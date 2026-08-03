@@ -45,6 +45,16 @@ import { toSafeErrorMessage } from "@/lib/safe-error"
 
 const PAYMENT_EXPIRY_DAYS = 7
 
+/** Neon/pg liefert timestamptz oft als Date – QuoteRequest erwartet ISO-Strings. */
+function asIsoString(value: unknown): string | null {
+  if (value == null) return null
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString()
+  }
+  if (typeof value === "string") return value
+  return String(value)
+}
+
 export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
   const { offer_pdf_data: _pdf, offer_pdf_mime_type: _mime, ...safeRow } = row
   return {
@@ -53,8 +63,13 @@ export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
     booking_id: (row.booking_id as number | null) ?? null,
     external_ref: (row.external_ref as string | null) ?? null,
     notes: (row.notes as string | null) ?? null,
-    expires_at: (row.expires_at as string | null) ?? null,
-    cancelled_at: (row.cancelled_at as string | null) ?? null,
+    submitted_at: asIsoString(row.submitted_at),
+    approved_at: asIsoString(row.approved_at),
+    paid_at: asIsoString(row.paid_at),
+    expires_at: asIsoString(row.expires_at),
+    cancelled_at: asIsoString(row.cancelled_at),
+    created_at: asIsoString(row.created_at) ?? (safeRow.created_at as string),
+    packing_docs_printed_at: asIsoString(row.packing_docs_printed_at),
     fulfillment_status: (row.fulfillment_status as QuoteRequest["fulfillment_status"]) ?? null,
     tracking_number: (row.tracking_number as string | null) ?? null,
     versand_dienstleister: (row.versand_dienstleister as QuoteRequest["versand_dienstleister"]) ?? null,
@@ -64,7 +79,6 @@ export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
     offer_pdf_filename: (row.offer_pdf_filename as string | null) ?? null,
     sevdesk_order_id: (row.sevdesk_order_id as string | null) ?? null,
     sevdesk_order_number: (row.sevdesk_order_number as string | null) ?? null,
-    packing_docs_printed_at: (row.packing_docs_printed_at as string | null) ?? null,
     config_json: typeof row.config_json === "string" ? JSON.parse(row.config_json) : row.config_json,
     price_snapshot_json:
       typeof row.price_snapshot_json === "string"

@@ -197,6 +197,28 @@ const sorted = [
 ].sort(compareFulfillmentUrgency)
 assert("Dringender Auftrag zuerst", sorted[0]?.id === 2)
 
+// Neon liefert timestamptz oft als Date-Objekt statt ISO-String
+const neonDateQuote = makeQuote({
+  config_json: {
+    ...configOhneEvent,
+    lieferpaket: "regulaer",
+    lieferzeit: "standard",
+  },
+  paid_at: new Date("2026-06-10T15:30:00.000Z") as unknown as string,
+  submitted_at: new Date("2026-06-01T09:00:00.000Z") as unknown as string,
+})
+let neonDateOk = false
+try {
+  const dueNeon = getFulfillmentDueDate(neonDateQuote)
+  const timingNeon = getFulfillmentTiming(neonDateQuote, new Date("2026-06-15T10:00:00"))
+  neonDateOk =
+    dueNeon?.toISOString().slice(0, 10) === expectedNoVon &&
+    timingNeon.urgency !== "unknown"
+} catch {
+  neonDateOk = false
+}
+assert("Neon-Date paid_at/submitted_at akzeptieren", neonDateOk)
+
 if (failed > 0) {
   console.error(`\n${failed} Test(s) fehlgeschlagen`)
   process.exit(1)

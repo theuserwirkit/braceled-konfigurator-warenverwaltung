@@ -39,8 +39,15 @@ export type FulfillmentTiming = {
 
 type TimingQuote = Pick<QuoteRequest, "config_json" | "paid_at" | "submitted_at" | "fulfillment_status">
 
-function parseDateOnly(iso: string): Date {
-  return new Date(`${iso.slice(0, 10)}T12:00:00`)
+/** Akzeptiert ISO-Strings und Date-Objekte (Neon liefert timestamptz oft als Date). */
+function parseDateOnly(iso: string | Date): Date {
+  const raw =
+    iso instanceof Date
+      ? iso.toISOString()
+      : typeof iso === "string"
+        ? iso
+        : String(iso)
+  return new Date(`${raw.slice(0, 10)}T12:00:00`)
 }
 
 function addCalendarDays(date: Date, days: number): Date {

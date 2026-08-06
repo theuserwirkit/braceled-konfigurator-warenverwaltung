@@ -4,7 +4,6 @@ import {
   getActiveFulfillmentSteps,
   getNextFulfillmentStep,
   isFulfillmentComplete,
-  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import type { FulfillmentStatus, QuoteRequest, QuoteStatus } from "@/lib/konfigurator/types"
 
@@ -26,11 +25,8 @@ export type WarehousePipelineContext = {
   packingDocsPrinted: boolean
 }
 
-export function getOrderPipelineSteps(
-  hasDruck: boolean,
-  needsReturn = true,
-): OrderPipelineStep[] {
-  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck, needsReturn)
+export function getOrderPipelineSteps(hasDruck: boolean): OrderPipelineStep[] {
+  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck)
   const verpacktIdx = fulfillmentSteps.indexOf("verpackt")
   const beforeVerpackt = fulfillmentSteps.slice(0, verpacktIdx)
   const fromVerpackt = fulfillmentSteps.slice(verpacktIdx)
@@ -60,10 +56,9 @@ export function isWarehousePipelineStep(
 function fulfillmentIndex(
   status: FulfillmentStatus | null | undefined,
   hasDruck: boolean,
-  needsReturn: boolean,
 ): number {
   if (!status) return -1
-  return getActiveFulfillmentSteps(hasDruck, needsReturn).indexOf(status)
+  return getActiveFulfillmentSteps(hasDruck).indexOf(status)
 }
 
 export function getOrderPipelinePhase(
@@ -71,21 +66,19 @@ export function getOrderPipelinePhase(
   hasDruck: boolean,
   warehouse: WarehousePipelineContext,
 ): OrderPipelineStepKey | null {
-  const needsReturn = needsReturnFulfillment(quote.config_json?.modus)
-
   if (["rejected", "expired", "cancelled"].includes(quote.status)) return null
   if (quote.status === "draft" || quote.status === "submitted") return "freigabe"
   if (quote.status === "approved" || quote.status === "payment_pending") return "geldeingang"
 
   if (quote.status === "paid") {
-    const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck, needsReturn)
+    const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck)
     const vorbereitetIdx = fulfillmentSteps.indexOf("vorbereitet")
     const verpacktIdx = fulfillmentSteps.indexOf("verpackt")
-    const currentIdx = fulfillmentIndex(quote.fulfillment_status, hasDruck, needsReturn)
+    const currentIdx = fulfillmentIndex(quote.fulfillment_status, hasDruck)
 
     if (currentIdx < vorbereitetIdx) {
       if (!quote.fulfillment_status) return "angenommen"
-      const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
+      const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
       if (next) return next
       return quote.fulfillment_status
     }
@@ -96,8 +89,8 @@ export function getOrderPipelinePhase(
       return "verpackt"
     }
 
-    if (isFulfillmentComplete(quote.fulfillment_status, hasDruck, needsReturn)) return null
-    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
+    if (isFulfillmentComplete(quote.fulfillment_status, hasDruck)) return null
+    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
     if (next) return next
     return quote.fulfillment_status
   }
@@ -110,8 +103,7 @@ export function getOrderPipelineProgressIndex(
   hasDruck: boolean,
   warehouse: WarehousePipelineContext,
 ): number {
-  const needsReturn = needsReturnFulfillment(quote.config_json?.modus)
-  const steps = getOrderPipelineSteps(hasDruck, needsReturn)
+  const steps = getOrderPipelineSteps(hasDruck)
   const phase = getOrderPipelinePhase(quote, hasDruck, warehouse)
 
   if (quote.status === "submitted") return 0
@@ -129,11 +121,7 @@ export function isOrderPipelineComplete(
   quote: Pick<QuoteRequest, "status" | "fulfillment_status" | "config_json">,
   hasDruck: boolean,
 ): boolean {
-  const needsReturn = needsReturnFulfillment(quote.config_json?.modus)
-  return (
-    quote.status === "paid" &&
-    isFulfillmentComplete(quote.fulfillment_status, hasDruck, needsReturn)
-  )
+  return quote.status === "paid" && isFulfillmentComplete(quote.fulfillment_status, hasDruck)
 }
 
 export function isPreFulfillmentStatus(status: QuoteStatus): boolean {

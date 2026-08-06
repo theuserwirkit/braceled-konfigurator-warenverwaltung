@@ -40,14 +40,14 @@ import {
   Package,
   RotateCcw,
 } from "lucide-react"
-import { advanceFulfillmentStep, previewFulfillmentEmail, getFulfillmentTemplateDefaults } from "@/lib/actions/fulfillment"
+import { advanceFulfillmentStep, previewFulfillmentEmail, getFulfillmentTemplateDefaults, completeFulfillmentWithoutReturn } from "@/lib/actions/fulfillment"
 import { getWarehouseFulfillmentBlockMessage } from "@/lib/actions/quote-warehouse"
 import {
   FULFILLMENT_STATUS_LABELS,
   getActiveFulfillmentSteps,
   getNextFulfillmentStep,
   isFulfillmentComplete,
-  needsReturnFulfillment,
+  canCompleteWithoutReturn,
 } from "@/lib/konfigurator/fulfillment-status"
 import { VERSAND_DIENSTLEISTER_OPTIONS } from "@/lib/konfigurator/versand-dienstleister"
 import { buildOrderContext } from "@/lib/konfigurator/order-context"
@@ -159,11 +159,11 @@ export function QuoteFulfillmentWorkflow({
   const [blockMessage, setBlockMessage] = useState<string | null>(null)
 
   const hasDruck = Boolean(quote.config_json.druck)
-  const needsReturn = needsReturnFulfillment(quote.config_json.modus)
-  const steps = getActiveFulfillmentSteps(hasDruck, needsReturn)
+  const steps = getActiveFulfillmentSteps(hasDruck)
   const current = quote.fulfillment_status
-  const next = getNextFulfillmentStep(current, hasDruck, needsReturn)
-  const complete = isFulfillmentComplete(current, hasDruck, needsReturn)
+  const next = getNextFulfillmentStep(current, hasDruck)
+  const complete = isFulfillmentComplete(current, hasDruck)
+  const canSkipReturn = canCompleteWithoutReturn(current)
 
   const loadPreview = useCallback(async () => {
     if (!next) return
@@ -221,6 +221,27 @@ export function QuoteFulfillmentWorkflow({
   const carrierMissing = trackingRequired && !versandDienstleister
   const stepBlocked = trackingMissing || carrierMissing || Boolean(blockMessage)
   const orderContext = buildOrderContext(quote)
+
+  async function handleSkipReturn() {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await completeFulfillmentWithoutReturn(quote.id)
+      if (!result.success) {
+        setError(result.error || "Fehler")
+        setLoading(false)
+        return
+      }
+      toast({
+        title: "Ohne Rücksendung abgeschlossen",
+        description: "Der Vorgang ist beendet – keine Rücksendeschritte nötig.",
+      })
+      router.refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Verbindungsfehler – bitte erneut versuchen")
+    }
+    setLoading(false)
+  }
 
   async function handleAdvance() {
     if (!next) return
@@ -460,6 +481,21 @@ export function QuoteFulfillmentWorkflow({
                 </Button>
               )}
             </div>
+            {canSkipReturn && (
+              <div className="pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void handleSkipReturn()}
+                  disabled={loading}
+                >
+                  Ohne Rücksendung abschließen
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Für Fälle ohne Rückgabe (z. B. Kauf ohne Station).
+                </p>
+              </div>
+            )}
           </div>
         ) : complete ? (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">

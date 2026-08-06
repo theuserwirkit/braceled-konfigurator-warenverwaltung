@@ -8,6 +8,7 @@ import { QuotePackingPrintModal } from "@/components/admin/quote-packing-print-m
 import { confirmPackingDocsPrinted } from "@/lib/actions/quote-warehouse"
 import type { QuoteStationInfo, QuoteWarehouseBaseOption } from "@/lib/actions/quote-warehouse"
 import type { BandBatchPool } from "@/lib/konfigurator/band-allocation"
+import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
 import type { OrderPipelineStepKey } from "@/lib/konfigurator/order-pipeline"
 import type { BookingWithRelations } from "@/lib/types"
 import { toast } from "@/hooks/use-toast"
@@ -21,6 +22,7 @@ type OrderPrimaryActionProps = {
   quoteId: number
   canPrint: boolean
   allocationReady?: boolean
+  packingSheetData?: PackingSheetData | null
   primaryBooking: BookingWithRelations | null
   requiredMenge: number
   bandBatchPools: BandBatchPool[]
@@ -36,6 +38,7 @@ export function OrderPrimaryAction({
   quoteId,
   canPrint,
   allocationReady = true,
+  packingSheetData = null,
   primaryBooking,
   requiredMenge,
   bandBatchPools,
@@ -101,6 +104,7 @@ export function OrderPrimaryAction({
         quoteStatus="paid"
         canPrint={canPrint}
         allocationReady={allocationReady}
+        packingSheetData={packingSheetData}
         open={openPrint}
         onOpenChange={setOpenPrint}
         showTrigger={false}

@@ -5,7 +5,6 @@ import { PRICING_NOTICE_B2B } from "@/lib/konfigurator/consent"
 import {
   FULFILLMENT_STATUS_LABELS,
   getActiveFulfillmentSteps,
-  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { formatKontaktAdresse } from "@/lib/konfigurator/kontakt-adresse"
@@ -35,7 +34,7 @@ const CUSTOMER_FULFILLMENT_HINTS: Partial<Record<FulfillmentStatus, string>> = {
   versand_beauftragt: "Versand ist beauftragt",
   versandt: "Paket ist unterwegs",
   ruecksendung_angekommen: "Rücksendung eingegangen",
-  zurueckgepackt: "Rücksendung abgeschlossen",
+  zurueckgepackt: "Auftrag abgeschlossen",
 }
 
 type FulfillmentEvent = {
@@ -72,8 +71,7 @@ export function AngebotStatusView({
   const statusInfo = STATUS_LABELS[quote.status] || { label: quote.status, variant: "outline" as const }
   const config = quote.config_json as QuoteConfig
   const hasDruck = Boolean(config.druck)
-  const needsReturn = needsReturnFulfillment(config.modus)
-  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck, needsReturn)
+  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck)
   const currentFulfillment = quote.fulfillment_status
   const currentIdx = currentFulfillment ? fulfillmentSteps.indexOf(currentFulfillment) : -1
   const showFulfillment = quote.status === "paid" && currentFulfillment

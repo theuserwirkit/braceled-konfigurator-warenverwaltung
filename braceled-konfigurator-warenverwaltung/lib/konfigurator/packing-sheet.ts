@@ -278,7 +278,16 @@ function buildEventChecklistItems(
     { gegenstand: "Blöcke", menge: null, anmerkung: null },
     { gegenstand: "Stifte", menge: null, anmerkung: null },
     { gegenstand: "Schlüsselanhänger (Lanyards)", menge: null, anmerkung: null },
-    { gegenstand: "Postkarten", menge: null, anmerkung: null },
+    {
+      gegenstand: "Checkliste / Übersicht (Kunde)",
+      menge: "1",
+      anmerkung: "Immer beilegen",
+    },
+    {
+      gegenstand: "Postkarten",
+      menge: "3",
+      anmerkung: "Immer beilegen",
+    },
     { gegenstand: "Visitenkarten", menge: null, anmerkung: null },
     { gegenstand: "Event Psychologie", menge: null, anmerkung: null },
     { gegenstand: "Roll ups", menge: null, anmerkung: null },

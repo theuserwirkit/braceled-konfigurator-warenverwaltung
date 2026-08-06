@@ -22,7 +22,6 @@ import {
   type OrderPipelineStepKey,
   type WarehousePipelineContext,
 } from "@/lib/konfigurator/order-pipeline"
-import { needsReturnFulfillment } from "@/lib/konfigurator/fulfillment-status"
 import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
 import { buildOrderContext } from "@/lib/konfigurator/order-context"
 import type { QuoteFulfillmentEvent, QuoteRequest } from "@/lib/konfigurator/types"
@@ -68,8 +67,7 @@ export function QuoteOrderWorkflow({
   }
 
   const hasDruck = Boolean(quote.config_json.druck)
-  const needsReturn = needsReturnFulfillment(quote.config_json.modus)
-  const steps = getOrderPipelineSteps(hasDruck, needsReturn)
+  const steps = getOrderPipelineSteps(hasDruck)
   const currentIndex = getOrderPipelineProgressIndex(quote, hasDruck, warehouseContext)
   const phase = getOrderPipelinePhase(quote, hasDruck, warehouseContext)
   const complete = isOrderPipelineComplete(quote, hasDruck)
@@ -271,6 +269,7 @@ export function QuoteOrderWorkflow({
         quoteStatus={quote.status}
         canPrint={warehousePanelProps.canPrint ?? false}
         allocationReady={warehousePanelProps.allocationReady ?? false}
+        packingSheetData={packingSheetData}
         open={openPrint}
         onOpenChange={setOpenPrint}
         showTrigger={false}

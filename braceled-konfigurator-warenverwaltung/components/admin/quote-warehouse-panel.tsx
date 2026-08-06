@@ -27,7 +27,7 @@ import {
   type BaseStationTyp,
 } from "@/lib/konfigurator/station-types"
 import { setReturnBookingId } from "@/lib/actions/fulfillment"
-import { isFulfillmentComplete, needsReturnFulfillment } from "@/lib/konfigurator/fulfillment-status"
+import { isFulfillmentComplete } from "@/lib/konfigurator/fulfillment-status"
 import { ACTIVE_STATUSES } from "@/lib/konfigurator/quote-status"
 import type { FulfillmentStatus, QuoteStatus } from "@/lib/konfigurator/types"
 import type { BatchRow, BookingStatus, BookingWithRelations, GroupRow } from "@/lib/types"
@@ -280,7 +280,6 @@ function FulfillmentReadinessHint({
   quoteStatus,
   fulfillmentStatus,
   hasDruck,
-  needsReturn,
   primaryBooking,
   stationInfo,
   requiredMenge,
@@ -288,7 +287,6 @@ function FulfillmentReadinessHint({
   quoteStatus: QuoteStatus
   fulfillmentStatus: FulfillmentStatus | null
   hasDruck: boolean
-  needsReturn: boolean
   primaryBooking: BookingWithRelations | null
   stationInfo: QuoteStationInfo | null
   requiredMenge: number
@@ -296,7 +294,7 @@ function FulfillmentReadinessHint({
   const fulfillmentActive =
     quoteStatus === "paid" &&
     fulfillmentStatus != null &&
-    !isFulfillmentComplete(fulfillmentStatus, hasDruck, needsReturn)
+    !isFulfillmentComplete(fulfillmentStatus, hasDruck)
 
   if (!fulfillmentActive) return null
 
@@ -688,7 +686,6 @@ export function QuoteWarehousePanel(props: QuoteWarehousePanelProps) {
           quoteStatus={quoteStatus}
           fulfillmentStatus={fulfillmentStatus}
           hasDruck={hasDruck}
-          needsReturn={needsReturnFulfillment(modus)}
           primaryBooking={primaryBooking}
           stationInfo={stationInfo}
           requiredMenge={requiredMenge}

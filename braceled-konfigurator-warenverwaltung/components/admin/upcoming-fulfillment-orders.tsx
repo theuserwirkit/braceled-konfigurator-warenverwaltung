@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import {
   FULFILLMENT_STATUS_LABELS,
   getNextFulfillmentStep,
-  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import {
   getFulfillmentTiming,
@@ -62,11 +61,7 @@ export function UpcomingFulfillmentOrders({
       <CardContent className="grid gap-3 md:grid-cols-3">
         {orders.map((quote) => {
           const hasDruck = Boolean(quote.config_json.druck)
-          const nextStep = getNextFulfillmentStep(
-            quote.fulfillment_status,
-            hasDruck,
-            needsReturnFulfillment(quote.config_json.modus),
-          )
+          const nextStep = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
           const timing = getFulfillmentTiming(quote)
           const Icon = urgencyIcon(timing.urgency)
           const paket = normalizeLieferpaket(quote.config_json)

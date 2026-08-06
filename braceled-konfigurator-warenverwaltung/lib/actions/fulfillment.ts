@@ -15,7 +15,7 @@ import {
   fulfillmentTemplateKey,
   getNextFulfillmentStep,
   isFulfillmentComplete,
-  needsReturnFulfillment,
+  canCompleteWithoutReturn,
 } from "@/lib/konfigurator/fulfillment-status"
 import { isVersandDienstleister } from "@/lib/konfigurator/versand-dienstleister"
 import { validateWarehouseForFulfillmentStep } from "@/lib/actions/quote-warehouse"
@@ -76,8 +76,7 @@ export async function advanceFulfillmentStep(
     }
 
     const hasDruck = Boolean(quote.config_json.druck)
-    const needsReturn = needsReturnFulfillment(quote.config_json.modus)
-    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
+    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
     if (!next) {
       return { success: false, error: "Kein weiterer Schritt verfügbar" }
     }
@@ -228,9 +227,75 @@ export async function getFulfillmentProgress(quoteId: number) {
   const quote = await getQuoteByIdInternal(quoteId)
   if (!quote) return null
   const hasDruck = Boolean(quote.config_json.druck)
-  const needsReturn = needsReturnFulfillment(quote.config_json.modus)
-  const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
-  const complete = isFulfillmentComplete(quote.fulfillment_status, hasDruck, needsReturn)
+  const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
+  const complete = isFulfillmentComplete(quote.fulfillment_status, hasDruck)
   const events = await listFulfillmentEvents(quoteId)
   return { quote, hasDruck, next, complete, events }
+}
+
+/** Vorgang nach Versand (oder mitten in der Rücksendung) ohne Rücksendung abschließen. */
+export async function completeFulfillmentWithoutReturn(
+  quoteId: number,
+  input?: { internalNote?: string },
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await requireRole(["ADMIN"])
+  } catch {
+    return { success: false, error: "Nicht authentifiziert" }
+  }
+
+  try {
+    const quote = await getQuoteByIdInternal(quoteId)
+    if (!quote) return { success: false, error: "Anfrage nicht gefunden" }
+    if (quote.status !== "paid") {
+      return { success: false, error: "Fulfillment nur nach Zahlung möglich" }
+    }
+    if (!canCompleteWithoutReturn(quote.fulfillment_status)) {
+      return {
+        success: false,
+        error: "Ohne Rücksendung erst ab Status „Versandt“ möglich",
+      }
+    }
+
+    const toStatus: FulfillmentStatus = "zurueckgepackt"
+    const fromStatus = quote.fulfillment_status
+    const note =
+      input?.internalNote?.trim() ||
+      "Vorgang ohne Rücksendung abgeschlossen (z. B. Kauf ohne Rückgabe)."
+
+    const sql = getDb()
+    await sql`
+      UPDATE quote_requests SET
+        fulfillment_status = ${toStatus},
+        updated_at = NOW()
+      WHERE id = ${quoteId}
+    `
+
+    await sql`
+      INSERT INTO quote_fulfillment_events (
+        quote_id, from_status, to_status, comment, internal_note, tracking_number, versand_dienstleister,
+        mail_sent, mail_subject, created_by
+      ) VALUES (
+        ${quoteId},
+        ${fromStatus},
+        ${toStatus},
+        null,
+        ${note},
+        null,
+        null,
+        false,
+        null,
+        'admin'
+      )
+    `
+
+    revalidatePath(`/warenverwaltung/auftraege/${quoteId}`)
+    revalidatePath("/warenverwaltung/auftraege")
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: toSafeErrorMessage(error, "completeFulfillmentWithoutReturn"),
+    }
+  }
 }

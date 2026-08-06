@@ -121,7 +121,7 @@ export function ManualQuoteForm() {
       return
     }
 
-    toast({ title: "Auftrag erstellt", description: `Anfrage #${result.quoteId} wurde angelegt` })
+    toast({ title: "Auftrag erstellt", description: `Auftrag #${result.quoteId} wurde angelegt` })
     router.push(`/warenverwaltung/auftraege/${result.quoteId}`)
   }
 

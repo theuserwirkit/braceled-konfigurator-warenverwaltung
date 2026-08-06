@@ -103,7 +103,7 @@ export async function createQuoteHoldBooking(
     von: config.von,
     bis: config.bis || config.von,
     kunde_email: email,
-    event: `Anfrage #${quoteId}`,
+    event: `Auftrag #${quoteId}`,
     status: "ANFRAGE",
   })
 
@@ -157,7 +157,7 @@ export async function finalizeQuoteBookingOnPayment(
         von: config.von,
         bis: config.bis || config.von,
         kunde_email: options?.leadEmail,
-        event: `Anfrage #${quoteId}`,
+        event: `Auftrag #${quoteId}`,
         status: "BESTAETIGT",
       })
 
@@ -201,7 +201,7 @@ export async function finalizeQuoteBookingOnPayment(
       status: "BESTAETIGT",
       customerName: customerName || undefined,
       datumAusgabe,
-      bemerkung: `Anfrage #${quoteId}`,
+      bemerkung: `Auftrag #${quoteId}`,
       items: [{
         groupId: allocation.groupId,
         batchId: allocation.batchId,

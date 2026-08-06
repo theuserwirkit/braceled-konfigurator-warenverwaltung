@@ -503,7 +503,7 @@ export async function createSevdeskOfferForQuote(
         taxType: "default",
         currency: "EUR",
         showNet: true,
-        customerInternalNote: `Wristlink Anfrage #${quote.id}`,
+        customerInternalNote: `Wristlink Auftrag #${quote.id}`,
       },
       orderPosSave: positionen,
     }),

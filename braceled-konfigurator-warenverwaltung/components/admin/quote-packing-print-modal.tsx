@@ -11,11 +11,16 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
+import { QuoteBagLabels } from "@/components/print/quote-bag-labels"
+import { QuotePackingChecklist } from "@/components/print/quote-packing-checklist"
+import { QuoteWarehouseOverview } from "@/components/print/quote-warehouse-overview"
 
 type QuotePackingPrintModalProps = {
   quoteId: number
   quoteStatus: string
   canPrint: boolean
+  packingSheetData?: PackingSheetData | null
   /** Vollständige Materialzuweisung – nötig für „Druck erledigt“. */
   allocationReady?: boolean
   open?: boolean
@@ -29,40 +34,57 @@ type QuotePackingPrintModalProps = {
 }
 
 const PRINT_TABS = [
-  { value: "labels", label: "Tüten-Labels", path: "labels" },
-  { value: "checkliste", label: "Checkliste", path: "checkliste" },
-  { value: "uebersicht", label: "Übersicht", path: "uebersicht" },
+  { value: "labels", label: "Tüten-Labels" },
+  { value: "checkliste", label: "Checkliste" },
+  { value: "uebersicht", label: "Übersicht" },
 ] as const
 
+type PrintTab = (typeof PRINT_TABS)[number]["value"]
+
 function PrintTabPanel({
-  quoteId,
-  path,
-  label,
+  tab,
+  data,
 }: {
-  quoteId: number
-  path: string
-  label: string
+  tab: PrintTab
+  data: PackingSheetData
 }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   function handlePrint() {
-    const frame = iframeRef.current
-    if (!frame?.contentWindow) return
-    frame.contentWindow.focus()
-    frame.contentWindow.print()
+    const node = previewRef.current
+    if (!node) return
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=700")
+    if (!printWindow) return
+
+    const styles = Array.from(document.querySelectorAll("style, link[rel='stylesheet']"))
+      .map((el) => el.outerHTML)
+      .join("\n")
+
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Druck</title>${styles}
+      <style>
+        body { margin: 0; background: #fff; color: #000; }
+        @media print { body { margin: 0; } }
+      </style>
+    </head><body>${node.innerHTML}</body></html>`)
+    printWindow.document.close()
+    printWindow.focus()
+    // Styles brauchen einen Tick zum Laden
+    window.setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 250)
   }
 
   return (
     <div className="space-y-4">
-      <div className="relative mx-auto w-full max-w-[640px] overflow-hidden rounded-lg border bg-white shadow-md">
-        <iframe
-          ref={iframeRef}
-          src={`/warenverwaltung/auftraege/${quoteId}/druck/${path}`}
-          title={`Vorschau ${label}`}
-          className="h-[640px] w-full border-0 bg-white"
-        />
+      <div className="mx-auto max-h-[640px] w-full max-w-[640px] overflow-auto rounded-lg border bg-white shadow-md">
+        <div ref={previewRef} className="bg-white p-2 text-black">
+          {tab === "labels" && <QuoteBagLabels data={data} />}
+          {tab === "checkliste" && <QuotePackingChecklist data={data} />}
+          {tab === "uebersicht" && <QuoteWarehouseOverview data={data} />}
+        </div>
       </div>
-      <Button className="w-full flex items-center gap-2" onClick={handlePrint}>
+      <Button className="flex w-full items-center gap-2" onClick={handlePrint}>
         <Printer className="h-4 w-4" />
         Drucken
       </Button>
@@ -71,9 +93,10 @@ function PrintTabPanel({
 }
 
 export function QuotePackingPrintModal({
-  quoteId,
+  quoteId: _quoteId,
   quoteStatus,
   canPrint,
+  packingSheetData,
   allocationReady = true,
   open: controlledOpen,
   onOpenChange,
@@ -111,46 +134,53 @@ export function QuotePackingPrintModal({
         </p>
       )}
 
+      {!packingSheetData ? (
+        <p className="text-sm text-destructive">
+          Packdaten konnten nicht geladen werden. Seite neu laden und erneut versuchen.
+        </p>
+      ) : (
+        <>
           <p className="text-sm text-muted-foreground">
-            Labels: Thermodrucker A6 (105 × 148 mm). Checkliste: A4. Skalierung 100 %. Vorschau und
-            Druck bleiben in diesem Fenster.
+            Labels: Thermodrucker A6 (105 × 148 mm). Checkliste: A4. Skalierung 100 %.
           </p>
 
-      <Tabs defaultValue="checkliste">
-        <TabsList className="w-full">
-          {PRINT_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 text-xs sm:text-sm">
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          <Tabs defaultValue="checkliste">
+            <TabsList className="w-full">
+              {PRINT_TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value} className="flex-1 text-xs sm:text-sm">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-        {PRINT_TABS.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className="mt-4">
-            <PrintTabPanel quoteId={quoteId} path={tab.path} label={tab.label} />
-          </TabsContent>
-        ))}
+            {PRINT_TABS.map((tab) => (
+              <TabsContent key={tab.value} value={tab.value} className="mt-4">
+                <PrintTabPanel tab={tab.value} data={packingSheetData} />
+              </TabsContent>
+            ))}
 
-        {onConfirmPrint && (
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full gap-2"
-            onClick={onConfirmPrint}
-            disabled={confirmingPrint || !allocationReady}
-            title={
-              allocationReady ? undefined : "Erst nach vollständiger Materialzuweisung"
-            }
-          >
-            {confirmingPrint ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
+            {onConfirmPrint && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-2 w-full gap-2"
+                onClick={onConfirmPrint}
+                disabled={confirmingPrint || !allocationReady}
+                title={
+                  allocationReady ? undefined : "Erst nach vollständiger Materialzuweisung"
+                }
+              >
+                {confirmingPrint ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Druck erledigt – weiter zum Packen
+              </Button>
             )}
-            Druck erledigt – weiter zum Packen
-          </Button>
-        )}
-      </Tabs>
+          </Tabs>
+        </>
+      )}
     </DialogContent>
   )
 

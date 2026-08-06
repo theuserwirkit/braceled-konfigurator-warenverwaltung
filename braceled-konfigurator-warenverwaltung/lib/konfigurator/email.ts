@@ -156,7 +156,7 @@ Freigabe im Admin-Bereich:
 ${params.adminUrl}`
   await sendTemplatedEmail({
     email: getTeamEmail(),
-    subject: `Neue Konfigurator-Anfrage #${params.quoteId}`,
+    subject: `Neuer Konfigurator-Auftrag #${params.quoteId}`,
     text: body,
   })
 }

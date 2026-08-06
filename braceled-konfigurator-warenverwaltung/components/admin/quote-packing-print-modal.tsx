@@ -16,6 +16,8 @@ type QuotePackingPrintModalProps = {
   quoteId: number
   quoteStatus: string
   canPrint: boolean
+  /** Vollständige Materialzuweisung – nötig für „Druck erledigt“. */
+  allocationReady?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
   showTrigger?: boolean
@@ -52,12 +54,12 @@ function PrintTabPanel({
 
   return (
     <div className="space-y-4">
-      <div className="relative mx-auto w-full max-w-[420px] overflow-hidden rounded-lg border bg-white shadow-md">
+      <div className="relative mx-auto w-full max-w-[640px] overflow-hidden rounded-lg border bg-white shadow-md">
         <iframe
           ref={iframeRef}
           src={`/warenverwaltung/auftraege/${quoteId}/druck/${path}`}
           title={`Vorschau ${label}`}
-          className="h-[520px] w-full border-0 bg-white"
+          className="h-[640px] w-full border-0 bg-white"
         />
       </div>
       <Button className="w-full flex items-center gap-2" onClick={handlePrint}>
@@ -72,6 +74,7 @@ export function QuotePackingPrintModal({
   quoteId,
   quoteStatus,
   canPrint,
+  allocationReady = true,
   open: controlledOpen,
   onOpenChange,
   showTrigger = true,
@@ -101,51 +104,53 @@ export function QuotePackingPrintModal({
         </DialogTitle>
       </DialogHeader>
 
-      {!canPrint ? (
+      {!allocationReady && (
         <p className="text-sm text-amber-700 dark:text-amber-400">
-          Bitte zuerst Leuchtgruppen, Chargen und Basis-Station zuweisen.
+          Vorschau und Druck sind möglich. Für „Druck erledigt“ bitte zuerst Leuchtgruppen,
+          Chargen und Basis-Station vollständig zuweisen.
         </p>
-      ) : (
-        <>
+      )}
+
           <p className="text-sm text-muted-foreground">
-            Thermodrucker A6 (105 × 148 mm), Skalierung 100 %. Vorschau und Druck bleiben in
-            diesem Fenster.
+            Labels: Thermodrucker A6 (105 × 148 mm). Checkliste: A4. Skalierung 100 %. Vorschau und
+            Druck bleiben in diesem Fenster.
           </p>
 
-          <Tabs defaultValue="checkliste">
-            <TabsList className="w-full">
-              {PRINT_TABS.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value} className="flex-1 text-xs sm:text-sm">
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+      <Tabs defaultValue="checkliste">
+        <TabsList className="w-full">
+          {PRINT_TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 text-xs sm:text-sm">
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-            {PRINT_TABS.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value} className="mt-4">
-                <PrintTabPanel quoteId={quoteId} path={tab.path} label={tab.label} />
-              </TabsContent>
-            ))}
+        {PRINT_TABS.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value} className="mt-4">
+            <PrintTabPanel quoteId={quoteId} path={tab.path} label={tab.label} />
+          </TabsContent>
+        ))}
 
-            {onConfirmPrint && (
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full gap-2"
-                onClick={onConfirmPrint}
-                disabled={confirmingPrint}
-              >
-                {confirmingPrint ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                Druck erledigt – weiter zum Packen
-              </Button>
+        {onConfirmPrint && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full gap-2"
+            onClick={onConfirmPrint}
+            disabled={confirmingPrint || !allocationReady}
+            title={
+              allocationReady ? undefined : "Erst nach vollständiger Materialzuweisung"
+            }
+          >
+            {confirmingPrint ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
             )}
-          </Tabs>
-        </>
-      )}
+            Druck erledigt – weiter zum Packen
+          </Button>
+        )}
+      </Tabs>
     </DialogContent>
   )
 
@@ -165,11 +170,6 @@ export function QuotePackingPrintModal({
           size={triggerClassName ? "default" : "sm"}
           className={triggerClassName ?? "flex items-center gap-2"}
           disabled={!canPrint}
-          title={
-            canPrint
-              ? undefined
-              : "Erst nach Zuweisung von Leuchtgruppen, Chargen und Basis-Station"
-          }
         >
           <Package className="h-4 w-4" />
           {triggerLabel}

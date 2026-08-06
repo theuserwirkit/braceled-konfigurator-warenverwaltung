@@ -20,6 +20,7 @@ type OrderPrimaryActionProps = {
   totalSteps: number
   quoteId: number
   canPrint: boolean
+  allocationReady?: boolean
   primaryBooking: BookingWithRelations | null
   requiredMenge: number
   bandBatchPools: BandBatchPool[]
@@ -34,6 +35,7 @@ export function OrderPrimaryAction({
   totalSteps,
   quoteId,
   canPrint,
+  allocationReady = true,
   primaryBooking,
   requiredMenge,
   bandBatchPools,
@@ -98,6 +100,7 @@ export function OrderPrimaryAction({
         quoteId={quoteId}
         quoteStatus="paid"
         canPrint={canPrint}
+        allocationReady={allocationReady}
         open={openPrint}
         onOpenChange={setOpenPrint}
         showTrigger={false}
@@ -156,7 +159,7 @@ export function OrderPrimaryAction({
               type="button"
               variant="outline"
               onClick={() => void handleConfirmPrint()}
-              disabled={confirmingPrint}
+              disabled={confirmingPrint || !allocationReady}
               className="h-11 shrink-0 gap-2 font-medium"
             >
               {confirmingPrint ? (

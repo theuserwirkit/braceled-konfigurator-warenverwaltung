@@ -47,6 +47,7 @@ import {
   getActiveFulfillmentSteps,
   getNextFulfillmentStep,
   isFulfillmentComplete,
+  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import { VERSAND_DIENSTLEISTER_OPTIONS } from "@/lib/konfigurator/versand-dienstleister"
 import { buildOrderContext } from "@/lib/konfigurator/order-context"
@@ -158,10 +159,11 @@ export function QuoteFulfillmentWorkflow({
   const [blockMessage, setBlockMessage] = useState<string | null>(null)
 
   const hasDruck = Boolean(quote.config_json.druck)
-  const steps = getActiveFulfillmentSteps(hasDruck)
+  const needsReturn = needsReturnFulfillment(quote.config_json.modus)
+  const steps = getActiveFulfillmentSteps(hasDruck, needsReturn)
   const current = quote.fulfillment_status
-  const next = getNextFulfillmentStep(current, hasDruck)
-  const complete = isFulfillmentComplete(current, hasDruck)
+  const next = getNextFulfillmentStep(current, hasDruck, needsReturn)
+  const complete = isFulfillmentComplete(current, hasDruck, needsReturn)
 
   const loadPreview = useCallback(async () => {
     if (!next) return

@@ -133,7 +133,6 @@ export function RentalProtocol({ booking }: RentalProtocolProps) {
           <div className="space-y-2">
             {[
               "DMX Basis PRO",
-              "Handfernbedienung",
               "Versandlabel erstellt",
               "Rückgabe Label erstellt",
               "Rückgabelabel und Protokoll mit verpackt",

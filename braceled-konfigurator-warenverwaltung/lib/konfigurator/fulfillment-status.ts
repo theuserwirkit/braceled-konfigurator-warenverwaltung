@@ -27,16 +27,32 @@ export function fulfillmentTemplateKey(status: FulfillmentStatus): string {
   return `fulfillment_${status}`
 }
 
-export function getActiveFulfillmentSteps(hasDruck: boolean): FulfillmentStatus[] {
-  if (hasDruck) return FULFILLMENT_STEPS
-  return FULFILLMENT_STEPS.filter((s) => s !== "bedruckt")
+/** Rücksendeschritte nur bei Miete; Kauf endet nach „versandt“. */
+export function needsReturnFulfillment(modus: string | null | undefined): boolean {
+  return modus === "miete"
+}
+
+export function getActiveFulfillmentSteps(
+  hasDruck: boolean,
+  needsReturn = true,
+): FulfillmentStatus[] {
+  let steps = hasDruck
+    ? [...FULFILLMENT_STEPS]
+    : FULFILLMENT_STEPS.filter((s) => s !== "bedruckt")
+  if (!needsReturn) {
+    steps = steps.filter(
+      (s) => s !== "ruecksendung_angekommen" && s !== "zurueckgepackt",
+    )
+  }
+  return steps
 }
 
 export function getNextFulfillmentStep(
   current: FulfillmentStatus | null | undefined,
   hasDruck: boolean,
+  needsReturn = true,
 ): FulfillmentStatus | null {
-  const steps = getActiveFulfillmentSteps(hasDruck)
+  const steps = getActiveFulfillmentSteps(hasDruck, needsReturn)
   if (!current) return steps[0] ?? null
   const idx = steps.indexOf(current)
   if (idx < 0 || idx >= steps.length - 1) return null
@@ -46,8 +62,9 @@ export function getNextFulfillmentStep(
 export function isFulfillmentComplete(
   current: FulfillmentStatus | null | undefined,
   hasDruck: boolean,
+  needsReturn = true,
 ): boolean {
-  const steps = getActiveFulfillmentSteps(hasDruck)
+  const steps = getActiveFulfillmentSteps(hasDruck, needsReturn)
   if (!current) return false
   return current === steps[steps.length - 1]
 }

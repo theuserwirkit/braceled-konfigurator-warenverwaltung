@@ -348,10 +348,9 @@ export async function expireStaleQuotes(): Promise<number> {
     `
   }
 
-  if (stale.length > 0) {
-    revalidatePath("/warenverwaltung/auftraege")
-  }
-
+  // Kein revalidatePath hier: expireStaleQuotes wird auch während SSR
+  // (z. B. getQuoteRequestStats auf /warenverwaltung) aufgerufen – revalidatePath
+  // während Render wirft in Next.js 15.
   return stale.length
 }
 

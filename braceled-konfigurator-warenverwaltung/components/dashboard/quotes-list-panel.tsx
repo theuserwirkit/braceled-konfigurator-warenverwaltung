@@ -19,6 +19,7 @@ import {
 import {
   FULFILLMENT_STATUS_LABELS,
   getNextFulfillmentStep,
+  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import type { QuoteRequest, QuoteSource, QuoteStatus } from "@/lib/konfigurator/types"
 
@@ -226,7 +227,11 @@ export function QuotesListPanel({
                     const hasDruck = Boolean(q.config_json.druck)
                     const nextStep =
                       q.status === "paid"
-                        ? getNextFulfillmentStep(q.fulfillment_status, hasDruck)
+                        ? getNextFulfillmentStep(
+                            q.fulfillment_status,
+                            hasDruck,
+                            needsReturnFulfillment(q.config_json.modus),
+                          )
                         : null
                     return (
                       <TableRow key={q.id} className="hover:bg-muted/50">

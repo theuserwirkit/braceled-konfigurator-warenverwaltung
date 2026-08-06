@@ -1,5 +1,5 @@
 import { daysUntilEvent } from "@/lib/konfigurator/availability-stress"
-import { isFulfillmentComplete } from "@/lib/konfigurator/fulfillment-status"
+import { isFulfillmentComplete, needsReturnFulfillment } from "@/lib/konfigurator/fulfillment-status"
 import {
   minWerktageForPaket,
   normalizeFlexRueckgabe,
@@ -228,7 +228,11 @@ export function isFulfillmentWorkOpen(
 ): boolean {
   if (quote.status !== "paid") return false
   const hasDruck = Boolean(quote.config_json.druck)
-  return !isFulfillmentComplete(quote.fulfillment_status, hasDruck)
+  return !isFulfillmentComplete(
+    quote.fulfillment_status,
+    hasDruck,
+    needsReturnFulfillment(quote.config_json.modus),
+  )
 }
 
 export function compareFulfillmentUrgency(

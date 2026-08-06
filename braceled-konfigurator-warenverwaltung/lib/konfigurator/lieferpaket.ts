@@ -33,7 +33,7 @@ export const PRODUKTION_WERKTAGE: Record<Lieferpaket, number> = {
   eil: 2,
 }
 
-/** Versandlaufzeit Regulär/Express in Werktagen (UPS/TNT). */
+/** Versandlaufzeit Regulär/Express in Werktagen (UPS/DHL/TNT/FedEx). */
 export const VERSAND_WERKTAGE_STANDARD = 2
 /** Versandlaufzeit Eilauftrag (Overnight-Kurier) in Werktagen. */
 export const VERSAND_WERKTAGE_EIL = 1
@@ -61,6 +61,8 @@ export function workdaysUntilEvent(eventDateIso: string, from = new Date()): num
   return workdaysUntil(fromNorm, event)
 }
 
+const CARRIER_SHORT = "UPS/DHL/TNT/FedEx"
+
 export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   value: Lieferpaket
   label: string
@@ -71,24 +73,21 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   {
     value: "regulaer",
     label: "Regulär",
-    description:
-      "Produktion 20 Werktage · Anlieferung bis 2 Tage vor Event (UPS/TNT) · Rückversand 3 Werktage",
+    description: `Produktion 20 Werktage · Anlieferung bis 2 Tage vor Event (${CARRIER_SHORT}) · Rückversand 3 Werktage`,
     minWerktage: minWerktageForPaket("regulaer", false),
     preisNetto: LIEFERPAKET_PREIS.regulaer,
   },
   {
     value: "express",
     label: "Express",
-    description:
-      "Produktion 10 Werktage · Anlieferung bis 2 Tage vor Event (UPS/TNT) · Rückversand 3 Werktage",
+    description: `Produktion 10 Werktage · Anlieferung bis 2 Tage vor Event (${CARRIER_SHORT}) · Rückversand 3 Werktage`,
     minWerktage: minWerktageForPaket("express", false),
     preisNetto: LIEFERPAKET_PREIS.express,
   },
   {
     value: "eil",
     label: "Eilauftrag",
-    description:
-      "Produktion 48 Std · Overnight per UPS/TNT · Rückversand 3 Werktage · Bedruckung möglich",
+    description: `Produktion 48 Std · Overnight per ${CARRIER_SHORT} · Rückversand 3 Werktage · Bedruckung möglich`,
     minWerktage: minWerktageForPaket("eil", false),
     preisNetto: LIEFERPAKET_PREIS.eil,
   },
@@ -96,8 +95,7 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
 
 export const FLEX_RUECKGABE_INFO = {
   label: "Flex-Rückgabe",
-  description:
-    "Frühere Anlieferung (≥5 Werktage vor Event, UPS/TNT) · Rückversandfenster 8 Werktage",
+  description: `Frühere Anlieferung (≥5 Werktage vor Event, ${CARRIER_SHORT}) · Rückversandfenster 8 Werktage`,
   preisNetto: FLEX_NETTO,
 } as const
 

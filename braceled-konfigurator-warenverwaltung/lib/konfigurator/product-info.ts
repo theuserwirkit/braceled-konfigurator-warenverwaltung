@@ -60,20 +60,20 @@ export const LIEFERART_OPTIONS: ReadonlyArray<{
     value: "standard",
     label: "Standard-Anlieferung",
     description:
-      "Bis 2 Tage vor Event per UPS oder TNT. Rückversandfenster 3 Werktage, bis Miet-Equipment wieder bei uns sein muss.",
+      "Bis 2 Tage vor Event per UPS, DHL, TNT oder FedEx. Rückversandfenster 3 Werktage, bis Miet-Equipment wieder bei uns sein muss.",
     preisNetto: 0,
   },
   {
     value: "flex",
     label: "Flex-Lieferung",
     description:
-      "Anlieferung mindestens 5 Werktage vor Event per UPS oder TNT. Rückversandfenster 8 Werktage.",
+      "Anlieferung mindestens 5 Werktage vor Event per UPS, DHL, TNT oder FedEx. Rückversandfenster 8 Werktage.",
     preisNetto: FLEX_NETTO,
   },
   {
     value: "overnight",
     label: "Overnight-Versand",
-    description: "Anlieferung innerhalb von 48 Stunden per UPS oder TNT.",
+    description: "Anlieferung innerhalb von 48 Stunden per UPS, DHL, TNT oder FedEx.",
     preisNetto: OVERNIGHT_NETTO,
   },
 ]

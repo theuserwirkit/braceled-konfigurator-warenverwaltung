@@ -139,6 +139,12 @@ export type PackingBaseRow = {
   anzahl: number
 }
 
+export type PackingEventChecklistItem = {
+  gegenstand: string
+  menge: string | null
+  anmerkung: string | null
+}
+
 export type PackingSheetData = {
   quoteId: number
   kunde: string
@@ -166,6 +172,7 @@ export type PackingSheetData = {
   bookingRows: PackingBookingRow[]
   baseRows: PackingBaseRow[]
   checklistAccessories: string[]
+  eventChecklistItems: PackingEventChecklistItem[]
 }
 
 function szenarioLabel(value?: string): string | null {
@@ -221,15 +228,61 @@ function buildChecklistAccessories(
     items.push(`Basis-Station (${stationLabel})`)
   }
 
-  if (station === "pro") {
-    items.push("Handfernbedienung")
-  }
-
   if (gruppenAnzahl > 0) {
     items.push("DMX-Konfiguration geprüft")
   }
 
   return items
+}
+
+function buildEventChecklistItems(
+  menge: number,
+  station: string,
+  gruppenAnzahl: number,
+  warehouseRows: PackingWarehouseRow[],
+): PackingEventChecklistItem[] {
+  const groupNote =
+    warehouseRows.length > 0
+      ? warehouseRows
+          .map((row) => {
+            const lager = row.lagerGruppe ? `${row.lagerGruppe}` : `Gruppe ${row.slot}`
+            const charge = row.charge ? ` · ${row.charge}` : ""
+            return `${lager}${charge}: ${row.anzahl}`
+          })
+          .join("; ")
+      : gruppenAnzahl > 0
+        ? `${gruppenAnzahl} Lichtgruppe${gruppenAnzahl === 1 ? "" : "n"}`
+        : null
+
+  const controllerMenge = station !== "keine" ? "1" : null
+  const controllerNote =
+    station === "eco"
+      ? "ECO Handcontroller"
+      : station === "pro"
+        ? "PRO Basis-Station (DMX)"
+        : null
+
+  return [
+    {
+      gegenstand: "LED-Armbänder",
+      menge: String(menge),
+      anmerkung: groupNote,
+    },
+    {
+      gegenstand: "Controller",
+      menge: controllerMenge,
+      anmerkung: controllerNote,
+    },
+    { gegenstand: "Showcase", menge: null, anmerkung: null },
+    { gegenstand: "Events Magazin", menge: null, anmerkung: null },
+    { gegenstand: "Blöcke", menge: null, anmerkung: null },
+    { gegenstand: "Stifte", menge: null, anmerkung: null },
+    { gegenstand: "Schlüsselanhänger (Lanyards)", menge: null, anmerkung: null },
+    { gegenstand: "Postkarten", menge: null, anmerkung: null },
+    { gegenstand: "Visitenkarten", menge: null, anmerkung: null },
+    { gegenstand: "Event Psychologie", menge: null, anmerkung: null },
+    { gegenstand: "Roll ups", menge: null, anmerkung: null },
+  ]
 }
 
 export function buildPackingSheetData(
@@ -352,6 +405,12 @@ export function buildPackingSheetData(
       config.gruppen,
       config.druck,
       hasLogo,
+    ),
+    eventChecklistItems: buildEventChecklistItems(
+      config.menge,
+      station,
+      config.gruppen,
+      warehouseRows,
     ),
   }
 }

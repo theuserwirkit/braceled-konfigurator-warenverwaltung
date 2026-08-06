@@ -1008,7 +1008,8 @@ export function ConfiguratorWizard({
                     onValueChange={([v]) => updateConfig({ menge: v })}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {MIN_MENGE.toLocaleString("de-DE")}–{MAX_MENGE.toLocaleString("de-DE")} in {MENGE_STEP}er-Schritten
+                    {MIN_MENGE.toLocaleString("de-DE")}–{MAX_MENGE.toLocaleString("de-DE")} in{" "}
+                    {MENGE_STEP}er-Schritten
                   </p>
                 </div>
 

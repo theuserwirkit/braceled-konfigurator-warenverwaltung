@@ -12,7 +12,7 @@ export type QuoteSource = "konfigurator" | "n8n_email" | "manual"
 
 export type PaymentMethod = "stripe" | "bank_transfer" | "manual"
 
-export type VersandDienstleister = "UPS" | "DHL" | "TNT"
+export type VersandDienstleister = "UPS" | "DHL" | "TNT" | "FedEx"
 
 export type FulfillmentStatus =
   | "angenommen"

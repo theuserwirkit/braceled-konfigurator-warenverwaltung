@@ -1,5 +1,6 @@
 import type { QuoteRequest } from "@/lib/konfigurator/types"
 import { getAppBaseUrl } from "@/lib/konfigurator/lead-auth"
+import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { getVersandDienstleisterLabel } from "@/lib/konfigurator/versand-dienstleister"
 import { formatDate } from "@/lib/utils/date"
 
@@ -71,6 +72,7 @@ export function buildQuoteTemplateVars(
 
   return {
     anfrage_id: String(quote.id),
+    auftrags_nr: formatAuftragsNr(quote),
     kunde_email: leadEmail,
     kunde_name: config.kontaktName || "",
     kunde_firma: config.kontaktFirma || "",
@@ -105,5 +107,5 @@ export function formatKommentarBlock(comment: string | undefined): string {
 export function formatAblehnungsgrundBlock(reason: string | undefined): string {
   const trimmed = reason?.trim()
   if (!trimmed) return ""
-  return `Grund: ${trimmed}\n\n`
+  return `${trimmed}\n\n`
 }

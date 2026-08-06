@@ -15,6 +15,7 @@ import {
   fulfillmentTemplateKey,
   getNextFulfillmentStep,
   isFulfillmentComplete,
+  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
 import { isVersandDienstleister } from "@/lib/konfigurator/versand-dienstleister"
 import { validateWarehouseForFulfillmentStep } from "@/lib/actions/quote-warehouse"
@@ -75,7 +76,8 @@ export async function advanceFulfillmentStep(
     }
 
     const hasDruck = Boolean(quote.config_json.druck)
-    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
+    const needsReturn = needsReturnFulfillment(quote.config_json.modus)
+    const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
     if (!next) {
       return { success: false, error: "Kein weiterer Schritt verfügbar" }
     }
@@ -226,8 +228,9 @@ export async function getFulfillmentProgress(quoteId: number) {
   const quote = await getQuoteByIdInternal(quoteId)
   if (!quote) return null
   const hasDruck = Boolean(quote.config_json.druck)
-  const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck)
-  const complete = isFulfillmentComplete(quote.fulfillment_status, hasDruck)
+  const needsReturn = needsReturnFulfillment(quote.config_json.modus)
+  const next = getNextFulfillmentStep(quote.fulfillment_status, hasDruck, needsReturn)
+  const complete = isFulfillmentComplete(quote.fulfillment_status, hasDruck, needsReturn)
   const events = await listFulfillmentEvents(quoteId)
   return { quote, hasDruck, next, complete, events }
 }

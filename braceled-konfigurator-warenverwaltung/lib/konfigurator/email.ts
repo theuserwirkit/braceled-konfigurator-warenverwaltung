@@ -231,7 +231,7 @@ export async function sendCustomerSubmittedEmail(params: {
 }) {
   const body = `Hallo,
 
-vielen Dank für deine Anfrage #${params.quoteId}. Wir prüfen deine Konfiguration und melden uns in Kürze bei dir – bald wissen wir mehr über die Verfügbarkeit für dein Event.
+vielen Dank für deinen Auftrag #${params.quoteId}. Wir prüfen deine Konfiguration und melden uns in Kürze bei dir – bald wissen wir mehr über die Verfügbarkeit für dein Event.
 
 Status und Angebot findest du hier (Zugang mit der Postleitzahl deiner Firmenadresse):
 ${params.offerUrl}
@@ -242,7 +242,7 @@ Viele Grüße
 Dein WIRKUNG-Team`
   return sendTemplatedEmail({
     email: params.email,
-    subject: "Anfrage eingegangen – WIRKUNG Wristlink",
+    subject: "Auftrag eingegangen – WIRKUNG Wristlink",
     text: body,
   })
 }

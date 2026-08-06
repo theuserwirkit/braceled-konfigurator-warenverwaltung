@@ -53,7 +53,7 @@ export function AngebotPlzGate({
           </div>
           <CardTitle>Ihr Auftragsstatus</CardTitle>
           <CardDescription>
-            Anfrage #{quoteId} – bitte die Postleitzahl Ihrer Firmenadresse eingeben, um
+            Auftrag #{quoteId} – bitte die Postleitzahl Ihrer Firmenadresse eingeben, um
             Angebot und Status einzusehen.
           </CardDescription>
         </CardHeader>

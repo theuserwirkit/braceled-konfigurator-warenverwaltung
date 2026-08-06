@@ -12,16 +12,21 @@ export const SHORT_LEAD_DAYS = SHORT_LEAD_WEEKS * 7
 /** Unterhalb dieser Tage bis zum Event: Lieferhinweis im Konfigurator */
 export const SHORT_DELIVERY_WARNING_DAYS = 14
 
-export function monthsUntilEvent(eventDateIso: string, from = new Date()): number {
-  const target = new Date(`${eventDateIso.slice(0, 10)}T12:00:00`)
+function toDateOnlyIso(value: string | Date): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return String(value).slice(0, 10)
+}
+
+export function monthsUntilEvent(eventDateIso: string | Date, from = new Date()): number {
+  const target = new Date(`${toDateOnlyIso(eventDateIso)}T12:00:00`)
   const months =
     (target.getFullYear() - from.getFullYear()) * 12 + (target.getMonth() - from.getMonth())
   const dayFraction = (target.getDate() - from.getDate()) / 30
   return months + dayFraction
 }
 
-export function daysUntilEvent(eventDateIso: string, from = new Date()): number {
-  const target = new Date(`${eventDateIso.slice(0, 10)}T12:00:00`)
+export function daysUntilEvent(eventDateIso: string | Date, from = new Date()): number {
+  const target = new Date(`${toDateOnlyIso(eventDateIso)}T12:00:00`)
   const fromNorm = new Date(`${from.toISOString().slice(0, 10)}T12:00:00`)
   return Math.ceil((target.getTime() - fromNorm.getTime()) / (1000 * 60 * 60 * 24))
 }

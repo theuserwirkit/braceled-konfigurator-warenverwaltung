@@ -1,129 +1,180 @@
 "use client"
 
 import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
-import { modusAnzeige } from "@/lib/konfigurator/product-info"
-import { A6PrintStyles } from "@/components/print/print-a6-styles"
 import { PackingShippingDates } from "@/components/print/packing-shipping-dates"
 
 type QuotePackingChecklistProps = {
   data: PackingSheetData
 }
 
-function ChecklistMeta({ data }: { data: PackingSheetData }) {
-  return (
-    <div className="mb-4 border-b-2 border-black pb-2">
-      <h1 className="text-base font-black uppercase">Pack-Checkliste</h1>
-      <p className="mt-1 text-sm font-bold">Auftrag #{data.quoteId}</p>
-      <div className="mt-2 space-y-0.5 text-xs">
-        <p>
-          <span className="font-bold">Kunde:</span> {data.kunde}
-        </p>
-        {data.ansprechpartner && (
-          <p>
-            <span className="font-bold">Ansprechpartner:</span> {data.ansprechpartner}
-          </p>
-        )}
-        {data.eventLabel && (
-          <p>
-            <span className="font-bold">Event:</span> {data.eventLabel}
-            {data.eventDatum ? ` · ${data.eventDatum}` : ""}
-          </p>
-        )}
-        <p>
-          <span className="font-bold">Modus:</span> {modusAnzeige(data.modus)} ·{" "}
-          <span className="font-bold">Lieferpaket:</span> {data.lieferpaket}
-        </p>
-        <p>
-          <span className="font-bold">Druck:</span> {data.druckLabel}
-          {data.probedruckLabel ? ` · Probedruck: ${data.probedruckLabel}` : ""}
-        </p>
-        {data.fulfillmentStatus && (
-          <p>
-            <span className="font-bold">Status:</span> {data.fulfillmentStatus}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function formatGroupLine(row: PackingSheetData["warehouseRows"][number]): string {
-  if (!row.lagerGruppe) {
-    return `Gruppe ${row.slot}: – · ${row.anzahl} Stk`
+const CHECKLIST_PRINT_CSS = `
+  .event-checklist-root {
+    color: #000;
+    background: #fff;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
   }
-  const charge = row.charge ? ` · ${row.charge}` : ""
-  return `Gruppe ${row.slot}: ${row.lagerGruppe}${charge} · ${row.anzahl} Stk`
-}
 
-function ChecklistGroups({ rows }: { rows: PackingSheetData["warehouseRows"] }) {
+  .event-checklist-page {
+    width: 210mm;
+    min-height: 280mm;
+    padding: 10mm;
+    box-sizing: border-box;
+    color: #000;
+    background: #fff;
+  }
+
+  @media print {
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      color: #000 !important;
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .event-checklist-page {
+      width: auto;
+      min-height: auto;
+      padding: 0;
+    }
+  }
+`
+
+function MetaField({ label, value }: { label: string; value: string | null }) {
   return (
-    <div className="mb-4">
-      <h2 className="mb-2 text-xs font-black uppercase">Bänder je Gruppe</h2>
-      <ul className="space-y-2">
-        {rows.map((row) => (
-          <li key={row.slot} className="flex items-baseline gap-2 text-sm">
-            <span className="shrink-0 text-base leading-none">☐</span>
-            <span>{formatGroupLine(row)}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function ChecklistAccessories({ items }: { items: string[] }) {
-  if (items.length === 0) return null
-
-  return (
-    <div className="mb-4">
-      <h2 className="mb-2 text-xs font-black uppercase">Zubehör & Versand</h2>
-      <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item} className="flex items-baseline gap-2 text-sm">
-            <span className="shrink-0 text-base leading-none">☐</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function VersandFooter({ data }: { data: PackingSheetData }) {
-  return (
-    <div className="mt-auto border-t-2 border-black pt-3">
-      <PackingShippingDates data={data} />
+    <div className="flex gap-2 border-b border-black/30 pb-1 text-xs">
+      <span className="w-28 shrink-0 font-bold">{label}</span>
+      <span className="min-h-[1rem] flex-1">{value || "\u00a0"}</span>
     </div>
   )
 }
 
 export function QuotePackingChecklist({ data }: QuotePackingChecklistProps) {
-  const splitPages = data.warehouseRows.length > 6
+  const eventName = [data.kunde, data.eventLabel].filter(Boolean).join(" · ") || "–"
+  const datum = data.eventDatum || data.anlieferungDatum || data.versandDatum || ""
 
   return (
-    <div className="a6-print-root">
-      <A6PrintStyles />
-      {splitPages ? (
-        <>
-          <div className="a6-page flex flex-col">
-            <ChecklistMeta data={data} />
-            <ChecklistAccessories items={data.checklistAccessories} />
-            <VersandFooter data={data} />
+    <div className="event-checklist-root">
+      <style jsx global>{CHECKLIST_PRINT_CSS}</style>
+
+      <div className="event-checklist-page flex flex-col gap-4">
+        <header>
+          <h1 className="text-base font-black uppercase tracking-wide">
+            Event-Checkliste &amp; Packliste
+          </h1>
+          <p className="mt-1 text-xs text-black/70">Auftrag #{data.quoteId}</p>
+        </header>
+
+        <section className="space-y-2">
+          <MetaField label="Event / Projekt:" value={eventName} />
+          <MetaField label="Datum:" value={datum} />
+          <MetaField label="Verantwortlich:" value={data.ansprechpartner} />
+          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs">
+            <span className="font-bold">Status:</span>
+            <span>☐ Packen</span>
+            <span>☐ Verladen</span>
           </div>
-          <div className="a6-page flex flex-col">
-            <p className="mb-3 text-xs font-bold">Auftrag #{data.quoteId} — Gruppen</p>
-            <ChecklistGroups rows={data.warehouseRows} />
-            <VersandFooter data={data} />
-          </div>
-        </>
-      ) : (
-        <div className="a6-page flex flex-col">
-          <ChecklistMeta data={data} />
-          <ChecklistGroups rows={data.warehouseRows} />
-          <ChecklistAccessories items={data.checklistAccessories} />
-          <VersandFooter data={data} />
+        </section>
+
+        <section>
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b-2 border-black text-left">
+                <th className="w-10 py-1.5 font-bold">Status</th>
+                <th className="py-1.5 font-bold">Gegenstand</th>
+                <th className="w-16 py-1.5 font-bold">Relevanz</th>
+                <th className="w-16 py-1.5 font-bold">Menge</th>
+                <th className="py-1.5 font-bold">Anmerkung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.eventChecklistItems.map((item) => (
+                <tr key={item.gegenstand} className="border-b border-black/25 align-top">
+                  <td className="py-2 text-base leading-none">☐</td>
+                  <td className="py-2 font-medium">{item.gegenstand}</td>
+                  <td className="py-2">
+                    <span className="inline-block min-w-[2rem] border-b border-dotted border-black/40">
+                      &nbsp;
+                    </span>
+                  </td>
+                  <td className="py-2 font-mono">
+                    {item.menge ?? (
+                      <span className="inline-block min-w-[2rem] border-b border-dotted border-black/40">
+                        &nbsp;
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2 text-[11px] leading-snug">
+                    {item.anmerkung ?? (
+                      <span className="inline-block min-h-[1rem] w-full border-b border-dotted border-black/40">
+                        &nbsp;
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {data.checklistAccessories.length > 0 && (
+          <section>
+            <h2 className="mb-2 text-xs font-black uppercase">Lager intern</h2>
+            <ul className="space-y-1.5 text-xs">
+              {data.checklistAccessories.map((item) => (
+                <li key={item} className="flex items-baseline gap-2">
+                  <span className="shrink-0 text-base leading-none">☐</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="mt-2 border-t-2 border-black pt-3">
+          <h2 className="mb-2 text-xs font-black uppercase">
+            Prozess-Check: Ausgangskontrolle
+          </h2>
+          <ul className="space-y-2 text-xs">
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 text-base leading-none">☐</span>
+              <span>
+                <span className="font-bold">Vollständigkeit:</span> Alle oben genannten Artikel
+                sind in der richtigen Menge verpackt.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 text-base leading-none">☐</span>
+              <span>
+                <span className="font-bold">Funktionstest:</span> Controller auf Funktion geprüft.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 text-base leading-none">☐</span>
+              <span>
+                <span className="font-bold">Verpackung:</span> Alles sicher in Cases oder Kartonagen
+                verstaut.
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        <div className="mt-auto border-t border-black/30 pt-3">
+          <PackingShippingDates data={data} />
         </div>
-      )}
+      </div>
     </div>
   )
 }

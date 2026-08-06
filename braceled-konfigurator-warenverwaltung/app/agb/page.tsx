@@ -168,7 +168,7 @@ export default function AgbPage() {
             </p>
             <p className="mt-2">
               Der Versand erfolgt über vom Anbieter beauftragte Logistikdienstleister (z. B. UPS,
-              DHL, TNT). Gefahr und Zufall gehen mit Übergabe an den Transporteur auf den Kunden
+              DHL, TNT, FedEx). Gefahr und Zufall gehen mit Übergabe an den Transporteur auf den Kunden
               über, sofern nicht gesetzlich anders zwingend vorgeschrieben.
             </p>
             <p className="mt-2">

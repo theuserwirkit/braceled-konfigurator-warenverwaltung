@@ -6,11 +6,14 @@ import { getLieferpaketLabel, normalizeLieferpaket } from "@/lib/konfigurator/li
 import {
   PRODUKT_ANZEIGE,
   SZENARIO_OPTIONS,
+  STATION_DETAIL,
+  DRUCK_INFO,
   getProbedruckLabel,
   modusAnzeige,
   normalizeDruckArt,
   normalizeProbedruckOption,
 } from "@/lib/konfigurator/product-info"
+import { formatVersandCarrierPhrase } from "@/lib/konfigurator/versand-dienstleister"
 import { isSevdeskConfigured, sevdeskJson } from "@/lib/konfigurator/sevdesk"
 import type { QuoteConfig, QuoteRequest } from "@/lib/konfigurator/types"
 import { formatKontaktAdresse } from "@/lib/konfigurator/kontakt-adresse"
@@ -138,13 +141,18 @@ function htmlSection(title: string, items: string[]): string {
 function buildPositionText(pos: string, config: QuoteConfig): string | undefined {
   const produktBasis = PRODUKT_ANZEIGE[config.produkt] ?? config.produkt
   const zeitraum = formatDateRange(config.von, config.bis)
+  const carrierPhrase = formatVersandCarrierPhrase()
 
   if (
     pos.includes(`(${modusLabel(config.modus)})`) ||
     pos.includes(`(${config.modus})`) ||
     pos.startsWith(produktBasis)
   ) {
-    const details: string[] = [`${config.menge.toLocaleString("de-DE")} Stück`]
+    const details: string[] = [
+      `Hochwertige LED-Armbänder für Events – synchron ansteuerbar, robust und für große Mengen ausgelegt.`,
+      `${config.menge.toLocaleString("de-DE")} Stück`,
+      `${modusLabel(config.modus)}`,
+    ]
     if (config.variante === "premium") details.push("Premium-Variante")
     if (config.kanalanzahl) details.push(`${config.kanalanzahl} Kanäle`)
     if (config.modus === "miete" && zeitraum) details.push(`Mietzeitraum: ${zeitraum}`)
@@ -152,31 +160,35 @@ function buildPositionText(pos: string, config: QuoteConfig): string | undefined
   }
 
   if (pos === "Druck – Setup-/Abwicklungsgebühr") {
-    return "Einmalige Vorbereitung, Farbabstimmung und Produktionsfreigabe für den Logo-Druck (3 × 2 cm)."
+    return `${DRUCK_INFO.summary} Einmalige Vorbereitung, Farbabstimmung und Produktionsfreigabe für den Logo-Druck.`
   }
   if (pos === "Druck – pro Stück") {
-    return "Individueller Logo-Druck je LED-Armband gemäß hochgeladenem Motiv."
+    return "Individueller Logo-Druck je LED-Armband gemäß hochgeladenem Motiv (UV-Direktdruck CMYK + Weiß, Druckfläche 3 × 2 cm einseitig)."
   }
   if (pos === "Vollflächiger Druck – pro Stück") {
-    return "Vollflächige Bedruckung je LED-Armband – abgestimmt im Projektablauf."
+    return "Vollflächige Bedruckung je LED-Armband – Motiv und Farben werden im Projektablauf mit dir abgestimmt."
   }
 
   const probedruckLabel = getProbedruckLabel(normalizeProbedruckOption(config))
   if (probedruckLabel && pos === probedruckLabel) {
     return normalizeProbedruckOption(config) === "versand"
-      ? "Physisches Muster per Post zur Freigabe vor der Serienproduktion."
+      ? "Physisches Muster per Post zur Freigabe vor der Serienproduktion – so siehst du Druckqualität und Farbwirkung vorab."
       : "Musterdruck mit Fotodokumentation zur Freigabe vor der Serienproduktion."
   }
 
   if (pos.startsWith("Lieferpaket ")) {
     const paket = normalizeLieferpaket(config)
-    if (paket === "eil") return "Eilauftrag mit beschleunigter Anlieferung (48 Stunden)."
-    if (paket === "express") return "Express-Anlieferung mit verkürzter Vorlaufzeit."
-    return "Reguläre Anlieferung gemäß gewähltem Lieferpaket."
+    if (paket === "eil") {
+      return `Eilauftrag mit beschleunigter Anlieferung (48 Stunden) per ${carrierPhrase}.`
+    }
+    if (paket === "express") {
+      return `Express-Anlieferung mit verkürzter Vorlaufzeit per ${carrierPhrase}.`
+    }
+    return `Reguläre Anlieferung gemäß gewähltem Lieferpaket per ${carrierPhrase}.`
   }
 
   if (pos === "Flex-Rückgabe") {
-    return "Verlängertes Rücksendefenster für Miet-Equipment nach dem Event."
+    return "Verlängertes Rücksendefenster für Miet-Equipment nach dem Event (früherer Anliefertermin, mehr Zeit für den Rückversand)."
   }
 
   if (pos === "Gruppenprogrammierung") {
@@ -186,32 +198,32 @@ function buildPositionText(pos: string, config: QuoteConfig): string | undefined
         ? groessen.map((n, i) => `Gruppe ${i + 1}: ${n} Bänder`).join(", ")
         : null
     return gruppenInfo
-      ? `Individuelle Lichtprogramme pro Gruppe (${gruppenInfo}).`
-      : "Individuelle Lichtprogramme für bis zu 20 Gästegruppen über die PRO Basis-Station."
+      ? `Individuelle Lichtprogramme pro Gruppe über die PRO Basis-Station (${gruppenInfo}). Ideal z. B. für VIP, Tribünen oder Backstage.`
+      : "Individuelle Lichtprogramme für bis zu 20 Gästegruppen über die PRO Basis-Station – jede Gruppe mit eigenem Lichtprogramm."
   }
 
   if (pos.startsWith("ECO Handcontroller")) {
-    return "Handfernbedienung zur zentralen Steuerung aller Armbänder."
+    return `${STATION_DETAIL.eco.subtitle} ${STATION_DETAIL.eco.idealFor}`
   }
   if (pos === "PRO Basis-Station (Miete)") {
-    return "DMX/Bluetooth-Basis-Station für Live-Steuerung und Gruppenprogrammierung."
+    return `${STATION_DETAIL.pro.subtitle} ${STATION_DETAIL.pro.idealFor} Lieferumfang inkl. Hand-Fernbedienung und Transportkoffer.`
   }
 
   if (pos.startsWith("Versand ")) {
-    return "Versand innerhalb Deutschlands per UPS oder TNT."
+    return `Versand innerhalb Deutschlands per ${carrierPhrase}.`
   }
 
   if (pos === "Techniker – Reisepauschale") {
-    return "An- und Abreise sowie Vor-Ort-Setup am Veranstaltungstag."
+    return "An- und Abreise sowie Vor-Ort-Setup am Veranstaltungstag durch WIRKUNG-Techniker."
   }
   if (pos === "Techniker – Einsatztag") {
     const tage = config.technikerTage ?? 1
-    return `${tage} Einsatztag${tage === 1 ? "" : "e"} vor Ort${config.technikerAdresse ? ` (${config.technikerAdresse})` : ""}.`
+    return `${tage} Einsatztag${tage === 1 ? "" : "e"} vor Ort${config.technikerAdresse ? ` (${config.technikerAdresse})` : ""} – technische Proben und Show-Betreuung.`
   }
   if (pos === "Techniker – Fahrtkosten") {
     return config.technikerKm
-      ? `Fahrtkosten für ${config.technikerKm.toLocaleString("de-DE")} km (Hin- und Rückfahrt).`
-      : "Fahrtkosten gemäß Kilometerangabe."
+      ? `Fahrtkosten für ${config.technikerKm.toLocaleString("de-DE")} km (Hin- und Rückfahrt ab Wehrheim).`
+      : "Fahrtkosten gemäß Kilometerangabe (ab Wehrheim)."
   }
 
   return undefined

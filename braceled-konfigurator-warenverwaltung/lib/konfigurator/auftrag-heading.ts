@@ -1,4 +1,5 @@
 import type { QuoteRequest } from "@/lib/konfigurator/types"
+import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { formatDate } from "@/lib/utils/date"
 
 export function formatAuftragHeading(quote: QuoteRequest): string {
@@ -20,5 +21,5 @@ export function formatAuftragHeading(quote: QuoteRequest): string {
     datum = formatDate(quote.submitted_at)
   }
 
-  return `Auftrag #${quote.id} ${kunde} ${baender} ${ort} ${datum}`
+  return `Auftrag ${formatAuftragsNr(quote)} ${kunde} ${baender} ${ort} ${datum}`
 }

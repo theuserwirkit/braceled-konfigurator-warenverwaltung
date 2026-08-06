@@ -5,7 +5,9 @@ import { PRICING_NOTICE_B2B } from "@/lib/konfigurator/consent"
 import {
   FULFILLMENT_STATUS_LABELS,
   getActiveFulfillmentSteps,
+  needsReturnFulfillment,
 } from "@/lib/konfigurator/fulfillment-status"
+import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { formatKontaktAdresse } from "@/lib/konfigurator/kontakt-adresse"
 import type { FulfillmentStatus, QuoteConfig, QuoteRequest } from "@/lib/konfigurator/types"
 import type { QuoteVersionRow } from "@/lib/konfigurator/quote-versions"
@@ -70,7 +72,8 @@ export function AngebotStatusView({
   const statusInfo = STATUS_LABELS[quote.status] || { label: quote.status, variant: "outline" as const }
   const config = quote.config_json as QuoteConfig
   const hasDruck = Boolean(config.druck)
-  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck)
+  const needsReturn = needsReturnFulfillment(config.modus)
+  const fulfillmentSteps = getActiveFulfillmentSteps(hasDruck, needsReturn)
   const currentFulfillment = quote.fulfillment_status
   const currentIdx = currentFulfillment ? fulfillmentSteps.indexOf(currentFulfillment) : -1
   const showFulfillment = quote.status === "paid" && currentFulfillment
@@ -81,7 +84,7 @@ export function AngebotStatusView({
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold">Ihr Auftragsstatus</h1>
           <p className="text-muted-foreground mt-1">
-            Anfrage #{quote.id}
+            Auftrag {formatAuftragsNr(quote)}
             {config.kontaktFirma ? ` · ${config.kontaktFirma}` : ""}
           </p>
         </div>

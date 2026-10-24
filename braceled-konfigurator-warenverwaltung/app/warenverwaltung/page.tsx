@@ -17,7 +17,7 @@ import {
 import { KPICards } from "@/components/dashboard/kpi-cards"
 import { AvailabilityTable } from "@/components/dashboard/availability-table"
 import { UpcomingFulfillmentOrders } from "@/components/admin/upcoming-fulfillment-orders"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getUser, canEdit, canAdmin } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 export default async function DashboardPage() {
@@ -26,6 +26,10 @@ export default async function DashboardPage() {
   if (!authenticated) {
     redirect("/login")
   }
+
+  const user = await getUser()
+  const userCanEdit = await canEdit(user)
+  const userCanAdmin = await canAdmin(user)
 
   const [
     stats,
@@ -50,9 +54,6 @@ export default async function DashboardPage() {
     getQuoteRequestStats(),
     listPriorityFulfillmentOrders(3),
   ])
-
-  const userCanEdit = true
-  const userCanAdmin = true
 
   return (
     <BookingModalProvider

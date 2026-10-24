@@ -14,12 +14,16 @@ import {
   OperationsHeaderActions,
 } from "@/components/dashboard/operations-header-actions"
 import { BookingsTableWithReturnModal } from "@/components/dashboard/bookings-table"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getUser, canEdit, canAdmin } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 export default async function BuchungenPage() {
   const authenticated = await isAuthenticated()
   if (!authenticated) redirect("/login")
+
+  const user = await getUser()
+  const userCanEdit = await canEdit(user)
+  const userCanAdmin = await canAdmin(user)
 
   const [
     bookings,
@@ -40,9 +44,6 @@ export default async function BuchungenPage() {
     getInventoryLots(),
     getQuoteRequestStats(),
   ])
-
-  const userCanEdit = true
-  const userCanAdmin = true
 
   return (
     <BookingModalProvider

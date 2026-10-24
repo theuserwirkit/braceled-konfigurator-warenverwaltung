@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getUser, canAdmin } from "@/lib/auth"
 import { getQuoteById, getQuoteRequestStats } from "@/lib/actions/quotes"
 import { listFulfillmentEvents } from "@/lib/actions/fulfillment"
 import {
@@ -38,6 +38,9 @@ export default async function AuftragDetailPage({
   params: Promise<{ id: string }>
 }) {
   if (!(await isAuthenticated())) redirect("/login")
+
+  const user = await getUser()
+  const userCanAdmin = await canAdmin(user)
 
   const { id } = await params
   const quoteId = Number(id)
@@ -109,8 +112,6 @@ export default async function AuftragDetailPage({
     mwst_19?: number
     gesamt_brutto?: number
   }
-  const userCanAdmin = true
-
   // Client-Workflow-Komponenten benötigen `public_token` nicht – nur der
   // serverseitig gerenderte Info-Tab (unten) erhält den vollen `quote`.
   const { public_token: _publicToken, ...quoteForClient } = quote

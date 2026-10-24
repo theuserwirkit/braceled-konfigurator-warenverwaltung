@@ -69,6 +69,7 @@ export const bookingRequestSchema = z.object({
   menge: z.coerce.number().finite().positive("menge muss größer als 0 sein"),
   von: z.string().min(1, "von ist erforderlich"),
   bis: z.string().max(30).optional(),
+  kanalanzahl: z.number().optional(),
   kunde_name: z.string().max(200).optional(),
   kunde_email: z.string().email().optional(),
   event: z.string().max(500).optional(),

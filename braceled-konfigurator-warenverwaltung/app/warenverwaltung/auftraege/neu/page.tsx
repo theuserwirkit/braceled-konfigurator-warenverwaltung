@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getUser, canAdmin } from "@/lib/auth"
 import { getQuoteRequestStats } from "@/lib/actions/quotes"
 import { OperationsShell } from "@/components/dashboard/operations-shell"
 import { ManualQuoteForm } from "@/components/admin/manual-quote-form"
@@ -12,10 +12,13 @@ export const dynamic = "force-dynamic"
 export default async function NeuerAuftragPage() {
   if (!(await isAuthenticated())) redirect("/login")
 
+  const user = await getUser()
+  const userCanAdmin = await canAdmin(user)
+
   const quoteStats = await getQuoteRequestStats({ skipExpire: true })
 
   return (
-    <OperationsShell activeTab="auftraege" quoteStats={quoteStats} userCanAdmin>
+    <OperationsShell activeTab="auftraege" quoteStats={quoteStats} userCanAdmin={userCanAdmin}>
       <div className="flex flex-col gap-6">
         <Button
           asChild

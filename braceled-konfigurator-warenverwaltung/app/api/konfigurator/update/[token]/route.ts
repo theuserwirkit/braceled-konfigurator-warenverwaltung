@@ -47,13 +47,11 @@ export async function POST(
 
   const rawConfig = parsed.data.config as QuoteConfig
 
-  const kanalanzahlSchonGesetzt =
-    rawConfig.kanalanzahl === 40 || rawConfig.kanalanzahl === 80
+  // Server resolve für neue Armband-Configs; bei Kunden-Edit überschreibt
+  // mergeCustomerEditConfig locked kanalanzahl aus dem bestehenden Quote.
   const kanalanzahl =
     rawConfig.produkt === "armband"
-      ? kanalanzahlSchonGesetzt
-        ? rawConfig.kanalanzahl
-        : await resolveKanalanzahlForConfig(rawConfig)
+      ? await resolveKanalanzahlForConfig(rawConfig)
       : undefined
   const config: QuoteConfig =
     kanalanzahl != null ? { ...rawConfig, kanalanzahl } : rawConfig

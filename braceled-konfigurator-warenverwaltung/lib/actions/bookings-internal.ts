@@ -9,7 +9,11 @@ import "server-only"
 import { withInteractiveTransaction, acquireResourceLocks, type TxQuery, type SqlRow } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import type { CreateBookingInput } from "@/lib/types"
-import { getAvailabilityForGroupInternal, getRentedItemsByGroupInternal } from "@/lib/actions/bookings"
+import {
+  getAvailabilityForGroupInternal,
+  getAvailabilityForGroupBatchesByDateRange,
+  getRentedItemsByGroupInternal,
+} from "@/lib/actions/bookings"
 import { resolveSkuId, resolveLotId } from "@/lib/actions/sku-lot-internal"
 
 type BookingWriteResult =
@@ -19,17 +23,21 @@ type BookingWriteResult =
 /**
  * C-04/C-06: zentraler Schreib-Choke-Point für alle Buchungsanlagen (n8n-Reservierungen,
  * Verkaufsbuchung beim Zahlungsabschluss, manuelle Admin-Buchungen, Rückgaben). Der
- * Verfügbarkeits-Check (unverändert: getAvailabilityForGroupInternal/getRentedItemsByGroupInternal)
- * und der eigentliche Schreibvorgang laufen jetzt gemeinsam unter einem Advisory-Lock auf die
- * betroffene(n) (Gruppe, Charge)-Ressource(n) in EINER echten, interaktiven Transaktion.
+ * Verfügbarkeits-Check und der eigentliche Schreibvorgang laufen gemeinsam unter einem
+ * Advisory-Lock auf die betroffene(n) (Gruppe, Charge)-Ressource(n) in EINER echten,
+ * interaktiven Transaktion.
  * Dadurch ist es unerheblich, wer den Aufruf auslöst (n8n-Webhook, Stripe-Payment,
  * Admin-UI) — zwei parallele Aufrufe für dieselbe Ressource können nicht mehr beide den
  * "genug verfügbar"-Zweig durchlaufen, bevor einer von beiden committet hat: der zweite
  * sieht nach Lock-Erwerb den bereits committeten Stand und bekommt ggf. die reguläre
  * "nicht genügend verfügbar"-Fehlermeldung statt eine stille Überbuchung.
  *
- * Fachliche Verfügbarkeitsregeln bleiben unverändert — nur die Reihenfolge/Atomizität
- * von Check und Schreiben wird abgesichert.
+ * Verfügbarkeit unter Lock:
+ * - VERKAUF: Point-Stock via getAvailabilityForGroupInternal
+ * - MIETE_AUSGABE: Kalender+Buffer (gleiche Semantik wie Ampel) via
+ *   getAvailabilityForGroupBatchesByDateRange — inventory_lots.menge ist NICHT die
+ *   Quelle der Wahrheit für Miet-Verfügbarkeit
+ * - MIETE_RUECKGABE: getRentedItemsByGroupInternal
  */
 export async function createBookingInternal(input: CreateBookingInput): Promise<BookingWriteResult> {
   try {
@@ -70,7 +78,7 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
         }
       }
 
-      if (input.bookingType === "VERKAUF" || input.bookingType === "MIETE_AUSGABE") {
+      if (input.bookingType === "VERKAUF") {
         for (const item of input.items) {
           const availability = await getAvailabilityForGroupInternal(item.groupId, item.batchId || input.batchId)
           if (availability.verfuegbar < item.anzahl) {
@@ -80,6 +88,31 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
             return {
               success: false,
               error: `Nicht genügend verfügbare Artikel für ${groups[0]?.name || "Gruppe"} mit Charge ${batches[0]?.code || ""}. Verfügbar: ${availability.verfuegbar}, Angefordert: ${item.anzahl}`,
+            }
+          }
+        }
+      }
+
+      if (input.bookingType === "MIETE_AUSGABE") {
+        const ausgabe = input.datumAusgabe
+        const rueckgabe = input.datumRueckgabeGeplant || input.datumAusgabe
+        if (!ausgabe || !rueckgabe) {
+          return { success: false, error: "Mietbuchung braucht Ausgabe- und Rückgabedatum" }
+        }
+        for (const item of input.items) {
+          const batchId = item.batchId || input.batchId
+          if (!batchId) {
+            return { success: false, error: "Mietbuchung braucht Charge (batchId)" }
+          }
+          const stats = await getAvailabilityForGroupBatchesByDateRange([item.groupId], ausgabe, rueckgabe)
+          const row = stats.find((s) => s.groupId === item.groupId && s.batchId === batchId)
+          const verfuegbar = row?.verfuegbar ?? 0
+          if (verfuegbar < item.anzahl) {
+            const groups = await query(`SELECT name FROM groups WHERE id = $1`, [item.groupId])
+            const batches = await query(`SELECT code FROM batches WHERE id = $1`, [batchId])
+            return {
+              success: false,
+              error: `Nicht genügend verfügbare Artikel für ${groups[0]?.name || "Gruppe"} mit Charge ${batches[0]?.code || ""}. Verfügbar: ${verfuegbar}, Angefordert: ${item.anzahl}`,
             }
           }
         }

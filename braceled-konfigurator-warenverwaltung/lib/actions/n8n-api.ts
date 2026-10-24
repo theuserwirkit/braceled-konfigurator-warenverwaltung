@@ -51,6 +51,7 @@ export type N8nBookingRequest = {
   menge: number
   von: string
   bis?: string
+  kanalanzahl?: number
   kunde_name?: string
   kunde_email?: string
   event?: string
@@ -263,8 +264,9 @@ async function findBestAllocation(
   menge: number,
   ausgabedatum: Date,
   rueckgabedatum: Date,
+  kanalanzahl?: number,
 ): Promise<{ groupId: number; batchId: number; verfuegbar: number } | null> {
-  const groups = await resolveGroupsForProduct(produkt)
+  const groups = await resolveGroupsForProduct(produkt, kanalanzahl)
   if (groups.length === 0) return null
   const groupIds = groups.map((group) => group.id)
   const stats = await getAvailabilityForGroupBatchesByDateRange(
@@ -304,8 +306,10 @@ export async function createN8nBooking(
   const bis = input.bis || input.von
   const ausgabe = parseDate(input.von)
   const rueckgabe = parseDate(bis)
+  const kanalanzahl =
+    produkt === "armband" ? normalizeKanalanzahl(input.kanalanzahl) : undefined
 
-  const allocation = await findBestAllocation(produkt, menge, ausgabe, rueckgabe)
+  const allocation = await findBestAllocation(produkt, menge, ausgabe, rueckgabe, kanalanzahl)
   if (!allocation) {
     const availability = await checkProductAvailability({
       produkt,
@@ -313,6 +317,7 @@ export async function createN8nBooking(
       menge,
       von: input.von,
       bis,
+      kanalanzahl,
     })
     return {
       success: false,

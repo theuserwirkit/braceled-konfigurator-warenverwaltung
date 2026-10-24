@@ -31,13 +31,9 @@ export async function POST(request: NextRequest) {
 
   const rawConfig = parsed.data.config as QuoteConfig
 
-  const kanalanzahlSchonGesetzt =
-    rawConfig.kanalanzahl === 40 || rawConfig.kanalanzahl === 80
   const kanalanzahl =
     rawConfig.produkt === "armband"
-      ? kanalanzahlSchonGesetzt
-        ? rawConfig.kanalanzahl
-        : await resolveKanalanzahlForConfig(rawConfig)
+      ? await resolveKanalanzahlForConfig(rawConfig)
       : undefined
   const config: QuoteConfig =
     kanalanzahl != null ? { ...rawConfig, kanalanzahl } : rawConfig

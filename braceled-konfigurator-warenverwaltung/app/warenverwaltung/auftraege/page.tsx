@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { isAuthenticated } from "@/lib/auth"
+import { isAuthenticated, getUser, canAdmin } from "@/lib/auth"
 import { expireStaleQuotes } from "@/lib/quotes-internal"
 import { getQuoteRequestStats, listPriorityFulfillmentOrders, listQuoteRequests } from "@/lib/actions/quotes"
 import { OperationsShell } from "@/components/dashboard/operations-shell"
@@ -16,6 +16,9 @@ export default async function AuftraegePage({
   searchParams: Promise<{ status?: string; source?: string }>
 }) {
   if (!(await isAuthenticated())) redirect("/login")
+
+  const user = await getUser()
+  const userCanAdmin = await canAdmin(user)
 
   const params = await searchParams
   const statusFilter = params.status as QuoteStatus | "all" | "active" | "fulfillment_open" | undefined
@@ -35,8 +38,6 @@ export default async function AuftraegePage({
     listPriorityFulfillmentOrders(3),
     getQuoteRequestStats({ skipExpire: true }),
   ])
-
-  const userCanAdmin = true
 
   return (
     <OperationsShell

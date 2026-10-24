@@ -10,6 +10,7 @@ import {
   finalizeQuoteBookingOnPayment,
   releaseQuoteBooking,
 } from "@/lib/actions/quote-booking-internal"
+import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import { getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads"
 import { getLeadById } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
@@ -531,6 +532,10 @@ async function revalidateAvailability(quote: QuoteRequest): Promise<string | nul
     menge: config.menge,
     von: config.von,
     bis: config.bis || config.von,
+    kanalanzahl:
+      config.produkt === "armband"
+        ? normalizeKanalanzahl(config.kanalanzahl)
+        : undefined,
   })
 
   if (!availability.verfuegbar) {

@@ -90,6 +90,7 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
   const STATUS_META: Record<BookingStatus, { label: string; className: string }> = {
     ANFRAGE:    { label: "Anfrage",   className: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300" },
     BESTAETIGT: { label: "Bestatigt", className: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300" },
+    STORNIERT:  { label: "Storniert", className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300" },
   }
 
   const handleStatusChange = (bookingId: number, status: BookingStatus) => {
@@ -109,7 +110,10 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
 
   const activeRentalCount = useMemo(() => {
     return bookings.filter(
-      (b) => b.booking_type === "MIETE_AUSGABE" && !returnedRentalIds.has(b.id)
+      (b) =>
+        b.booking_type === "MIETE_AUSGABE" &&
+        b.status !== "STORNIERT" &&
+        !returnedRentalIds.has(b.id)
     ).length
   }, [bookings, returnedRentalIds])
 
@@ -128,7 +132,9 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
     // Filter by "aktuell vermietet"
     if (filterMode === "aktuell_vermietet") {
       filtered = filtered.filter((row) =>
-        row.booking_type === "MIETE_AUSGABE" && !returnedRentalIds.has(row.id)
+        row.booking_type === "MIETE_AUSGABE" &&
+        row.status !== "STORNIERT" &&
+        !returnedRentalIds.has(row.id)
       )
     }
 

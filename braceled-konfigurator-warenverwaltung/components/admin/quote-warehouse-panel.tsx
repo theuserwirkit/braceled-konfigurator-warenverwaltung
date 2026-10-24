@@ -46,6 +46,11 @@ const STATUS_META: Record<BookingStatus, { label: string; className: string }> =
     className:
       "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300",
   },
+  STORNIERT: {
+    label: "Storniert",
+    className:
+      "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300",
+  },
 }
 
 type BookingModalPropsInput = {

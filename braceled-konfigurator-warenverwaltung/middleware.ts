@@ -64,6 +64,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/konfigurator") ||
     pathname.startsWith("/angebot/") ||
+    pathname === "/led-armbaender-events" ||
+    pathname === "/llms.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
     pathname === "/impressum" ||
     pathname === "/datenschutz" ||
     pathname === "/agb"

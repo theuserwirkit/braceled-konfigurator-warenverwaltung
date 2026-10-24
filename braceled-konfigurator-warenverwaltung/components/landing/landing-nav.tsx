@@ -9,7 +9,9 @@ import { HERO_COPY, NAV_LINKS } from "@/lib/landing/content"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 import { cn } from "@/lib/utils"
 
-export function LandingNav() {
+type NavLink = { readonly href: string; readonly label: string }
+
+export function LandingNav({ links = NAV_LINKS }: { links?: readonly NavLink[] }) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -38,7 +40,7 @@ export function LandingNav() {
           </Link>
 
           <nav className="lp-nav-links" aria-label="Hauptnavigation">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <a key={link.href} href={link.href}>
                 {link.label}
               </a>
@@ -78,7 +80,7 @@ export function LandingNav() {
           tabIndex={menuOpen ? -1 : undefined}
         >
           <nav className="lp-mobile-menu-links" aria-label="Mobile Hauptnavigation">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <a key={link.href} href={link.href} onClick={closeMenu}>
                 {link.label}
               </a>

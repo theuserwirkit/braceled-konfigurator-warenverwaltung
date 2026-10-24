@@ -8,7 +8,7 @@ export const HERO_COPY = {
 } as const
 
 export const NAV_LINKS = [
-  { href: "#features", label: "Produkt" },
+  { href: "/led-armbaender-events", label: "Produkt" },
   { href: "#technik", label: "Technik" },
   { href: "#preise", label: "Preise" },
   { href: "#faq", label: "FAQ" },

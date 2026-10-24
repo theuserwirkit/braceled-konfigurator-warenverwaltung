@@ -102,6 +102,10 @@ export async function createQuoteHoldBooking(
     menge: config.menge,
     von: config.von,
     bis: config.bis || config.von,
+    kanalanzahl:
+      config.produkt === "armband"
+        ? normalizeKanalanzahl(config.kanalanzahl)
+        : undefined,
     kunde_email: email,
     event: `Auftrag #${quoteId}`,
     status: "ANFRAGE",
@@ -156,6 +160,10 @@ export async function finalizeQuoteBookingOnPayment(
         menge: config.menge,
         von: config.von,
         bis: config.bis || config.von,
+        kanalanzahl:
+          config.produkt === "armband"
+            ? normalizeKanalanzahl(config.kanalanzahl)
+            : undefined,
         kunde_email: options?.leadEmail,
         event: `Auftrag #${quoteId}`,
         status: "BESTAETIGT",

@@ -46,4 +46,14 @@ assert(
   'BookingStatus muss "STORNIERT" enthalten',
 )
 
+// getRentedItemsByGroupInternal: Soft-Cancels zählen nicht als vermietet
+const rentedFn = bookings.match(
+  /export async function getRentedItemsByGroupInternal[\s\S]*?(?=\nexport async function |\n$)/,
+)?.[0]
+assert(rentedFn, "getRentedItemsByGroupInternal muss existieren")
+assert(
+  /status\s+IS\s+DISTINCT\s+FROM\s+['"]STORNIERT['"]/i.test(rentedFn!),
+  "getRentedItemsByGroupInternal muss STORNIERT-Buchungen ausschließen",
+)
+
 console.log("OK – Soft-Cancel STORNIERT contracts")

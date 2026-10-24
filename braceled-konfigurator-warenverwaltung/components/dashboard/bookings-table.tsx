@@ -110,7 +110,10 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
 
   const activeRentalCount = useMemo(() => {
     return bookings.filter(
-      (b) => b.booking_type === "MIETE_AUSGABE" && !returnedRentalIds.has(b.id)
+      (b) =>
+        b.booking_type === "MIETE_AUSGABE" &&
+        b.status !== "STORNIERT" &&
+        !returnedRentalIds.has(b.id)
     ).length
   }, [bookings, returnedRentalIds])
 
@@ -129,7 +132,9 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
     // Filter by "aktuell vermietet"
     if (filterMode === "aktuell_vermietet") {
       filtered = filtered.filter((row) =>
-        row.booking_type === "MIETE_AUSGABE" && !returnedRentalIds.has(row.id)
+        row.booking_type === "MIETE_AUSGABE" &&
+        row.status !== "STORNIERT" &&
+        !returnedRentalIds.has(row.id)
       )
     }
 

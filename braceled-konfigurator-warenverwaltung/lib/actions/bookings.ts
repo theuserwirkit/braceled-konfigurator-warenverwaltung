@@ -191,12 +191,14 @@ export async function getStats(filters?: { groupId?: number }) {
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
       WHERE bi.group_id = ${filters.groupId}
+        AND b.status IS DISTINCT FROM 'STORNIERT'
     `
   } else {
     items = await sql`
       SELECT bi.group_id, bi.anzahl, bi.anzahl_fehlt, b.booking_type
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
+      WHERE b.status IS DISTINCT FROM 'STORNIERT'
     `
   }
 
@@ -602,6 +604,7 @@ export async function getBaseTotalStats() {
     FROM booking_items bi
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.base_id IS NOT NULL AND bi.anzahl_basen > 0
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   let totalZugang = 0, totalVerkauft = 0, totalRented = 0, totalReturned = 0, totalDefekt = 0
@@ -636,6 +639,7 @@ export async function getBaseStats() {
     FROM booking_items bi
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.base_id IS NOT NULL
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   const itemsByBase = new Map<number, any[]>()
@@ -735,12 +739,14 @@ export async function getRentedItemsByGroupInternal(batchId?: number) {
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
       WHERE bi.batch_id = ${batchId}
+        AND b.status IS DISTINCT FROM 'STORNIERT'
     `
   } else {
     items = await sql`
       SELECT bi.group_id, bi.anzahl, bi.anzahl_fehlt, b.booking_type
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
+      WHERE b.status IS DISTINCT FROM 'STORNIERT'
     `
   }
 
@@ -765,6 +771,7 @@ export async function getTotalStats() {
     SELECT bi.anzahl, bi.anzahl_fehlt, b.booking_type
     FROM booking_items bi
     JOIN bookings b ON b.id = bi.booking_id
+    WHERE b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   if (!items || items.length === 0) {

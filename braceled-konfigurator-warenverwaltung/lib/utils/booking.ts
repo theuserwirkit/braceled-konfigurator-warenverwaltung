@@ -1,4 +1,28 @@
 import type { BookingType } from "@/lib/types"
+import { addDays } from "@/lib/utils/date"
+
+/** Default-Länge wenn nur Ausgabedatum gesetzt ist – analog Overlap-Logik offener Mietungen. */
+export const MIETE_DEFAULT_DURATION_DAYS = 3
+
+export type MieteBookingWindow =
+  | { ok: true; ausgabe: Date; rueckgabe: Date }
+  | { ok: false; error: string }
+
+/**
+ * Kanonisches Miet-Fenster für Write-Checks (gleiche Semantik wie Ampel-Overlaps):
+ * Ausgabedatum Pflicht; fehlende Rückgabe → Ausgabe + 3 Tage.
+ */
+export function resolveMieteBookingWindow(input: {
+  datumAusgabe?: Date | null
+  datumRueckgabeGeplant?: Date | null
+}): MieteBookingWindow {
+  if (!input.datumAusgabe) {
+    return { ok: false, error: "Mietbuchung braucht ein Ausgabedatum" }
+  }
+  const ausgabe = input.datumAusgabe
+  const rueckgabe = input.datumRueckgabeGeplant ?? addDays(ausgabe, MIETE_DEFAULT_DURATION_DAYS)
+  return { ok: true, ausgabe, rueckgabe }
+}
 
 export function getBookingTypeLabel(type: BookingType): string {
   const labels: Record<BookingType, string> = {

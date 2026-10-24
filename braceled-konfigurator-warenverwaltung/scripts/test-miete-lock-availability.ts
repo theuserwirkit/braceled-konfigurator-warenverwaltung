@@ -58,8 +58,17 @@ assert(
   "VERKAUF-Pfad darf keine Datumsbereich-Verfügbarkeit nutzen",
 )
 
+assert(
+  /resolveMieteBookingWindow/.test(bookingsInternal),
+  "bookings-internal muss resolveMieteBookingWindow für das kanonische Miet-Fenster nutzen",
+)
+
 const mieteBlock = bookingTypeBlock(bookingsInternal, "MIETE_AUSGABE")
 assert(mieteBlock, "createBookingInternal braucht einen eigenen MIETE_AUSGABE-Verfügbarkeitsblock")
+assert(
+  /resolveMieteBookingWindow/.test(mieteBlock!),
+  "MIETE_AUSGABE-Pfad muss resolveMieteBookingWindow aufrufen (Ausgabedatum Pflicht, +3-Tage-Fallback)",
+)
 assert(
   /getAvailabilityForGroupBatchesByDateRange/.test(mieteBlock!),
   "MIETE_AUSGABE-Pfad muss getAvailabilityForGroupBatchesByDateRange (Kalender+Buffer) referenzieren",

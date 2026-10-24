@@ -15,6 +15,7 @@ import {
   getRentedItemsByGroupInternal,
 } from "@/lib/actions/bookings"
 import { resolveSkuId, resolveLotId } from "@/lib/actions/sku-lot-internal"
+import { resolveMieteBookingWindow } from "@/lib/utils/booking"
 
 type BookingWriteResult =
   | { success: true; data: SqlRow }
@@ -34,9 +35,9 @@ type BookingWriteResult =
  *
  * Verfügbarkeit unter Lock:
  * - VERKAUF: Point-Stock via getAvailabilityForGroupInternal
- * - MIETE_AUSGABE: Kalender+Buffer (gleiche Semantik wie Ampel) via
- *   getAvailabilityForGroupBatchesByDateRange — inventory_lots.menge ist NICHT die
- *   Quelle der Wahrheit für Miet-Verfügbarkeit
+ * - MIETE_AUSGABE: resolveMieteBookingWindow (Ausgabedatum Pflicht, Rückgabe +3 Tage
+ *   Fallback) + Kalender+Buffer via getAvailabilityForGroupBatchesByDateRange
+ *   — inventory_lots.menge ist NICHT die Quelle der Wahrheit für Miet-Verfügbarkeit
  * - MIETE_RUECKGABE: getRentedItemsByGroupInternal
  */
 export async function createBookingInternal(input: CreateBookingInput): Promise<BookingWriteResult> {
@@ -62,6 +63,9 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
 
     const result = await withInteractiveTransaction<BookingWriteResult>(async (query) => {
       await acquireResourceLocks(query, Array.from(lockKeys))
+
+      let mieteAusgabe: Date | undefined = input.datumAusgabe
+      let mieteRueckgabe: Date | undefined = input.datumRueckgabeGeplant
 
       if (input.bookingType === "MIETE_RUECKGABE") {
         const rentedItems = await getRentedItemsByGroupInternal(input.batchId)
@@ -94,17 +98,25 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
       }
 
       if (input.bookingType === "MIETE_AUSGABE") {
-        const ausgabe = input.datumAusgabe
-        const rueckgabe = input.datumRueckgabeGeplant || input.datumAusgabe
-        if (!ausgabe || !rueckgabe) {
-          return { success: false, error: "Mietbuchung braucht Ausgabe- und Rückgabedatum" }
+        const window = resolveMieteBookingWindow({
+          datumAusgabe: input.datumAusgabe,
+          datumRueckgabeGeplant: input.datumRueckgabeGeplant,
+        })
+        if (!window.ok) {
+          return { success: false, error: window.error }
         }
+        mieteAusgabe = window.ausgabe
+        mieteRueckgabe = window.rueckgabe
         for (const item of input.items) {
           const batchId = item.batchId || input.batchId
           if (!batchId) {
             return { success: false, error: "Mietbuchung braucht Charge (batchId)" }
           }
-          const stats = await getAvailabilityForGroupBatchesByDateRange([item.groupId], ausgabe, rueckgabe)
+          const stats = await getAvailabilityForGroupBatchesByDateRange(
+            [item.groupId],
+            window.ausgabe,
+            window.rueckgabe,
+          )
           const row = stats.find((s) => s.groupId === item.groupId && s.batchId === batchId)
           const verfuegbar = row?.verfuegbar ?? 0
           if (verfuegbar < item.anzahl) {
@@ -134,6 +146,15 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
         }
       }
 
+      const datumAusgabeIso =
+        input.bookingType === "MIETE_AUSGABE"
+          ? mieteAusgabe?.toISOString() || null
+          : input.datumAusgabe?.toISOString() || null
+      const datumRueckgabeIso =
+        input.bookingType === "MIETE_AUSGABE"
+          ? mieteRueckgabe?.toISOString() || null
+          : input.datumRueckgabeGeplant?.toISOString() || null
+
       const bookings = await query(
         `INSERT INTO bookings (booking_type, status, customer_id, datum_ausgabe, datum_rueckgabe_geplant, datum_rueckgabe_ist, reference_rental_id, bemerkung)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -142,8 +163,8 @@ export async function createBookingInternal(input: CreateBookingInput): Promise<
           input.bookingType,
           input.status || "BESTAETIGT",
           customerId,
-          input.datumAusgabe?.toISOString() || null,
-          input.datumRueckgabeGeplant?.toISOString() || null,
+          datumAusgabeIso,
+          datumRueckgabeIso,
           input.datumRueckgabeIst?.toISOString() || null,
           input.referenceRentalId || null,
           input.bemerkung || null,

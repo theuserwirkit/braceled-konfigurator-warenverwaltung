@@ -238,6 +238,17 @@ Intern bleiben `frei`, `bestand`, `belegt` in der API für Berechnungen erhalten
 
 **Langfristig (≥ 4 Monate):** `verfuegbar = true` auch bei knappem Pool; Hinweis: *„Aktuell knapp auf Lager – mit über 4 Monaten Vorlauf voraussichtlich realisierbar.“*
 
+### Inventory-Hardening (2026-10-24)
+
+| Thema | Regel |
+|-------|--------|
+| **Kanalanzahl** | Dieselbe `kanalanzahl` fließt durch Ampel (`checkProductAvailability`), Hold (`createQuoteHoldBooking` → `findBestAllocation`) und Freigabe (`revalidateAvailability`). |
+| **Submit** | `kanalanzahl` wird beim Absenden **immer serverseitig** neu aufgelöst (`resolveKanalanzahlForConfig`); Client-Wert wird nicht vertraut. |
+| **Soft-Cancel** | Hold-Freigabe setzt Status `STORNIERT` (kein DELETE). Verfügbarkeits-/Belegungsqueries ignorieren stornierte Buchungen. |
+| **Ledger = SoT** | `bookings` / `booking_items` sind Wahrheitsquelle für Verfügbarkeit; `inventory_lots.menge` ist abgeleiteter Cache (nicht Check-Quelle). |
+| **Miet-Schreibpfad** | Unter Advisory-Lock: Kalender + Puffer wie die Ampel (`getAvailabilityForGroupBatchesByDateRange`). |
+| **Verkauf-Schreibpfad** | Unter Lock: Punkt-Bestand (`getAvailabilityForGroupInternal`) – physischer Abgang. |
+
 ### Zwei getrennte Vorlauf-Hinweise
 
 | Schwelle | Ebene | Kunden-Hinweis |
@@ -422,8 +433,9 @@ submitted → approved (ohne Stripe) / payment_pending (mit Stripe)
 - **Freigabe-Performance:** Kunden-Mail wird asynchron versendet (`after()`), UI antwortet sofort nach DB-Update.
 - **Angebots-PDF:** vor Freigabe manuell anlegen (sevDesk-Button oder Upload); Anhang bei Freigabe- und Zahlungs-Mail – siehe **`docs/sevdesk-angebote.md`**.
 - **Fulfillment** startet erst nach `paid` (nicht bei Freigabe).
-- **Bestandsbuchung (Miete):** Hold (`ANFRAGE`) bei Submit; `BESTAETIGT` erst bei Zahlung.
+- **Bestandsbuchung (Miete):** Hold (`ANFRAGE`) bei Submit; `BESTAETIGT` erst bei Zahlung. Hold-Freigabe / Edit-Renewal: alte Buchung → `STORNIERT` (Soft-Cancel), nicht DELETE.
 - **Bestandsbuchung (Kauf):** keine Reservierung beim Submit; Verkaufsbuchung (`VERKAUF`) erst bei Zahlung (`finalizeQuoteBookingOnPayment`). Fehlende Buchung: Retry über Lager-Panel oder `scripts/repair-quote-bookings.mjs`.
+- **Verfügbarkeit SoT:** Ledger (`booking_items`); `inventory_lots.menge` nur Cache. Miet-Check unter Lock = Kalender+Puffer; Verkauf = Punkt-Bestand.
 - **Aufträge vs. Buchungen:** Konfigurator-Anfragen unter `/warenverwaltung/auftraege`; Tab „Buchungen“ = manuelle Lagerbuchungen.
 
 ### Fulfillment-Schritte

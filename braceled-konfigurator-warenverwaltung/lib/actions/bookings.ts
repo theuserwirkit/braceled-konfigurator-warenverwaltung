@@ -62,6 +62,7 @@ export async function getAvailabilityForGroupInternal(groupId: number, batchId?:
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
       WHERE bi.group_id = ${groupId} AND bi.batch_id = ${batchId}
+        AND b.status IS DISTINCT FROM 'STORNIERT'
     `
   } else {
     items = await sql`
@@ -69,6 +70,7 @@ export async function getAvailabilityForGroupInternal(groupId: number, batchId?:
       FROM booking_items bi
       JOIN bookings b ON b.id = bi.booking_id
       WHERE bi.group_id = ${groupId}
+        AND b.status IS DISTINCT FROM 'STORNIERT'
     `
   }
 
@@ -290,6 +292,7 @@ export async function getBaseAvailabilityInternal(baseId: number) {
     FROM booking_items bi
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.base_id = ${baseId}
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   let totalZugang = 0, totalVerkauft = 0, totalRented = 0, totalReturned = 0, totalDefekt = 0
@@ -417,6 +420,7 @@ export async function getAvailabilityForGroupBatchesByDateRange(
     WHERE bi.group_id = ANY(${normalizedGroupIds})
       AND bi.batch_id = ANY(${batchIds})
       AND b.booking_type = 'MIETE_AUSGABE'
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   const rentalIds = rentals.map((row) => Number(row.id))
@@ -565,6 +569,7 @@ export async function getBaseAvailabilityByDateRangeInternal(
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.base_id = ${baseId}
       AND b.booking_type = 'MIETE_AUSGABE'
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   const { blocked: blockedInPeriod } = await computeBlockedRentals(
@@ -678,6 +683,7 @@ export async function getOpenRentals() {
     FROM bookings b
     LEFT JOIN customers c ON c.id = b.customer_id
     WHERE b.booking_type = 'MIETE_AUSGABE'
+      AND b.status IS DISTINCT FROM 'STORNIERT'
       AND NOT EXISTS (
         SELECT 1 FROM bookings r
         WHERE r.booking_type = 'MIETE_RUECKGABE'
@@ -827,7 +833,7 @@ export async function getCalendarData() {
   await ensureAuthed()
   const sql = getDb()
 
-  // Get all MIETE_AUSGABE bookings with their items
+  // Get all MIETE_AUSGABE bookings with their items (stornierte Soft-Cancels ausblenden)
   const rentals = await sql`
     SELECT b.id, b.booking_type, b.status, b.datum_ausgabe, b.datum_rueckgabe_geplant, b.datum_rueckgabe_ist,
       b.reference_rental_id, b.bemerkung,
@@ -837,6 +843,7 @@ export async function getCalendarData() {
     LEFT JOIN customers c ON c.id = b.customer_id
     LEFT JOIN quote_requests qr ON qr.booking_id = b.id
     WHERE b.booking_type = 'MIETE_AUSGABE'
+      AND b.status IS DISTINCT FROM 'STORNIERT'
     ORDER BY b.datum_ausgabe ASC
   `
 

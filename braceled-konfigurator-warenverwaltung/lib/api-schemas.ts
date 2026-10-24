@@ -72,7 +72,7 @@ export const bookingRequestSchema = z.object({
   kunde_name: z.string().max(200).optional(),
   kunde_email: z.string().email().optional(),
   event: z.string().max(500).optional(),
-  status: z.enum(["ANFRAGE", "BESTAETIGT"]).optional(),
+  status: z.enum(["ANFRAGE", "BESTAETIGT", "STORNIERT"]).optional(),
 })
 
 export const externalQuoteInputSchema = z.object({

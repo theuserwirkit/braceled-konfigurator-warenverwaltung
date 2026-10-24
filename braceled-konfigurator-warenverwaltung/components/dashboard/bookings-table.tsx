@@ -90,6 +90,7 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
   const STATUS_META: Record<BookingStatus, { label: string; className: string }> = {
     ANFRAGE:    { label: "Anfrage",   className: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300" },
     BESTAETIGT: { label: "Bestatigt", className: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300" },
+    STORNIERT:  { label: "Storniert", className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300" },
   }
 
   const handleStatusChange = (bookingId: number, status: BookingStatus) => {

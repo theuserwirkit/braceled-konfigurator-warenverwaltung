@@ -522,10 +522,12 @@ export function BookingForm({
                 const labels: Record<BookingStatus, string> = {
                   ANFRAGE: "Anfrage / Angebot",
                   BESTAETIGT: "Bestatigt",
+                  STORNIERT: "Storniert",
                 }
                 const colors: Record<BookingStatus, string> = {
                   ANFRAGE: bookingStatus === s ? "bg-slate-600 text-white border-slate-600" : "border-slate-300 text-slate-600 hover:border-slate-400",
                   BESTAETIGT: bookingStatus === s ? "bg-green-600 text-white border-green-600" : "border-green-300 text-green-700 hover:border-green-400",
+                  STORNIERT: bookingStatus === s ? "bg-red-600 text-white border-red-600" : "border-red-300 text-red-700 hover:border-red-400",
                 }
                 return (
                   <button

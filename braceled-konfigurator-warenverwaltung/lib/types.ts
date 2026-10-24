@@ -1,5 +1,5 @@
 export type BookingType = "ZUGANG" | "MIETE_AUSGABE" | "MIETE_RUECKGABE" | "VERKAUF"
-export type BookingStatus = "ANFRAGE" | "BESTAETIGT"
+export type BookingStatus = "ANFRAGE" | "BESTAETIGT" | "STORNIERT"
 
 export interface Base {
   id: number

@@ -133,7 +133,7 @@ export async function confirmQuoteBooking(bookingId: number): Promise<void> {
 export async function releaseQuoteBooking(bookingId: number | null | undefined): Promise<void> {
   if (!bookingId) return
   const sql = getDb()
-  await sql`DELETE FROM bookings WHERE id = ${bookingId}`
+  await sql`UPDATE bookings SET status = 'STORNIERT' WHERE id = ${bookingId} AND status <> 'STORNIERT'`
   revalidateBookingPaths()
 }
 

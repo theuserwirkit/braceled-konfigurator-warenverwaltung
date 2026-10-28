@@ -24,6 +24,22 @@ export const DEFAULT_WRISTBAND_PRINT_CALIBRATION: WristbandPrintCalibration = {
   rotateZ: 0,
 }
 
+/** Druckfläche auf dem LED-Gehäuse des Textilarmband-Mock-ups */
+export const TEXTILBAND_PRINT_CALIBRATION: WristbandPrintCalibration = {
+  left: 38,
+  top: 38,
+  width: 22,
+  height: 28,
+  rotateX: 0,
+  rotateZ: -8,
+}
+
+export function getPrintCalibrationForProdukt(produkt: string): WristbandPrintCalibration {
+  return produkt === "textilband"
+    ? TEXTILBAND_PRINT_CALIBRATION
+    : DEFAULT_WRISTBAND_PRINT_CALIBRATION
+}
+
 export function getPrintOverlayRect(cal: WristbandPrintCalibration) {
   return {
     left: cal.left,

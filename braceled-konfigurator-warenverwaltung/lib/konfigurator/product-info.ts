@@ -446,6 +446,14 @@ export const REPEATER_BASIS_INFO = {
 
 export const WRISTBAND_MOCKUP_URL = "/images/ledband-mockup-web.png"
 
+/** Mock-up für Logo-Druck auf LED-Textilarmband (weißes Blank mit Textilband) */
+export const TEXTILBAND_MOCKUP_URL =
+  "/images/konfigurator/products/textilband-probedruck.jpg"
+
+export function getWristbandMockupUrl(produkt: string): string {
+  return produkt === "textilband" ? TEXTILBAND_MOCKUP_URL : WRISTBAND_MOCKUP_URL
+}
+
 export const DRUCK_INFO = {
   title: "Bedruckung (nur Kauf)",
   summary:

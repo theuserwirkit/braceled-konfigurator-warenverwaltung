@@ -2,22 +2,27 @@
 
 import Image from "next/image"
 import { PrintPreviewLogoImage } from "@/components/konfigurator/print-preview-logo"
-import { WRISTBAND_MOCKUP_URL } from "@/lib/konfigurator/product-info"
+import { getWristbandMockupUrl } from "@/lib/konfigurator/product-info"
 import {
-  DEFAULT_WRISTBAND_PRINT_CALIBRATION,
+  getPrintCalibrationForProdukt,
   getPrintOverlayRect,
 } from "@/lib/konfigurator/mockup-calibration"
-
-const cal = DEFAULT_WRISTBAND_PRINT_CALIBRATION
-const overlay = getPrintOverlayRect(cal)
 
 export function WristbandMockup({
   printPreviewUrl,
   previewLoading,
+  produkt = "armband",
 }: {
   printPreviewUrl: string | null
   previewLoading?: boolean
+  produkt?: string
 }) {
+  const mockupUrl = getWristbandMockupUrl(produkt)
+  const cal = getPrintCalibrationForProdukt(produkt)
+  const overlay = getPrintOverlayRect(cal)
+  const alt =
+    produkt === "textilband" ? "LED Textilarmband" : "LED Armband"
+
   return (
     <div className="rounded-lg border overflow-hidden bg-black">
       <p className="text-[10px] uppercase tracking-wider text-zinc-400 text-center py-2 bg-zinc-950 border-b border-zinc-800">
@@ -25,8 +30,8 @@ export function WristbandMockup({
       </p>
       <div className="relative w-full">
         <Image
-          src={WRISTBAND_MOCKUP_URL}
-          alt="LED Armband"
+          src={mockupUrl}
+          alt={alt}
           width={1024}
           height={576}
           className="w-full h-auto block"

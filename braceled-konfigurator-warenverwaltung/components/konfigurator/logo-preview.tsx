@@ -17,6 +17,8 @@ type LogoPreviewProps = {
   uploadError: string | null
   /** Wird vor dem Dateidialog aufgerufen – z. B. Bedruckung aktivieren */
   onBrowseRequest?: () => void
+  /** Produkt für Mock-up (z. B. textilband vs. armband) */
+  produkt?: string
 }
 
 const MIN_WIDTH_PX = 350
@@ -57,6 +59,7 @@ export function LogoPreview({
   uploading,
   uploadError,
   onBrowseRequest,
+  produkt = "armband",
 }: LogoPreviewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null)
@@ -128,6 +131,7 @@ export function LogoPreview({
       <WristbandMockup
         printPreviewUrl={previewUrl}
         previewLoading={previewLoading}
+        produkt={produkt}
       />
 
       <div className="rounded-lg border bg-card overflow-hidden">

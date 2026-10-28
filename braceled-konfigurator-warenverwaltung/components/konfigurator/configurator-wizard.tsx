@@ -1113,6 +1113,7 @@ export function ConfiguratorWizard({
                                 onFileSelect={handleLogoUpload}
                                 uploading={logoUploading}
                                 uploadError={logoError}
+                                produkt={config.produkt}
                                 onBrowseRequest={() =>
                                   updateConfig({ druck: true, druckArt: "logo" })
                                 }

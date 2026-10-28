@@ -41,6 +41,9 @@ export const quoteConfigSchema = z
     technikerTage: z.coerce.number().optional(),
     technikerAdresse: z.string().max(500).optional(),
     technikerKm: z.coerce.number().optional(),
+    technikerSteuerpult: z.enum(["mitbuchen", "vorhanden"]).optional(),
+    vorprogrammiertZusenden: z.boolean().optional(),
+    repeaterBasisstation: z.boolean().optional(),
   })
   .passthrough()
 

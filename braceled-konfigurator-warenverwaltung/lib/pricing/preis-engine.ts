@@ -295,6 +295,24 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
     }
   }
 
+  if (Boolean(input.vorprogrammiertZusenden) && station === "pro") {
+    positionen.push({
+      pos: "Vorprogrammiert zusenden (bis 8 Szenen inkl. Steuerpult Miete)",
+      menge: 1,
+      einzel: 0,
+      summe: 0,
+    })
+  }
+
+  if (Boolean(input.repeaterBasisstation) && station === "pro") {
+    positionen.push({
+      pos: "Repeater-Basisstation gewünscht (Info – keine Lagerbuchung, DMX vor Ort)",
+      menge: 1,
+      einzel: 0,
+      summe: 0,
+    })
+  }
+
   const gesamt_netto = eur(positionen.reduce((s, p) => s + p.summe, 0))
   const mwst_19 = eur(gesamt_netto * 0.19)
   const gesamt_brutto = eur(gesamt_netto + mwst_19)

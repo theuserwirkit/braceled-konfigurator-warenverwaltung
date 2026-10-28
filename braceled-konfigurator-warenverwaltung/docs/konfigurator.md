@@ -12,9 +12,9 @@ Diese Datei beschreibt Logik, Berechnungen und interne Regeln des B2B-Konfigurat
 |--------|--------|--------|
 | 0 | Event | Kontakt inkl. **Firmenadresse** (Straße, PLZ, Ort), Szenario, Eventadresse, Zeitraum (`von` / `bis`) |
 | 1 | Umfang | Produkt (nur LED Armband wählbar; LED Ball, LED Platine, LED Lanyard, LED-Licht ausgegraut mit Strichzeichnungen), Miete/Kauf, Menge, Bedruckung + Probedruck-Optionen (nur Kauf) |
-| 2 | Zeitraum | Verfügbarkeitsprüfung Bänder (+ Controller, falls schon gewählt), Lieferhinweis bei kurzem Vorlauf |
-| 3 | Steuerung | Variante Standard/Premium (nur Armband), Basis-Station, Gruppenprogrammierung (nur PRO) |
-| 4 | Extras | Lieferland (nur DE), Lieferpakete (Regulär / Express / Eilauftrag), Flex-Rückgabe, Techniker |
+| 2 | Steuerung | Basis-Station, Gruppenprogrammierung (nur PRO), Techniker/Vorprogrammiert/Repeater (nur PRO) |
+| 3 | Zeitraum | Verfügbarkeitsprüfung Bänder (+ Controller), Lieferhinweis bei kurzem Vorlauf |
+| 4 | Extras | Lieferland (nur DE), Lieferpakete (Regulär / Express / Eilauftrag), Flex-Rückgabe |
 | 5 | Angebot | Zusammenfassung, Preis, Absenden |
 
 Vor dem Konfigurator: **E-Mail-Gate** mit:

@@ -92,6 +92,12 @@ export type QuoteConfig = {
   technikerTage?: number
   technikerAdresse?: string
   technikerKm?: number
+  /** Bei Techniker vor Ort: Steuerpult-Mitnahme vs. vorhanden vor Ort */
+  technikerSteuerpult?: "mitbuchen" | "vorhanden"
+  /** Vorprogrammierung inkl. intelligentem Steuerpult (Miete), nur PRO */
+  vorprogrammiertZusenden?: boolean
+  /** Zweite Basisstation – nur Info auf dem Angebot (0 €), keine Lagerbuchung */
+  repeaterBasisstation?: boolean
 }
 
 export type Lead = {

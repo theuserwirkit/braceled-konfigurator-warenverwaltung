@@ -29,6 +29,9 @@ import {
   DRUCK_INFO,
   PROBEDRUCK_OPTIONS,
   TECHNIKER_INFO,
+  TECHNIKER_STEUERPULT_OPTIONS,
+  VORPROGRAMMIERT_INFO,
+  REPEATER_BASIS_INFO,
   PRODUKT_ANZEIGE,
   getProbedruckLabel,
   normalizeProbedruckOption,
@@ -76,13 +79,14 @@ import {
   GRUPPEN_SLIDER_STEP,
 } from "@/lib/konfigurator/gruppen-config"
 import { MAX_PHYSICAL_GROUPS } from "@/lib/konfigurator/kanalanzahl"
+import { PersonalCallBanner } from "@/components/konfigurator/personal-call-banner"
 import { GruppenVerteilungsSlider } from "@/components/konfigurator/gruppen-verteilungs-slider"
 
 const STEPS = [
   { label: "Event", question: "Was planen Sie?" },
   { label: "Umfang", question: "Wie viele LED-Produkte benötigen Sie?" },
-  { label: "Zeitraum", question: "Ist Ihr Wunschtermin verfügbar?" },
   { label: "Steuerung", question: "Wie sollen die Bänder gesteuert werden?" },
+  { label: "Zeitraum", question: "Ist Ihr Wunschtermin verfügbar?" },
   { label: "Extras", question: "Welche Zusatzleistungen wünschen Sie?" },
   { label: "Angebot", question: "Ihre Zusammenfassung" },
 ] as const
@@ -122,6 +126,9 @@ const DEFAULT_CONFIG: QuoteConfig = {
   technikerTage: 1,
   technikerAdresse: "",
   technikerKm: undefined,
+  technikerSteuerpult: undefined,
+  vorprogrammiertZusenden: false,
+  repeaterBasisstation: false,
   gruppenGroessen: [],
 }
 
@@ -193,6 +200,13 @@ export function ConfiguratorWizard({
       if (patch.station && patch.station !== "pro") {
         next.gruppen = 0
         next.gruppenGroessen = []
+        next.techniker = false
+        next.technikerSteuerpult = undefined
+        next.vorprogrammiertZusenden = false
+        next.repeaterBasisstation = false
+      }
+      if (patch.techniker === true && next.technikerSteuerpult == null) {
+        next.technikerSteuerpult = "vorhanden"
       }
       const syncedGroessen = syncGruppenGroessen(prev, patch)
       if (syncedGroessen !== undefined) {
@@ -245,6 +259,7 @@ export function ConfiguratorWizard({
         Object.assign(next, lieferPatch)
         if (!isTechnikerAllowed(tage)) {
           next.techniker = false
+          next.technikerSteuerpult = undefined
         }
       }
       if (patch.druck !== undefined || patch.modus !== undefined) {
@@ -257,6 +272,7 @@ export function ConfiguratorWizard({
       }
       if (patch.techniker === false) {
         next.technikerTage = 1
+        next.technikerSteuerpult = undefined
       }
       return next
     })
@@ -560,40 +576,41 @@ export function ConfiguratorWizard({
       return true
     }
     if (step === 2) {
-      // Rote Ampel blockiert nicht: Anfrage geht in manuelle Prüfung.
-      return Boolean(config.von)
-    }
-    if (step === 3) {
       if (config.station === "pro" && config.gruppen < GRUPPEN_MIN) return false
       if (config.gruppen > 0 && config.station !== "pro") return false
       if (config.station === "pro" && !gruppenVerteilungGueltig(gruppenGroessen, config.menge)) {
         return false
       }
-      // Basis-/Gruppen-Verfügbarkeit blockiert nicht (rote Warnung bleibt sichtbar).
-      return true
-    }
-    if (step === 4) {
-      if (!hasAllowedLieferpaket(werktageBisEvent)) return false
-      if (!isLieferpaketAllowed(lieferpaket, werktageBisEvent)) return false
-      if (flexRueckgabe && !isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket)) return false
       if (config.techniker) {
         if (!isTechnikerAllowed(tageBisEvent)) return false
         if (!config.technikerTage || config.technikerTage < 1) return false
         if (!config.technikerAdresse?.trim()) return false
         if (config.technikerKm === undefined || config.technikerKm < 0) return false
+        if (!config.technikerSteuerpult) return false
       }
+      // Basis-/Gruppen-Verfügbarkeit blockiert nicht (rote Warnung bleibt sichtbar).
+      return true
+    }
+    if (step === 3) {
+      // Rote Ampel blockiert nicht: Anfrage geht in manuelle Prüfung.
+      return Boolean(config.von)
+    }
+    if (step === 4) {
+      if (!hasAllowedLieferpaket(werktageBisEvent)) return false
+      if (!isLieferpaketAllowed(lieferpaket, werktageBisEvent)) return false
+      if (flexRueckgabe && !isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket)) return false
       return true
     }
     return true
   }
 
   const plzValid = normalizePlz(config.kontaktPlz || "").length === 5
-  const step3GruppenInvalid =
+  const step2GruppenInvalid =
     config.station === "pro" && !gruppenVerteilungGueltig(gruppenGroessen, config.menge)
   const step4LieferpaketInvalid =
     !hasAllowedLieferpaket(werktageBisEvent) ||
     !isLieferpaketAllowed(lieferpaket, werktageBisEvent)
-  const step4TechnikerInvalid =
+  const step2TechnikerInvalid =
     config.techniker &&
     (!config.technikerTage ||
       config.technikerTage < 1 ||
@@ -686,6 +703,7 @@ export function ConfiguratorWizard({
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
+      <PersonalCallBanner />
       {editMode && (
         <Alert className="border-blue-200 bg-blue-50 text-blue-900">
           <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -1122,62 +1140,8 @@ export function ConfiguratorWizard({
               </div>
             )}
 
-            {/* Schritt 2: Zeitraum */}
+            {/* Schritt 2: Steuerung */}
             {step === 2 && (
-              <div className="space-y-4">
-                {config.von && (
-                  <p className="text-sm rounded-lg border bg-muted/30 p-4">
-                    Eventzeitraum: <strong>{config.von}</strong>
-                    {config.bis && config.bis !== config.von ? (
-                      <>
-                        {" "}
-                        – <strong>{config.bis}</strong>
-                      </>
-                    ) : null}
-                    {config.technikerAdresse ? (
-                      <>
-                        <br />
-                        Ort: <strong>{config.technikerAdresse}</strong>
-                      </>
-                    ) : null}
-                  </p>
-                )}
-                <AvailabilityIndicator
-                  availability={availability}
-                  loading={loadingAvailability}
-                  hideDetails={editMode}
-                />
-
-                {!availability?.verfuegbar && availability && (
-                  <p className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                    Für Deinen Termin sind laut Lagerbestand nicht genug LED-Bänder verfügbar. Wir
-                    prüfen natürlich trotzdem, ob wir Dir helfen können – eventuell kommt in der
-                    Zwischenzeit noch eine Lieferung oder wir bekommen Refurbished-Bänder zurück
-                    ins Lager.
-                  </p>
-                )}
-
-                {kurzeLieferzeit && (
-                  <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
-                    <AlertDescription>
-                      Achtung: Noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "e"} bis zum
-                      Event. Wir müssen prüfen, ob eine Lieferung in der kurzen Zeit möglich ist.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {config.station !== "keine" && (
-                  <StationAvailabilityIndicator
-                    station={config.station}
-                    availability={stationAvailability}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Schritt 3: Steuerung */}
-            {step === 3 && (
               <div className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -1278,7 +1242,7 @@ export function ConfiguratorWizard({
                   <div
                     className={cn(
                       "space-y-4 rounded-lg border p-4",
-                      showFieldErrors && step3GruppenInvalid && "border-destructive ring-2 ring-destructive",
+                      showFieldErrors && step2GruppenInvalid && "border-destructive ring-2 ring-destructive",
                     )}
                   >
                     <div className="space-y-3">
@@ -1326,14 +1290,10 @@ export function ConfiguratorWizard({
                                   ` (über ${groupAvailability.physischeGruppen} physische Lagergruppe${groupAvailability.physischeGruppen === 1 ? "" : "n"})`}
                               </p>
                             ) : (
-                              <div className="space-y-2">
-                                <p className="text-sm text-destructive font-medium">
-                                  Gruppenprogrammierung voraussichtlich nicht vollständig möglich
-                                </p>
-                                <p className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                                  Wir prüfen natürlich trotzdem, ob wir Dir helfen können.
-                                </p>
-                              </div>
+                              <p className="text-sm text-destructive font-medium rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                                Gruppenprogrammierung voraussichtlich nicht vollständig möglich. Wir
+                                prüfen natürlich trotzdem, ob wir Dir helfen können.
+                              </p>
                             )}
                             {groupAvailability.hinweis && (
                               <p className="text-xs text-muted-foreground">{groupAvailability.hinweis}</p>
@@ -1358,6 +1318,243 @@ export function ConfiguratorWizard({
                       </div>
                     )}
                   </div>
+                )}
+
+                {config.station === "pro" && (
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div>
+                      <Label className="text-base">PRO-Zusatzoptionen</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Techniker und Vorprogrammierung können gleichzeitig gewählt werden.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="rounded-lg border p-4 space-y-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <Label>{TECHNIKER_INFO.title}</Label>
+                            <p className="text-xs text-muted-foreground">{TECHNIKER_INFO.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Buchbar ab {TECHNIKER_INFO.minVorlaufTage} Tagen Vorlauf.{" "}
+                              {formatEur(TECHNIKER_INFO.reiseNetto)} Reisepauschale ·{" "}
+                              {formatEur(TECHNIKER_INFO.tagNetto)}/Tag ·{" "}
+                              {formatEur(TECHNIKER_INFO.kmNetto)}/km
+                            </p>
+                            {!isTechnikerAllowed(tageBisEvent) && (
+                              <p className="text-xs text-amber-700">
+                                Bei nur noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "en"} bis zum
+                                Event ist ein Techniker-Einsatz nicht mehr buchbar.
+                              </p>
+                            )}
+                          </div>
+                          <Switch
+                            checked={config.techniker}
+                            disabled={!isTechnikerAllowed(tageBisEvent)}
+                            onCheckedChange={(v) => updateConfig({ techniker: v })}
+                          />
+                        </div>
+                        {config.techniker && (
+                          <div
+                            className={cn(
+                              "space-y-3 pt-2 border-t",
+                              showFieldErrors &&
+                                step2TechnikerInvalid &&
+                                "rounded-lg ring-2 ring-destructive p-2",
+                            )}
+                          >
+                            <div className="space-y-2">
+                              <Label>Steuerpult</Label>
+                              <div className="grid gap-2">
+                                {TECHNIKER_STEUERPULT_OPTIONS.map((opt) => (
+                                  <OptionCard
+                                    key={opt.value}
+                                    selected={config.technikerSteuerpult === opt.value}
+                                    onClick={() =>
+                                      updateConfig({ technikerSteuerpult: opt.value })
+                                    }
+                                    title={opt.label}
+                                    description={opt.description}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <RequiredLabel
+                                htmlFor="techniker-tage"
+                                showError={fieldError(
+                                  Boolean(config.technikerTage && config.technikerTage >= 1),
+                                )}
+                              >
+                                Einsatztage
+                              </RequiredLabel>
+                              <Input
+                                id="techniker-tage"
+                                type="number"
+                                min={1}
+                                max={14}
+                                value={config.technikerTage ?? 1}
+                                onChange={(e) =>
+                                  updateConfig({ technikerTage: Number(e.target.value) })
+                                }
+                                className={cn(
+                                  fieldError(
+                                    Boolean(config.technikerTage && config.technikerTage >= 1),
+                                  ) && INVALID_INPUT_CLASS,
+                                )}
+                                aria-invalid={fieldError(
+                                  Boolean(config.technikerTage && config.technikerTage >= 1),
+                                )}
+                              />
+                            </div>
+                            {config.technikerKm === undefined ? (
+                              <div className="space-y-2">
+                                <RequiredLabel
+                                  htmlFor="techniker-event-adresse"
+                                  showError={fieldError(Boolean(config.technikerAdresse?.trim()))}
+                                >
+                                  Eventadresse
+                                </RequiredLabel>
+                                <Input
+                                  id="techniker-event-adresse"
+                                  placeholder="Straße, PLZ Ort"
+                                  value={config.technikerAdresse || ""}
+                                  onChange={(e) => {
+                                    setDistanceError(null)
+                                    updateConfig({
+                                      technikerAdresse: e.target.value,
+                                      technikerKm: undefined,
+                                    })
+                                  }}
+                                  className={cn(
+                                    fieldError(Boolean(config.technikerAdresse?.trim())) &&
+                                      INVALID_INPUT_CLASS,
+                                  )}
+                                  aria-invalid={fieldError(
+                                    Boolean(config.technikerAdresse?.trim()),
+                                  )}
+                                />
+                                {distanceLoading && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Entfernung wird berechnet …
+                                  </p>
+                                )}
+                                {distanceError && (
+                                  <p className="text-xs text-destructive">{distanceError}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Eventort: {config.technikerAdresse}
+                                {" · "}
+                                ca. {config.technikerKm} km (
+                                {formatEur(config.technikerKm * TECHNIKER_INFO.kmNetto)} netto)
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  className="h-auto p-0 ml-1 text-xs"
+                                  onClick={() => {
+                                    setDistanceError(null)
+                                    updateConfig({ technikerKm: undefined })
+                                  }}
+                                >
+                                  ändern
+                                </Button>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <OptionCard
+                        selected={Boolean(config.vorprogrammiertZusenden)}
+                        onClick={() =>
+                          updateConfig({
+                            vorprogrammiertZusenden: !config.vorprogrammiertZusenden,
+                          })
+                        }
+                        title={VORPROGRAMMIERT_INFO.title}
+                        description={VORPROGRAMMIERT_INFO.description}
+                        imageSrc={VORPROGRAMMIERT_INFO.imageSrc}
+                        imageAlt={VORPROGRAMMIERT_INFO.title}
+                        priceHint="Preisabstimmung durch Team"
+                      />
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <Label>{REPEATER_BASIS_INFO.title}</Label>
+                          <p className="text-xs text-muted-foreground">
+                            {REPEATER_BASIS_INFO.description}
+                          </p>
+                          <p className="text-xs font-medium">
+                            {formatEur(0)} netto · nur Info auf dem Angebot, keine Lagerbuchung
+                          </p>
+                        </div>
+                        <Switch
+                          checked={Boolean(config.repeaterBasisstation)}
+                          onCheckedChange={(v) => updateConfig({ repeaterBasisstation: v })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* Schritt 3: Zeitraum */}
+            {step === 3 && (
+              <div className="space-y-4">
+                {config.von && (
+                  <p className="text-sm rounded-lg border bg-muted/30 p-4">
+                    Eventzeitraum: <strong>{config.von}</strong>
+                    {config.bis && config.bis !== config.von ? (
+                      <>
+                        {" "}
+                        – <strong>{config.bis}</strong>
+                      </>
+                    ) : null}
+                    {config.technikerAdresse ? (
+                      <>
+                        <br />
+                        Ort: <strong>{config.technikerAdresse}</strong>
+                      </>
+                    ) : null}
+                  </p>
+                )}
+                <AvailabilityIndicator
+                  availability={availability}
+                  loading={loadingAvailability}
+                  hideDetails={editMode}
+                />
+
+                {!availability?.verfuegbar && availability && (
+                  <p className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                    Für Deinen Termin sind laut Lagerbestand nicht genug LED-Bänder verfügbar. Wir
+                    prüfen natürlich trotzdem, ob wir Dir helfen können – eventuell kommt in der
+                    Zwischenzeit noch eine Lieferung oder wir bekommen Refurbished-Bänder zurück
+                    ins Lager.
+                  </p>
+                )}
+
+                {kurzeLieferzeit && (
+                  <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription>
+                      Achtung: Noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "e"} bis zum
+                      Event. Wir müssen prüfen, ob eine Lieferung in der kurzen Zeit möglich ist.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {config.station !== "keine" && (
+                  <StationAvailabilityIndicator
+                    station={config.station}
+                    availability={stationAvailability}
+                  />
                 )}
               </div>
             )}
@@ -1439,126 +1636,6 @@ export function ConfiguratorWizard({
                     </p>
                   </div>
                 )}
-
-                <div className="rounded-lg border p-4 space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <Label>{TECHNIKER_INFO.title}</Label>
-                      <p className="text-xs text-muted-foreground">{TECHNIKER_INFO.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Buchbar ab {TECHNIKER_INFO.minVorlaufTage} Tagen Vorlauf.{" "}
-                        {formatEur(TECHNIKER_INFO.reiseNetto)} Reisepauschale ·{" "}
-                        {formatEur(TECHNIKER_INFO.tagNetto)}/Tag ·{" "}
-                        {formatEur(TECHNIKER_INFO.kmNetto)}/km
-                      </p>
-                      {!isTechnikerAllowed(tageBisEvent) && (
-                        <p className="text-xs text-amber-700">
-                          Bei nur noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "en"} bis zum
-                          Event ist ein Techniker-Einsatz nicht mehr buchbar.
-                        </p>
-                      )}
-                    </div>
-                    <Switch
-                      checked={config.techniker}
-                      disabled={!isTechnikerAllowed(tageBisEvent)}
-                      onCheckedChange={(v) => updateConfig({ techniker: v })}
-                    />
-                  </div>
-                  {config.techniker && (
-                    <div
-                      className={cn(
-                        "space-y-3 pt-2 border-t",
-                        showFieldErrors && step4TechnikerInvalid && "rounded-lg ring-2 ring-destructive p-2",
-                      )}
-                    >
-                      <div className="space-y-2">
-                        <RequiredLabel
-                          htmlFor="techniker-tage"
-                          showError={fieldError(Boolean(config.technikerTage && config.technikerTage >= 1))}
-                        >
-                          Einsatztage
-                        </RequiredLabel>
-                        <Input
-                          id="techniker-tage"
-                          type="number"
-                          min={1}
-                          max={14}
-                          value={config.technikerTage ?? 1}
-                          onChange={(e) =>
-                            updateConfig({ technikerTage: Number(e.target.value) })
-                          }
-                          className={cn(
-                            fieldError(Boolean(config.technikerTage && config.technikerTage >= 1)) &&
-                              INVALID_INPUT_CLASS,
-                          )}
-                          aria-invalid={fieldError(
-                            Boolean(config.technikerTage && config.technikerTage >= 1),
-                          )}
-                        />
-                      </div>
-                      {config.technikerKm === undefined ? (
-                        <div className="space-y-2">
-                          <RequiredLabel
-                            htmlFor="techniker-event-adresse"
-                            showError={fieldError(Boolean(config.technikerAdresse?.trim()))}
-                          >
-                            Eventadresse
-                          </RequiredLabel>
-                          <Input
-                            id="techniker-event-adresse"
-                            placeholder="Straße, PLZ Ort"
-                            value={config.technikerAdresse || ""}
-                            onChange={(e) => {
-                              setDistanceError(null)
-                              updateConfig({
-                                technikerAdresse: e.target.value,
-                                technikerKm: undefined,
-                              })
-                            }}
-                            className={cn(
-                              fieldError(Boolean(config.technikerAdresse?.trim())) &&
-                                INVALID_INPUT_CLASS,
-                            )}
-                            aria-invalid={fieldError(Boolean(config.technikerAdresse?.trim()))}
-                          />
-                          {distanceLoading && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-2">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Entfernung wird berechnet …
-                            </p>
-                          )}
-                          {!distanceLoading && !config.technikerKm && (
-                            <p className="text-xs text-muted-foreground">
-                              Entfernung wird automatisch berechnet, sobald die Adresse vollständig
-                              ist.
-                            </p>
-                          )}
-                          {distanceError && (
-                            <p className="text-xs text-destructive">{distanceError}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Eventort: {config.technikerAdresse}
-                          {" · "}
-                          ca. {config.technikerKm} km (
-                          {formatEur(config.technikerKm * TECHNIKER_INFO.kmNetto)} netto)
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="h-auto p-0 ml-1 text-xs"
-                            onClick={() => {
-                              setDistanceError(null)
-                              updateConfig({ technikerKm: undefined })
-                            }}
-                          >
-                            ändern
-                          </Button>
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
 
@@ -1616,7 +1693,7 @@ export function ConfiguratorWizard({
                           ? "Voraussichtlich nicht verfügbar"
                           : "Wird geprüft"
                     }
-                    onEdit={() => setStep(2)}
+                    onEdit={() => setStep(3)}
                   />
                 )}
                 <SummaryRow
@@ -1633,10 +1710,18 @@ export function ConfiguratorWizard({
                         ? "Controller voraussichtlich verfügbar"
                         : "Controller voraussichtlich nicht verfügbar"
                       : null,
+                    config.techniker ? `Techniker ${config.technikerTage}d` : null,
+                    config.technikerSteuerpult === "mitbuchen"
+                      ? "Steuerpult mitbuchen"
+                      : config.technikerSteuerpult === "vorhanden"
+                        ? "Steuerpult vorhanden"
+                        : null,
+                    config.vorprogrammiertZusenden ? "Vorprogrammiert zusenden" : null,
+                    config.repeaterBasisstation ? "Repeater-Basisstation (Info)" : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
-                  onEdit={() => setStep(3)}
+                  onEdit={() => setStep(2)}
                 />
                 <SummaryRow
                   label="Extras"
@@ -1649,7 +1734,6 @@ export function ConfiguratorWizard({
                     getProbedruckLabel(probedruckOption),
                     getLieferpaketLabel(lieferpaket),
                     flexRueckgabe ? "Flex-Rückgabe" : null,
-                    config.techniker ? `Techniker ${config.technikerTage}d` : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}

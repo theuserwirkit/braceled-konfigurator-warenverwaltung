@@ -332,6 +332,35 @@ export const TECHNIKER_INFO = {
   kmNetto: TECHNIKER_KM_NETTO,
 } as const
 
+export const TECHNIKER_STEUERPULT_OPTIONS = [
+  {
+    value: "mitbuchen" as const,
+    label: "Steuerpult zur Programmierung mitbuchen",
+    description: "WIRKUNG stellt ein Steuerpult zur Programmierung vor Ort bereit.",
+  },
+  {
+    value: "vorhanden" as const,
+    label: "Lichtsteuerpult ist über Eventtechnik vorhanden",
+    description: "Ihr Eventtechnik-Partner stellt das Lichtsteuerpult vor Ort.",
+  },
+] as const
+
+export const VORPROGRAMMIERT_INFO = {
+  title: "Vorprogrammiert zusenden",
+  description:
+    "Programmieren von bis zu 8 Szenen im Vorfeld inkl. intelligentem Steuerpult (zur Miete).",
+  imageSrc: "/images/steuerkonsole-vorprogrammiert.png",
+  /** Preisabstimmung durch Team – Position erscheint mit 0,00 EUR bis Freigabe */
+  preisNetto: 0,
+} as const
+
+export const REPEATER_BASIS_INFO = {
+  title: "Repeater-Basisstation gewünscht",
+  description:
+    "Bei großen Event-Locations eine zweite Basisstation mitbuchen. Diese muss ebenfalls ans DMX angeschlossen werden. Rückfragen beantwortet unser Team.",
+  preisNetto: 0,
+} as const
+
 export const WRISTBAND_MOCKUP_URL = "/images/ledband-mockup-web.png"
 
 export const DRUCK_INFO = {

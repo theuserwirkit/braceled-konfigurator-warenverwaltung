@@ -25,6 +25,9 @@ export type PreisEngineInput = {
   techniker?: boolean
   technikerTage?: number
   technikerKm?: number
+  technikerSteuerpult?: "mitbuchen" | "vorhanden"
+  vorprogrammiertZusenden?: boolean
+  repeaterBasisstation?: boolean
 }
 
 export type PreisPosition = {

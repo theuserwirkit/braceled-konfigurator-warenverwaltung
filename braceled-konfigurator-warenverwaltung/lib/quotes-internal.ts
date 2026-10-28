@@ -141,6 +141,17 @@ function configSummary(config: QuoteConfig): string {
       `Eventadresse: ${config.technikerAdresse || "–"}`,
       `Fahrt: ${config.technikerKm ?? 0} km`,
     )
+    if (config.technikerSteuerpult === "mitbuchen") {
+      lines.push("Steuerpult: zur Programmierung mitbuchen")
+    } else if (config.technikerSteuerpult === "vorhanden") {
+      lines.push("Steuerpult: über Eventtechnik vorhanden")
+    }
+  }
+  if (config.vorprogrammiertZusenden) {
+    lines.push("Vorprogrammiert zusenden: ja (bis 8 Szenen inkl. Steuerpult)")
+  }
+  if (config.repeaterBasisstation) {
+    lines.push("Repeater-Basisstation: gewünscht (Info, 0 €, keine Lagerbuchung)")
   }
   return lines.join("\n")
 }

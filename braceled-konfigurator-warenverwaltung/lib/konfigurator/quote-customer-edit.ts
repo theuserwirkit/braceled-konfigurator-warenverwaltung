@@ -38,8 +38,18 @@ export function buildChangeSummary(before: QuoteConfig, after: QuoteConfig): str
   if (before.logoId !== after.logoId) parts.push("Logo")
   if (before.druck !== after.druck || before.druckArt !== after.druckArt) parts.push("Druck")
   if (before.probedruckOption !== after.probedruckOption) parts.push("Probedruck")
-  if (Boolean(before.techniker) !== Boolean(after.techniker) || before.technikerTage !== after.technikerTage) {
+  if (
+    Boolean(before.techniker) !== Boolean(after.techniker) ||
+    before.technikerTage !== after.technikerTage ||
+    before.technikerSteuerpult !== after.technikerSteuerpult
+  ) {
     parts.push("Techniker")
+  }
+  if (Boolean(before.vorprogrammiertZusenden) !== Boolean(after.vorprogrammiertZusenden)) {
+    parts.push("Vorprogrammiert")
+  }
+  if (Boolean(before.repeaterBasisstation) !== Boolean(after.repeaterBasisstation)) {
+    parts.push("Repeater")
   }
   if (Boolean(before.flexRueckgabe ?? before.flex) !== Boolean(after.flexRueckgabe ?? after.flex)) {
     parts.push("Flex")

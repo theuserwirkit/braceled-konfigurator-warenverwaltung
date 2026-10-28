@@ -6,7 +6,11 @@ const SESSION_MAX_AGE = 60 * 60 * 24 * 7
 // Edge runtime: HMAC-SHA256 über Web Crypto (SubtleCrypto).
 // Muss dasselbe Ergebnis liefern wie createHmac in lib/auth-core.ts (Node runtime).
 function getSessionSecret(): string | null {
-  return process.env["WRISTLINK_SESSION_SECRET"] || process.env["WRISTLINK_PASSWORD"] || null
+  const dedicated = process.env["WRISTLINK_SESSION_SECRET"]
+  if (process.env.NODE_ENV === "production") {
+    return dedicated || null
+  }
+  return dedicated || process.env["WRISTLINK_PASSWORD"] || null
 }
 
 async function hmacSha256Hex(message: string, secret: string): Promise<string> {

@@ -4,15 +4,21 @@ import { cookies } from "next/headers"
 export const ANGEBOT_ACCESS_COOKIE = "wristlink_angebot_access"
 export const ANGEBOT_ACCESS_MAX_AGE = 60 * 60 * 24 * 30
 
-// A-06: einmaliger Hinweis pro Prozess, siehe lib/auth-core.ts.
-let warnedAngebotSecretFallbackInProduction = false
+// A-06: einmaliger Hinweis pro Prozess in Nicht-Production, siehe lib/auth-core.ts.
+let warnedAngebotSecretFallbackInNonProduction = false
 
 function getSecret(): string {
   const dedicated = process.env.LEAD_SESSION_SECRET
+  if (process.env.NODE_ENV === "production") {
+    if (!dedicated) {
+      throw new Error("LEAD_SESSION_SECRET is required in production")
+    }
+    return dedicated
+  }
   const secret = dedicated || process.env.WRISTLINK_PASSWORD
   if (!secret) throw new Error("LEAD_SESSION_SECRET or WRISTLINK_PASSWORD required")
-  if (!dedicated && process.env.NODE_ENV === "production" && !warnedAngebotSecretFallbackInProduction) {
-    warnedAngebotSecretFallbackInProduction = true
+  if (!dedicated && !warnedAngebotSecretFallbackInNonProduction) {
+    warnedAngebotSecretFallbackInNonProduction = true
     console.warn(
       "[angebot-access] LEAD_SESSION_SECRET ist nicht gesetzt – Angebots-Zugriffstoken " +
         "fallen auf WRISTLINK_PASSWORD zurück und teilen sich damit ein Secret mit " +

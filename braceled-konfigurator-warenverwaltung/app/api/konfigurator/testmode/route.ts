@@ -38,9 +38,13 @@ export async function POST(request: NextRequest) {
     // leerer Body ist ok – Default-E-Mail wird verwendet
   }
 
-  const result = await bypassEmailVerificationForTestmode(body.email)
+  const headerSecret = request.headers.get("x-testmode-secret") ?? undefined
+  const result = await bypassEmailVerificationForTestmode(body.email, {
+    secret: headerSecret,
+  })
   if (!result.success) {
-    return Response.json({ error: result.error }, { status: 400 })
+    const status = result.error === "Forbidden" ? 403 : 400
+    return Response.json({ error: result.error }, { status })
   }
 
   return Response.json({ success: true })

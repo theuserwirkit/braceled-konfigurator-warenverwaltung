@@ -597,6 +597,7 @@ export async function getBaseAvailabilityByDateRange(
 }
 
 export async function getBaseTotalStats() {
+  await ensureAuthed()
   const sql = getDb()
 
   const items = await sql`
@@ -765,6 +766,7 @@ export async function getRentedItemsByGroupInternal(batchId?: number) {
 }
 
 export async function getTotalStats() {
+  await ensureAuthed()
   const sql = getDb()
 
   const items = await sql`

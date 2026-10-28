@@ -4,15 +4,21 @@ import { cookies } from "next/headers"
 export const LEAD_SESSION_COOKIE = "wristlink_lead_session"
 export const LEAD_SESSION_MAX_AGE = 60 * 60 * 24 * 7
 
-// A-06: einmaliger Hinweis pro Prozess, siehe lib/auth-core.ts.
-let warnedLeadSecretFallbackInProduction = false
+// A-06: einmaliger Hinweis pro Prozess in Nicht-Production, siehe lib/auth-core.ts.
+let warnedLeadSecretFallbackInNonProduction = false
 
 function getLeadSecret(): string {
   const dedicated = process.env.LEAD_SESSION_SECRET
+  if (process.env.NODE_ENV === "production") {
+    if (!dedicated) {
+      throw new Error("LEAD_SESSION_SECRET is required in production")
+    }
+    return dedicated
+  }
   const secret = dedicated || process.env.WRISTLINK_PASSWORD
   if (!secret) throw new Error("LEAD_SESSION_SECRET or WRISTLINK_PASSWORD required")
-  if (!dedicated && process.env.NODE_ENV === "production" && !warnedLeadSecretFallbackInProduction) {
-    warnedLeadSecretFallbackInProduction = true
+  if (!dedicated && !warnedLeadSecretFallbackInNonProduction) {
+    warnedLeadSecretFallbackInNonProduction = true
     console.warn(
       "[lead-auth] LEAD_SESSION_SECRET ist nicht gesetzt – Lead-Sessions fallen auf " +
         "WRISTLINK_PASSWORD zurück und teilen sich damit ein Secret mit weiteren Zwecken. " +

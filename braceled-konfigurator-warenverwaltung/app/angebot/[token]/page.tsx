@@ -33,7 +33,7 @@ export default async function AngebotPage({
     return <AngebotPlzGate token={token} quoteId={quote.id} />
   }
 
-  const fulfillmentEvents = await getPublicFulfillmentEvents(quote.id)
+  const fulfillmentEvents = await getPublicFulfillmentEvents(token)
   const versions = await listQuoteVersions(quote.id)
   const canEdit = canCustomerEditQuoteStatus(quote.status)
   const hasOfferPdf = Boolean(quote.offer_pdf_filename)

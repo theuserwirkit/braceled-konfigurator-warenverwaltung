@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { unauthorizedResponse, verifyApiKey } from "@/lib/api-auth"
+import { unauthorizedResponse, verifyApiKeyApprove } from "@/lib/api-auth"
 import { getQuoteByIdInternal, rejectQuoteRequest } from "@/lib/quotes-internal"
 import type { RejectionReasonId } from "@/lib/konfigurator/rejection-reasons"
 
@@ -9,7 +9,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!verifyApiKey(request)) return unauthorizedResponse()
+  if (!verifyApiKeyApprove(request)) return unauthorizedResponse()
 
   const { id } = await params
   const quoteId = Number(id)

@@ -3,22 +3,26 @@ import { createHmac, timingSafeEqual } from "crypto"
 export const SESSION_COOKIE_NAME = "wristlink_auth"
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7
 
-// A-06: einmaliger Hinweis pro Prozess, wenn Admin-Session, Lead-Session (lead-auth.ts)
-// und Angebots-Zugriff (angebot-access.ts) in Production denselben Fallback-Secret
-// (WRISTLINK_PASSWORD) teilen, weil kein eigenes WRISTLINK_SESSION_SECRET gesetzt ist.
-// Bewusst NICHT hart erzwungen (würde bestehende Deployments ohne das neue Secret
-// sofort brechen) – siehe A-06 in docs/audit-findings.md für die vollständige
-// Begründung/Breaking-Change-Abwägung.
-let warnedSharedSecretFallbackInProduction = false
+// A-06: einmaliger Hinweis pro Prozess in Nicht-Production, wenn kein WRISTLINK_SESSION_SECRET
+// gesetzt ist und auf WRISTLINK_PASSWORD zurückgefallen wird (nur lokale DX).
+let warnedSharedSecretFallbackInNonProduction = false
 
 export function getSessionSecret(): string {
   const dedicated = process.env["WRISTLINK_SESSION_SECRET"]
+  if (process.env.NODE_ENV === "production") {
+    if (!dedicated) {
+      throw new Error(
+        "WRISTLINK_SESSION_SECRET environment variable is required in production",
+      )
+    }
+    return dedicated
+  }
   const secret = dedicated || process.env["WRISTLINK_PASSWORD"]
   if (!secret) {
     throw new Error("WRISTLINK_SESSION_SECRET or WRISTLINK_PASSWORD environment variable is not set")
   }
-  if (!dedicated && process.env.NODE_ENV === "production" && !warnedSharedSecretFallbackInProduction) {
-    warnedSharedSecretFallbackInProduction = true
+  if (!dedicated && !warnedSharedSecretFallbackInNonProduction) {
+    warnedSharedSecretFallbackInNonProduction = true
     console.warn(
       "[auth-core] WRISTLINK_SESSION_SECRET ist nicht gesetzt – Admin-Sessions fallen auf " +
         "WRISTLINK_PASSWORD zurück und teilen sich damit ein Secret mit weiteren Zwecken " +

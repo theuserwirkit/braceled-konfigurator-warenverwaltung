@@ -11,7 +11,7 @@ import {
   releaseQuoteBooking,
 } from "@/lib/actions/quote-booking-internal"
 import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
-import { getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads"
+import { getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads-internal"
 import { getLeadById } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
 import {
@@ -726,33 +726,47 @@ export async function cancelQuoteRequest(
 }
 
 /**
- * B-09: Idempotenz gegen doppelt zugestellte Stripe-Events. Das INSERT mit
- * `ON CONFLICT (event_id) DO NOTHING RETURNING` ist atomar (Postgres reserviert
- * die Zeile innerhalb eines einzelnen Statements) — anders als ein vorheriges
- * SELECT-then-INSERT können zwei parallele Zustellungen desselben Events NICHT
- * beide den "noch nicht verarbeitet"-Zweig durchlaufen. Bei Konflikt (bereits
- * verarbeitet) liefert die Funktion `alreadyProcessed: true` statt zu werfen,
- * damit die Webhook-Route weiterhin `{received:true}` zurückgeben kann und
- * Stripe nicht unnötig retried.
+ * B-09 / Fix 5: Stripe-Event-Idempotenz ohne vorzeitiges „Verbrauchen“ der event_id.
+ * 1) Bereits bekannte event_id → alreadyProcessed (idempotent, kein Retry nötig).
+ * 2) Paid-Finalisierung zuerst (`finalizeQuoteAsPaid` ist für bereits bezahlte Quotes idempotent).
+ * 3) event_id erst nach erfolgreicher Finalisierung INSERT — bei Fehler bleibt die event_id
+ *    frei, damit Stripe per HTTP 5xx retryen kann.
+ * Race: zwei parallele Zustellungen können beide finalisieren; das INSERT nutzt den PK
+ * (`ON CONFLICT DO NOTHING`). Gewinnt der andere Insert, zählt das trotzdem als Erfolg.
  */
-export async function processPaidQuote(quoteId: number, stripeEventId: string) {
+export async function processPaidQuote(
+  quoteId: number,
+  stripeEventId: string,
+): Promise<{ success?: boolean; error?: string; alreadyProcessed?: boolean }> {
   const sql = getDb()
 
-  const inserted = await sql`
-    INSERT INTO stripe_webhook_events (event_id) VALUES (${stripeEventId})
-    ON CONFLICT (event_id) DO NOTHING
-    RETURNING event_id
+  const existing = await sql`
+    SELECT event_id FROM stripe_webhook_events
+    WHERE event_id = ${stripeEventId}
+    LIMIT 1
   `
-  if (inserted.length === 0) return { alreadyProcessed: true }
+  if (existing.length > 0) return { alreadyProcessed: true }
 
-  const quote = await getQuoteByIdInternal(quoteId)
-  if (!quote) return { success: false, error: "Quote not found" }
-  if (quote.status === "paid") return { alreadyProcessed: true }
-
-  return finalizeQuoteAsPaid(quoteId, {
+  const result = await finalizeQuoteAsPaid(quoteId, {
     paymentMethod: "stripe",
     stripeEventId,
   })
+
+  if (!result.success) {
+    return result
+  }
+
+  try {
+    await sql`
+      INSERT INTO stripe_webhook_events (event_id) VALUES (${stripeEventId})
+      ON CONFLICT (event_id) DO NOTHING
+    `
+  } catch {
+    // Unique-Constraint-Race nach erfolgreicher Finalisierung: anderer Worker hat gewonnen → OK.
+  }
+
+  if (result.alreadyProcessed) return { alreadyProcessed: true }
+  return { success: true }
 }
 
 export async function finalizeQuoteAsPaid(
@@ -781,10 +795,9 @@ export async function finalizeQuoteAsPaid(
   // klaren Retry-Pfad. Jetzt: Wenn die Buchung fehlschlägt, bleibt der Status auf dem
   // bisherigen (zahlbaren) Wert stehen, die Notiz wird trotzdem geschrieben (bestehendes
   // Logging bleibt erhalten) — ein erneuter Aufruf von finalizeQuoteAsPaid (z. B. über den
+  // Stripe-Webhook-Retry, da Fix 5 die event_id erst nach Erfolg speichert, oder den
   // Admin-Retry-Pfad `markQuoteAsPaid` in lib/actions/quotes.ts) kann die Buchung dann
-  // erneut versuchen, da `payable` weiterhin erfüllt ist. Für Stripe-Zahlungen bleibt das
-  // zugehörige Event dank B-09 (ON CONFLICT DO NOTHING auf stripe_webhook_events) bereits
-  // als verarbeitet markiert; ein manueller Admin-Retry ist davon unabhängig möglich.
+  // erneut versuchen, da `payable` weiterhin erfüllt ist.
   const lead = await getLeadById(quote.lead_id)
 
   const paidQuoteForBooking = {

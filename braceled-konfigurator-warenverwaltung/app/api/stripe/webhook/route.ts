@@ -27,15 +27,17 @@ export async function POST(request: NextRequest) {
     if (quoteId) {
       try {
         const result = await processPaidQuote(Number(quoteId), event.id)
-        if (!("alreadyProcessed" in result) && result.success === false) {
-          // Fachlicher Fehler (z. B. Quote nicht gefunden/ungültiger Status): geloggt,
-          // aber weiterhin 200 an Stripe, da ein Retry das Ergebnis nicht ändern würde.
+        if (result.alreadyProcessed) {
+          return Response.json({ received: true })
+        }
+        if (result.success === false) {
+          // Finalize fehlgeschlagen: event_id wurde nicht persisted → Stripe soll retryen.
           console.error(`Stripe webhook: processPaidQuote failed for quote #${quoteId}:`, result.error)
+          return Response.json({ error: "Processing failed" }, { status: 500 })
         }
       } catch (err) {
-        // B-09: Fehler (inkl. PK-Konflikt bei bereits verarbeitetem Event) hier abfangen,
-        // damit Stripe kein unnötiges Retry auslöst; Ursache bleibt im Server-Log sichtbar.
         console.error(`Stripe webhook: processPaidQuote threw for quote #${quoteId}:`, err)
+        return Response.json({ error: "Processing failed" }, { status: 500 })
       }
     }
   }

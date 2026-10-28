@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { unauthorizedResponse, verifyApiKey } from "@/lib/api-auth"
+import { unauthorizedResponse, verifyApiKeyApprove } from "@/lib/api-auth"
 import { approveQuoteRequest, getQuoteByIdInternal } from "@/lib/quotes-internal"
 
 export const dynamic = "force-dynamic"
@@ -8,7 +8,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!verifyApiKey(request)) return unauthorizedResponse()
+  if (!verifyApiKeyApprove(request)) return unauthorizedResponse()
 
   const { id } = await params
   const quoteId = Number(id)

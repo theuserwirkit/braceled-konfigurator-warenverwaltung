@@ -11,6 +11,14 @@ function getApiKey(): string {
   return key
 }
 
+function getApiKeyApprove(): string {
+  const key = process.env.WRISTLINK_API_KEY_APPROVE
+  if (!key) {
+    throw new Error("WRISTLINK_API_KEY_APPROVE environment variable is not set")
+  }
+  return key
+}
+
 function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a)
   const bufB = Buffer.from(b)
@@ -24,11 +32,26 @@ export function extractBearerToken(request: NextRequest): string | null {
   return header.slice(7).trim() || null
 }
 
+/** Automation key: availability, bookings, quote create/GET. */
 export function verifyApiKey(request: NextRequest): boolean {
   try {
     const token = extractBearerToken(request)
     if (!token) return false
     return safeCompare(token, getApiKey())
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Approve/reject only. Requires WRISTLINK_API_KEY_APPROVE — fail-closed if unset.
+ * Does NOT accept WRISTLINK_API_KEY.
+ */
+export function verifyApiKeyApprove(request: NextRequest): boolean {
+  try {
+    const token = extractBearerToken(request)
+    if (!token) return false
+    return safeCompare(token, getApiKeyApprove())
   } catch {
     return false
   }

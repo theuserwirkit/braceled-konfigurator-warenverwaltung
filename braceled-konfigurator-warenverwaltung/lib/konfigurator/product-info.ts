@@ -364,9 +364,16 @@ export function textilbandDruckPreisNetto(menge: number): number {
   return menge <= 250 ? TEXTILBAND_DRUCK_INFO.preisBis250 : TEXTILBAND_DRUCK_INFO.preisAb251
 }
 
-/** Produkte, die den LED-Armband-Lagerpool (Leuchtgruppen) nutzen */
+/** Produkte mit Soft-Hold über Leuchtgruppen (je eigener Pool) */
 export function usesArmbandLager(produkt: string): boolean {
   return produkt === "armband" || produkt === "textilband"
+}
+
+/** Kurzlabel für Verfügbarkeits-Ampel (welcher Lagerpool) */
+export function availabilityPoolLabel(produkt: string): string {
+  if (produkt === "textilband") return "Textilband-Lager"
+  if (produkt === "armband") return "LED-Armband-Lager (Nylon)"
+  return PRODUKT_ANZEIGE[produkt] ?? produkt
 }
 
 export const LIEFERZEIT_OPTIONS = [

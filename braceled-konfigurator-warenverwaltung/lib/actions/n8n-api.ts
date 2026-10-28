@@ -248,14 +248,20 @@ export async function checkProductAvailability(
   const pool = await aggregateProductAvailability(produkt, ausgabe, rueckgabe, kanalanzahl)
 
   const modusLabel = modus === "kauf" ? "Kauf" : "Miete"
+  const poolName =
+    produkt === "textilband"
+      ? "Textilband-Lager"
+      : produkt === "armband"
+        ? "LED-Armband-Lager (Nylon)"
+        : produkt
   return finalizeAvailability(input, pool, {
     von,
     bis,
     pendingInquiries,
     hinweis:
       modus === "kauf"
-        ? `${modusLabel}: Verfügbarkeit für Lieferung zum Eventtermin`
-        : undefined,
+        ? `${modusLabel}: Verfügbarkeit im ${poolName} für Lieferung zum Eventtermin`
+        : `Geprüft gegen ${poolName} (nicht mit anderen Produkten verrechnet)`,
   })
 }
 

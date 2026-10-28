@@ -101,9 +101,14 @@ export const resolveGroupsForProduct = cache(async (
 
   return groups
     .filter((group) => {
-      if (produkt === "armband" && isLeuchtgruppeName(group.name)) return true
-      if (produkt === "textilband" && isTextilbandLeuchtgruppe(group.name)) return true
+      // Nylon/LED-Armband und Textilband: strikte, getrennte Pools – kein Pattern-Fallback
+      if (produkt === "armband") {
+        return isLeuchtgruppeName(group.name)
+      }
+      if (produkt === "textilband") {
+        return isTextilbandLeuchtgruppe(group.name)
+      }
       return groupMatchesPatterns(group.name, patterns)
     })
-    .filter((group) => effectiveKanal == null || group.kanalanzahl === effectiveKanal)
+    .filter((group) => effectiveKanal == null || Number(group.kanalanzahl) === effectiveKanal)
 })

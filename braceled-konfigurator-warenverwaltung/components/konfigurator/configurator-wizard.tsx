@@ -1185,12 +1185,16 @@ export function ConfiguratorWizard({
                 )}
 
                 <div className="space-y-3 rounded-lg border p-4">
-                  <Label>Verfügbarkeit LED-Bänder</Label>
+                  <Label>
+                    Verfügbarkeit{" "}
+                    {config.produkt === "textilband" ? "Textilband" : "LED-Bänder"}
+                  </Label>
                   <div className="min-h-[300px]">
                     <AvailabilityIndicator
                       availability={availability}
                       loading={loadingAvailability}
                       hideDetails={editMode}
+                      produkt={config.produkt}
                     />
                     {!loadingAvailability && !availability && config.von && (
                       <p className="text-sm text-muted-foreground py-2">

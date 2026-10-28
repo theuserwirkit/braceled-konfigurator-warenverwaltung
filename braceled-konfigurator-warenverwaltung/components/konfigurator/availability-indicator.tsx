@@ -3,15 +3,19 @@
 import { Loader2 } from "lucide-react"
 import type { AvailabilityResponse } from "@/lib/actions/n8n-api"
 import { formatAvailabilityStandDatum } from "@/lib/konfigurator/availability-stress"
+import { availabilityPoolLabel } from "@/lib/konfigurator/product-info"
 
 export function AvailabilityIndicator({
   availability,
   loading,
   hideDetails = false,
+  produkt,
 }: {
   availability: AvailabilityResponse | null
   loading?: boolean
   hideDetails?: boolean
+  /** Welches Produkt / welcher Lagerpool geprüft wird */
+  produkt?: string
 }) {
   if (loading) {
     return (
@@ -25,11 +29,19 @@ export function AvailabilityIndicator({
   if (!availability) return null
 
   const markerLeft = `clamp(0px, ${availability.stressScore}%, calc(100% - 12px))`
+  const poolLabel = produkt ? availabilityPoolLabel(produkt) : null
+  const frei = Number(availability.frei ?? 0)
+  const bestand = Number(availability.bestand ?? 0)
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm font-semibold">Aktuelle Verfügbarkeit</p>
+        <div>
+          <p className="text-sm font-semibold">Aktuelle Verfügbarkeit</p>
+          {poolLabel && (
+            <p className="text-xs text-muted-foreground mt-0.5">{poolLabel}</p>
+          )}
+        </div>
         {!hideDetails && (
           <p className="text-sm text-muted-foreground">{availability.stressLabel}</p>
         )}
@@ -64,6 +76,18 @@ export function AvailabilityIndicator({
           </span>
         )}
       </p>
+
+      {!hideDetails && Number.isFinite(frei) && (
+        <p className="text-sm tabular-nums">
+          <span className="font-medium">{frei.toLocaleString("de-DE")}</span>
+          <span className="text-muted-foreground">
+            {" "}
+            Stück frei
+            {bestand > 0 ? ` · ${bestand.toLocaleString("de-DE")} Bestand` : ""}
+            {poolLabel ? ` in diesem Pool` : ""}
+          </span>
+        </p>
+      )}
 
       {!hideDetails && availability.hinweis && (
         <p className="text-xs text-muted-foreground leading-relaxed">{availability.hinweis}</p>

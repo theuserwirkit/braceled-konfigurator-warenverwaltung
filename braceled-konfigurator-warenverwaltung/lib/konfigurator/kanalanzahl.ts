@@ -1,6 +1,7 @@
 export const KANALANZAHL_OPTIONS = [40, 80] as const
 export type Kanalanzahl = (typeof KANALANZAHL_OPTIONS)[number]
 
+/** Max. physikalische Lagergruppen (PGs) pro Anfragegruppe (AG) */
 export const MAX_PHYSICAL_GROUPS = 3
 
 export function isKanalanzahl(value: unknown): value is Kanalanzahl {

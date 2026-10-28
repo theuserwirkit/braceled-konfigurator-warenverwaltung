@@ -68,41 +68,6 @@ export async function getInventoryGroupPools(
   return pools.sort((a, b) => b.frei - a.frei)
 }
 
-function allocateFromPools(
-  gruppenGroessen: number[],
-  inventory: InventoryGroupPool[],
-): { slots: GroupSlotAssignment[]; fehlendeSlots: number[] } {
-  const remaining = inventory.map((g) => ({ ...g }))
-  const slots: GroupSlotAssignment[] = []
-  const fehlendeSlots: number[] = []
-
-  gruppenGroessen.forEach((benoetigt, index) => {
-    if (benoetigt <= 0) {
-      slots.push({ slot: index + 1, benoetigt: 0, zuteilungen: [] })
-      return
-    }
-
-    let left = benoetigt
-    const zuteilungen: GroupSlotAssignment["zuteilungen"] = []
-    const sorted = [...remaining].sort((a, b) => b.frei - a.frei)
-
-    for (const pool of sorted) {
-      if (left <= 0) break
-      if (pool.frei <= 0) continue
-      const take = Math.min(left, pool.frei)
-      pool.frei -= take
-      left -= take
-      const inv = inventory.find((g) => g.groupId === pool.groupId)!
-      zuteilungen.push({ groupId: pool.groupId, name: inv.name, anzahl: take })
-    }
-
-    slots.push({ slot: index + 1, benoetigt, zuteilungen })
-    if (left > 0) fehlendeSlots.push(index + 1)
-  })
-
-  return { slots, fehlendeSlots }
-}
-
 function countDistinctGroups(slots: GroupSlotAssignment[]): number {
   const ids = new Set<number>()
   for (const slot of slots) {
@@ -111,40 +76,15 @@ function countDistinctGroups(slots: GroupSlotAssignment[]): number {
   return ids.size
 }
 
-function combinations<T>(items: T[], size: number): T[][] {
-  if (size <= 0) return [[]]
-  if (items.length < size) return []
-  if (size === 1) return items.map((item) => [item])
-  const [first, ...rest] = items
-  return [
-    ...combinations(rest, size - 1).map((combo) => [first, ...combo]),
-    ...combinations(rest, size),
-  ]
-}
-
-function buildGroupCombos(
-  inventory: InventoryGroupPool[],
-  maxPhysical: number,
-): InventoryGroupPool[][] {
-  const combos: InventoryGroupPool[][] = []
-  const limit = Math.min(maxPhysical, inventory.length)
-  for (let size = 1; size <= limit; size++) {
-    combos.push(...combinations(inventory, size))
-  }
-  return combos.sort(
-    (a, b) =>
-      b.reduce((sum, g) => sum + g.frei, 0) - a.reduce((sum, g) => sum + g.frei, 0),
-  )
-}
-
 /**
- * Ordnet pro Kunden-Gruppe (Slot) Bänder aus passenden Lagergruppen zu.
- * Max. {@link MAX_PHYSICAL_GROUPS} verschiedene physische G-Gruppen insgesamt.
+ * Ordnet pro Anfragegruppe (AG) Bänder aus physischen Lagergruppen (PG) zu.
+ * Exklusiv: jede PG gehört höchstens einer AG.
+ * Max. {@link MAX_PHYSICAL_GROUPS} physische Lagergruppen pro Anfragegruppe.
  */
 export function allocateGroupProgramming(
   gruppenGroessen: number[],
   inventory: InventoryGroupPool[],
-  maxPhysicalGroups: number = MAX_PHYSICAL_GROUPS,
+  maxPgsPerAg: number = MAX_PHYSICAL_GROUPS,
 ): GroupProgrammingAvailability {
   const empty: GroupProgrammingAvailability = {
     verfuegbar: false,
@@ -152,49 +92,76 @@ export function allocateGroupProgramming(
     fehlendeSlots: gruppenGroessen.map((_, i) => i + 1),
     inventory,
     physischeGruppen: 0,
-    maxPhysischeGruppen: maxPhysicalGroups,
+    maxPhysischeGruppen: maxPgsPerAg,
   }
 
   if (inventory.length === 0) {
     return { ...empty, hinweis: "Keine passenden Leuchtgruppen im Bestand." }
   }
 
-  const combos = buildGroupCombos(inventory, maxPhysicalGroups)
-  let bestPartial: GroupProgrammingAvailability | null = null
+  const remaining = inventory.map((g) => ({ ...g }))
+  const slots: GroupSlotAssignment[] = gruppenGroessen.map((benoetigt, index) => ({
+    slot: index + 1,
+    benoetigt,
+    zuteilungen: [],
+  }))
+  const fehlendeSlots: number[] = []
 
-  for (const combo of combos) {
-    const { slots, fehlendeSlots } = allocateFromPools(gruppenGroessen, combo)
-    const physischeGruppen = countDistinctGroups(slots)
+  const order = gruppenGroessen
+    .map((benoetigt, index) => ({ benoetigt, index }))
+    .sort((a, b) => b.benoetigt - a.benoetigt || a.index - b.index)
 
-    if (fehlendeSlots.length === 0) {
-      return {
-        verfuegbar: true,
-        slots,
-        fehlendeSlots: [],
-        inventory,
-        physischeGruppen,
-        maxPhysischeGruppen: maxPhysicalGroups,
+  for (const { index, benoetigt } of order) {
+    if (benoetigt <= 0) continue
+
+    let left = benoetigt
+    const zuteilungen: GroupSlotAssignment["zuteilungen"] = []
+    let pgsUsed = 0
+
+    while (left > 0 && pgsUsed < maxPgsPerAg && remaining.length > 0) {
+      remaining.sort((a, b) => b.frei - a.frei)
+      const pool = remaining[0]
+      if (pool.frei <= 0) {
+        remaining.shift()
+        continue
       }
+      const take = Math.min(left, pool.frei)
+      left -= take
+      zuteilungen.push({ groupId: pool.groupId, name: pool.name, anzahl: take })
+      remaining.shift()
+      pgsUsed++
     }
 
-    if (!bestPartial || fehlendeSlots.length < bestPartial.fehlendeSlots.length) {
-      bestPartial = {
-        verfuegbar: false,
-        slots,
-        fehlendeSlots,
-        inventory,
-        physischeGruppen,
-        maxPhysischeGruppen: maxPhysicalGroups,
-      }
+    slots[index] = { slot: index + 1, benoetigt, zuteilungen }
+    if (left > 0) fehlendeSlots.push(index + 1)
+  }
+
+  fehlendeSlots.sort((a, b) => a - b)
+  const physischeGruppen = countDistinctGroups(slots)
+  const verfuegbar = fehlendeSlots.length === 0
+
+  if (verfuegbar) {
+    return {
+      verfuegbar: true,
+      slots,
+      fehlendeSlots: [],
+      inventory,
+      physischeGruppen,
+      maxPhysischeGruppen: maxPgsPerAg,
     }
   }
 
   return {
-    ...(bestPartial ?? empty),
+    verfuegbar: false,
+    slots,
+    fehlendeSlots,
+    inventory,
+    physischeGruppen,
+    maxPhysischeGruppen: maxPgsPerAg,
     hinweis:
-      bestPartial && bestPartial.fehlendeSlots.length > 0
-        ? `Für Gruppe(n) ${bestPartial.fehlendeSlots.join(", ")} reicht der Bestand nicht aus (max. ${maxPhysicalGroups} physische Lagergruppen).`
-        : `Mit höchstens ${maxPhysicalGroups} physischen Lagergruppen ist keine vollständige Zuordnung möglich.`,
+      fehlendeSlots.length > 0
+        ? `Für Gruppe(n) ${fehlendeSlots.join(", ")} reicht der Bestand nicht aus (max. ${maxPgsPerAg} physische Lagergruppen pro Anfragegruppe, exklusiv).`
+        : `Mit höchstens ${maxPgsPerAg} physischen Lagergruppen pro Anfragegruppe (exklusiv) ist keine vollständige Zuordnung möglich.`,
   }
 }
 

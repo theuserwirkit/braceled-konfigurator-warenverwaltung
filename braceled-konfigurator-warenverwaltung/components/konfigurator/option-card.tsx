@@ -89,9 +89,9 @@ export function OptionCard({
                   onInfoClick()
                 }
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/80 text-foreground/80 transition-colors hover:bg-muted hover:text-foreground hover:border-foreground/30"
             >
-              <Info className="h-4 w-4" />
+              <Info className="h-5 w-5" />
             </span>
           )}
           {badge && (

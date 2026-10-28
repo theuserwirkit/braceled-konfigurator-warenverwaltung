@@ -119,7 +119,7 @@ export function allocateGroupProgramming(
     let pgsUsed = 0
 
     while (left > 0 && pgsUsed < maxPgsPerAg && remaining.length > 0) {
-      remaining.sort((a, b) => b.frei - a.frei)
+      remaining.sort((a, b) => b.frei - a.frei || a.groupId - b.groupId)
       const pool = remaining[0]
       if (pool.frei <= 0) {
         remaining.shift()
@@ -158,10 +158,7 @@ export function allocateGroupProgramming(
     inventory,
     physischeGruppen,
     maxPhysischeGruppen: maxPgsPerAg,
-    hinweis:
-      fehlendeSlots.length > 0
-        ? `Für Gruppe(n) ${fehlendeSlots.join(", ")} reicht der Bestand nicht aus (max. ${maxPgsPerAg} physische Lagergruppen pro Anfragegruppe, exklusiv).`
-        : `Mit höchstens ${maxPgsPerAg} physischen Lagergruppen pro Anfragegruppe (exklusiv) ist keine vollständige Zuordnung möglich.`,
+    hinweis: `Für Gruppe(n) ${fehlendeSlots.join(", ")} reicht der Bestand nicht aus (max. ${maxPgsPerAg} physische Lagergruppen pro Anfragegruppe, exklusiv).`,
   }
 }
 

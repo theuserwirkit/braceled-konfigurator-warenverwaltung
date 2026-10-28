@@ -143,7 +143,7 @@ Staffelpreise **100–4.000** (Schritt 50) für Kauf und Miete pro Stück (nur `
 |----------|--------|
 | Premium-Variante | +10 % auf Produkt-Stückpreis (nur Armband) |
 | Bedruckung (Kauf) | Setup 120 EUR + Stückpreis nach Staffel |
-| Probedruck + Fotos | 149 EUR netto (optional, nur Kauf + Bedruckung, Schritt Umfang; `probedruckOption: "fotos"`) |
+| Probedruck + Fotos | 99 EUR netto (optional, nur Kauf + Bedruckung, Schritt Umfang; `probedruckOption: "fotos"`) |
 | Probedruck + Versand | 189 EUR netto (optional, nur Kauf + Bedruckung; `probedruckOption: "versand"`) |
 | Gruppenprogrammierung | 65 EUR netto **pro programmierter Gruppe** (nur PRO-Station) |
 | Basis-Station ECO | Kauf 399 / Miete 250 EUR netto |
@@ -199,8 +199,8 @@ flowchart TD
     G --> H[Stress-Balken ohne Zahlen]
   end
   subgraph grp [Gruppenprogrammierung PRO]
-    I[gruppenGroessen pro Slot] --> J[Flexible Zuordnung G-Pools]
-    J --> K[Max 3 physische Lagergruppen]
+    I[gruppenGroessen pro Slot] --> J[AG↔PG Zuordnung G-Pools]
+    J --> K[Max 3 PG pro AG]
   end
 ```
 
@@ -307,20 +307,16 @@ Controller-Verfügbarkeit erscheint in Schritt 2 (wenn Station schon gewählt) u
 
 **Preis:** 65 EUR netto × **Anzahl Gruppen** (nicht × Bänder pro Gruppe).
 
-#### Flexible Lager-Zuordnung
+#### Lager-Zuordnung (AG ↔ PG)
 
-Die **Kunden-Gruppe** (Slot 1…N) ist nicht 1:1 an eine feste Lager-G-ID gebunden.
+**AG** = Anfragegruppe (Kunden-Slot). **PG** = physikalische Lagergruppe (`group_id` / z. B. `G1_40ch`).
 
-Beispiel: Kunde will 4×100 Bänder. In G1 sind nur 40 frei, in G7 noch 400 – Slot 1 kann als 40 aus G1 + 60 aus G7 zugewiesen werden.
+- Eine PG gehört höchstens **einer** AG (exclusive) — eine PG ist nur einmal ansteuerbar.
+- Pro AG höchstens **3 PGs** (`MAX_PHYSICAL_GROUPS`) für den Mengensplit.
+- Slot-Nummer muss nicht der G-Nummer entsprechen (AG1 darf z. B. aus G7+G12 kommen).
+- `physischeGruppen` (Kunden-Hinweis „über X …“) = Anzahl **aller** genutzten PGs über alle AGs.
 
-**Logik:** `lib/konfigurator/group-allocation.ts`
-
-1. `getInventoryGroupPools()` – freie Bänder je Leuchtgruppe (gefiltert nach `kanalanzahl`)
-2. `allocateGroupProgramming()` – testet Kombinationen aus höchstens **3 physischen Lagergruppen** (`MAX_PHYSICAL_GROUPS = 3`)
-3. Pro Slot: Greedy-Zuteilung aus den gewählten Pools (größte Freiheit zuerst)
-4. Ergebnis: `slots[]` mit `zuteilungen[]` (intern, nicht im Kunden-UI)
-
-**Max-3-Regel:** Über alle Kunden-Slots hinweg dürfen höchstens 3 **verschiedene** `group_id`s gleichzeitig genutzt werden – unabhängig davon, wie die G-IDs heißen (G1, G7, G12_80ch, …).
+**Logik:** `lib/konfigurator/group-allocation.ts` → `allocateGroupProgramming()` (Greedy: AGs nach Größe absteigend, größte freie PGs zuerst).
 
 **API:** `POST /api/konfigurator/session` mit `action: "group-availability"`.
 
@@ -362,7 +358,7 @@ Die aufgelöste Kanalanzahl wird in `config.kanalanzahl` gespeichert (Submit, Ad
 3. Schieberegler Anzahl Gruppen: 1–max
 4. Schieberegler Bänder pro Gruppe: 50er-Schritte, Summe ≤ `menge`, je Gruppe min. 50
 5. Preis: 65 EUR netto × Anzahl Gruppen
-6. Intern: max. 3 physische Lagergruppen für die Zuordnung
+6. Intern: max. 3 PGs **pro AG**, PG↔AG exclusive
 
 **Config-Felder:** `gruppen` (Anzahl), `gruppenGroessen[]` (Bänder pro Slot). Hilfslogik: `lib/konfigurator/gruppen-config.ts`.
 
@@ -655,7 +651,7 @@ Jede Session-Aktion bei Armband löst zuerst `resolveKanalanzahlForConfig()` auf
 | `lib/konfigurator/resolve-kanalanzahl.ts` | Kanalanzahl-Auflösung |
 | `lib/konfigurator/kanalanzahl.ts` | Konstanten 40/80 CH, `MAX_PHYSICAL_GROUPS` |
 | `lib/konfigurator/leuchtgruppen.ts` | G-Slot-Benennung, 80-CH-Pflicht ab 11 Gruppen |
-| `lib/konfigurator/group-allocation.ts` | Flexible Gruppen-Zuordnung, max. 3 physische Gruppen |
+| `lib/konfigurator/group-allocation.ts` | AG↔PG-Zuordnung, max. 3 PGs pro AG |
 | `lib/konfigurator/gruppen-config.ts` | `gruppenGroessen[]`, Clamp auf Menge |
 | `lib/konfigurator/station-availability.ts` | Controller-Verfügbarkeit per `station_typ` + CH |
 | `lib/konfigurator/station-types.ts` | ECO / PRO / keine Labels |
@@ -739,7 +735,7 @@ HTTP-Smoke (nach `pnpm dev`): `/`, `/login`, `/konfigurator`, `/impressum`, `/da
 | Controller per `station_typ` + `kanalanzahl`, nicht Namensraten | ✓ |
 | Basis ohne ZUGANG = 1 Gerät | ✓ |
 | Gruppen-Schieber pro Slot + flexible G-Zuordnung | ✓ |
-| Max. 3 physische Lagergruppen gesamt | ✓ (`MAX_PHYSICAL_GROUPS`) |
+| Max. 3 physische Lagergruppen pro AG | ✓ (`MAX_PHYSICAL_GROUPS`) |
 | Kanalanzahl serverseitig, ≥11 Gruppen → 80 CH Pflicht | ✓ |
 | Admin: Stationstyp + Kanalanzahl Pflicht bei neuer Basis/Gruppe | ✓ |
 | Lieferpakete mit Vorlauf-Filter statt getrennter Lieferzeit/Lieferart | ✓ |

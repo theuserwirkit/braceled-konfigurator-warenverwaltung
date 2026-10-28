@@ -1297,7 +1297,7 @@ export function ConfiguratorWizard({
                       />
                       <p className="text-xs text-muted-foreground">
                         Je Gruppe {GRUPPEN_INFO.preisProGruppeNetto} EUR netto · max.{" "}
-                        {MAX_PHYSICAL_GROUPS} physische Lagergruppen gesamt
+                        {MAX_PHYSICAL_GROUPS} physische Lagergruppen pro Gruppe
                         {maxGruppen < 20
                           ? ` · bei ${config.menge} Bändern max. ${maxGruppen} Gruppen (je min. ${GRUPPEN_SLIDER_STEP} Stück)`
                           : ""}

@@ -434,7 +434,7 @@ export const VORPROGRAMMIERT_INFO = {
   preisNetto: 700,
 } as const
 
-export const TECHNIKER_CARD_IMAGE = "/images/techniker-kontur.png"
+export const TECHNIKER_CARD_IMAGE = "/images/techniker-vor-ort.png"
 
 export const REPEATER_BASIS_INFO = {
   title: "Mehr Reichweite oder verschiedene Räume?",

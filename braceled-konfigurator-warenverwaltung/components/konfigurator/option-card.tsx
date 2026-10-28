@@ -52,13 +52,15 @@ export function OptionCard({
       )}
     >
       {imageSrc && (
-        <div className="mb-3 flex h-28 items-center justify-center rounded-md bg-transparent p-2">
+        <div className="mb-3 flex h-28 items-center justify-center overflow-hidden rounded-md bg-muted/40 p-2">
           <Image
             src={imageSrc}
             alt={imageAlt ?? title}
             width={160}
             height={112}
-            className="max-h-24 w-auto object-contain"
+            unoptimized
+            className="max-h-24 w-auto object-contain bg-transparent"
+            style={{ backgroundColor: "transparent" }}
           />
         </div>
       )}

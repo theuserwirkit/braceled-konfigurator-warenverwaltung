@@ -1456,7 +1456,7 @@ export function ConfiguratorWizard({
                         description={VORPROGRAMMIERT_INFO.description}
                         imageSrc={VORPROGRAMMIERT_INFO.imageSrc}
                         imageAlt={VORPROGRAMMIERT_INFO.title}
-                        priceHint={`${formatEur(VORPROGRAMMIERT_INFO.preisNetto)} netto`}
+                        priceHint={`${formatEur(VORPROGRAMMIERT_INFO.preisNetto)} inkl. 1 Korrekturschleife; Video vorab`}
                       />
                     </div>
 

@@ -15,6 +15,7 @@
     "test:lieferpaket": "tsx scripts/test-lieferpaket.ts",
     "test:fulfillment-timing": "tsx scripts/test-fulfillment-timing.ts",
     "test:gruppen-config": "tsx scripts/test-gruppen-config.ts",
+    "test:group-allocation": "tsx --tsconfig tsconfig.scripts-test.json scripts/test-group-allocation.ts",
     "test:quote-versions": "tsx scripts/test-quote-versions.ts",
     "test:allocation-kanalanzahl": "tsx scripts/test-allocation-kanalanzahl.ts",
     "test:miete-lock": "tsx scripts/test-miete-lock-availability.ts",

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["scripts/test-group-allocation.ts", "lib/**/*.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "server-only": ["./scripts/stubs/server-only.ts"]
+    }
+  }
+}

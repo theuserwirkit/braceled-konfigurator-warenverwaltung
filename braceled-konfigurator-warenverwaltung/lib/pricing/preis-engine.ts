@@ -144,7 +144,7 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
     fehler.push("Druck des LED-Elements ist nur beim Kauf möglich")
   }
   if (druckTextilband && produkt !== "textilband") {
-    fehler.push("Textilband-Bedruckung nur für Textilband mit Einlass-Verschluss")
+    fehler.push("Textilband-Bedruckung nur für LED Textilarmband")
   }
   if (variante === "premium" && produkt !== "armband") {
     fehler.push("Premium-Variante nur für LED-Armbänder")

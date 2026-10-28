@@ -31,7 +31,7 @@ assert(isTextilbandLeuchtgruppe("T3_40ch"), "parse T3")
 assert(!isTextilbandLeuchtgruppe("G1_40ch"), "G1 is not textil")
 assert(parseTextilbandGruppeName("T7_40ch")?.slot === 7, "slot 7")
 assert(
-  formatGroupDisplayLabel("T1_40ch") === "Textilband 40 CH Gruppe 1",
+  formatGroupDisplayLabel("T1_40ch") === "LED Textilarmband 40 CH Gruppe 1",
   "display label T1",
 )
 assert(
@@ -57,7 +57,9 @@ const base = {
 const p500 = rechnePreis(base)
 assert(p500.gueltig, "kauf 500 gueltig")
 if (p500.gueltig) {
-  const prod = p500.positionen.find((x) => x.pos.includes("Textilband"))
+  const prod = p500.positionen.find((x) =>
+    x.pos.includes("Textilarmband") || x.pos.includes("Textilband"),
+  )
   assert(prod?.einzel === 4.3, `kauf 500 stk 4.30 got ${prod?.einzel}`)
 }
 

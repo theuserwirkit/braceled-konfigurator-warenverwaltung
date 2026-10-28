@@ -125,7 +125,7 @@ Alle Preise **netto (B2B)**. Zahlung in Deutschland: zzgl. 19 % MwSt.
 | Produkt | `value` | UI | Hinweis |
 |---------|---------|-----|---------|
 | LED Armband | `armband` | ✓ wählbar | Strichzeichnung; Lagerpool `G*_40/80ch` |
-| Textilband mit Einlass-Verschluss | `textilband` | ✓ wählbar | Eigene SKUs `T1_40ch`–`T10_40ch` (Anzeige: „Textilband 40 CH Gruppe N“); gleiche Controller 40 CH; max. 10 Gruppen |
+| LED Textilarmband | `textilband` | ✓ wählbar | LED-Armband mit Textilband und Einmalverschluss; eigene SKUs `T1_40ch`–`T10_40ch`; Controller 40 CH; max. 10 Gruppen |
 | LED Ball | `ball` | ausgegraut | „Aktuell hier nicht konfigurierbar“ |
 | LED Platine | `platine` | ausgegraut | LED Platine zum Einbau in eigene Event-Elemente (nicht Untersetzer) |
 | LED Lanyard | `lanyard` | ausgegraut | „Aktuell hier nicht konfigurierbar“ |

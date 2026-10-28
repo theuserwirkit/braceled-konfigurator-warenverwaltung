@@ -23,7 +23,7 @@ import {
   STATION_OPTIONS,
   PRODUCT_OPTIONS,
   SZENARIO_OPTIONS,
-  DRUCK_ART_OPTIONS,
+  getDruckArtOptions,
   LIEFERLAND_INFO,
   LIEFERLAND_OPTIONS,
   TECHNIKER_CARD_IMAGE,
@@ -31,7 +31,7 @@ import {
   DRUCK_INFO,
   TEXTILBAND_DRUCK_INFO,
   TEXTILBAND_MAX_GRUPPEN,
-  PROBEDRUCK_OPTIONS,
+  getProbedruckOptions,
   TECHNIKER_INFO,
   TECHNIKER_STEUERPULT_OPTIONS,
   VORPROGRAMMIERT_INFO,
@@ -1078,7 +1078,7 @@ export function ConfiguratorWizard({
                           <div className="space-y-3">
                             <Label>Druckart</Label>
                             <div className="grid gap-3 sm:grid-cols-2">
-                              {DRUCK_ART_OPTIONS.map((option) => (
+                              {getDruckArtOptions(config.produkt).map((option) => (
                                 <OptionCard
                                   key={option.value}
                                   selected={config.druck && druckArt === option.value}
@@ -1136,7 +1136,7 @@ export function ConfiguratorWizard({
                             <div className="space-y-3">
                               <Label>Probedruck (optional)</Label>
                               <div className="grid gap-3 sm:grid-cols-3">
-                                {PROBEDRUCK_OPTIONS.map((option) => (
+                                {getProbedruckOptions(config.produkt).map((option) => (
                                   <OptionCard
                                     key={option.value}
                                     selected={probedruckOption === option.value}
@@ -1147,6 +1147,8 @@ export function ConfiguratorWizard({
                                     }
                                     title={option.label}
                                     description={option.description}
+                                    imageSrc={option.imageSrc}
+                                    imageAlt={option.label}
                                     priceHint={
                                       option.preisNetto > 0
                                         ? `+${formatEur(option.preisNetto)} netto`
@@ -1187,7 +1189,7 @@ export function ConfiguratorWizard({
                 <div className="space-y-3 rounded-lg border p-4">
                   <Label>
                     Verfügbarkeit{" "}
-                    {config.produkt === "textilband" ? "Textilband" : "LED-Bänder"}
+                    {config.produkt === "textilband" ? "LED-Textilarmband" : "LED-Bänder"}
                   </Label>
                   <div className="min-h-[300px]">
                     <AvailabilityIndicator

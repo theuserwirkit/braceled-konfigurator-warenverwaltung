@@ -80,7 +80,7 @@ export function formatLeuchtgruppeSlotLabel(slot: number): string {
 export function formatGroupDisplayLabel(name: string): string {
   const textil = parseTextilbandGruppeName(name)
   if (textil) {
-    return `Textilband 40 CH Gruppe ${textil.slot}`
+    return `LED Textilarmband 40 CH Gruppe ${textil.slot}`
   }
   const armband = parseLeuchtgruppeName(name)
   if (armband) {

@@ -275,7 +275,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
               LED-Armband: <span className="font-mono">G1_40ch</span>–G20. Textilband (eigene SKUs):{" "}
-              <span className="font-mono">T1_40ch</span>–T10. Anzeige z. B. „Textilband 40 CH Gruppe 1“.
+              <span className="font-mono">T1_40ch</span>–T10. Anzeige z. B. „LED Textilarmband 40 CH Gruppe 1“.
             </p>
             <div className="flex flex-col gap-2">
               <Label htmlFor="groupProdukt">Produkt</Label>
@@ -292,7 +292,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="armband">LED Armband</SelectItem>
-                  <SelectItem value="textilband">Textilband mit Einlass-Verschluss</SelectItem>
+                  <SelectItem value="textilband">LED Textilarmband</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -313,7 +313,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
                       const taken = existingGroupNames.has(formatTextilbandGruppeName(slot))
                       return (
                         <SelectItem key={slot} value={String(slot)} disabled={taken}>
-                          Textilband 40 CH Gruppe {slot}
+                          LED Textilarmband 40 CH Gruppe {slot}
                           {taken ? " (belegt)" : ""}
                         </SelectItem>
                       )

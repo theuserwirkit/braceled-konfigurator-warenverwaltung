@@ -250,7 +250,7 @@ export async function checkProductAvailability(
   const modusLabel = modus === "kauf" ? "Kauf" : "Miete"
   const poolName =
     produkt === "textilband"
-      ? "Textilband-Lager"
+      ? "LED-Textilarmband-Lager"
       : produkt === "armband"
         ? "LED-Armband-Lager (Nylon)"
         : produkt

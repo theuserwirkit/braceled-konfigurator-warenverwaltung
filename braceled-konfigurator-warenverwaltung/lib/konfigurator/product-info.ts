@@ -291,11 +291,10 @@ export const PRODUCT_OPTIONS: ReadonlyArray<{
   },
   {
     value: "textilband",
-    label: "Textilband mit Einlass-Verschluss",
-    description:
-      "Einlass-Textilband mit LED-Element – gleiche 40-CH-Steuerung, optional Textilband-Druck",
+    label: "LED Textilarmband",
+    description: "LED-Armband mit Textilband und Einmalverschluss",
     available: true,
-    imageSrc: "/images/konfigurator/products/textilband.png",
+    imageSrc: "/images/konfigurator/products/textilband.jpg",
   },
   {
     value: "ball",
@@ -339,7 +338,7 @@ export function modusAnzeige(modus: string): string {
 
 export const PRODUKT_ANZEIGE: Record<string, string> = {
   armband: "LED Armband",
-  textilband: "Textilband mit Einlass-Verschluss",
+  textilband: "LED Textilarmband",
   ball: "LED Ball",
   platine: "LED Platine",
   lanyard: "LED Lanyard",
@@ -360,6 +359,13 @@ export const TEXTILBAND_DRUCK_INFO = {
   preisAb251: 0.66,
 } as const
 
+/** Bilder für Druck-Optionen beim LED-Textilarmband */
+export const TEXTILBAND_DRUCK_IMAGES = {
+  logo: "/images/konfigurator/products/textilband-druck.jpg",
+  vollflaechig: "/images/konfigurator/products/textilband-vollflaechig.jpg",
+  probedruck: "/images/konfigurator/products/textilband-probedruck.jpg",
+} as const
+
 export function textilbandDruckPreisNetto(menge: number): number {
   return menge <= 250 ? TEXTILBAND_DRUCK_INFO.preisBis250 : TEXTILBAND_DRUCK_INFO.preisAb251
 }
@@ -371,7 +377,7 @@ export function usesArmbandLager(produkt: string): boolean {
 
 /** Kurzlabel für Verfügbarkeits-Ampel (welcher Lagerpool) */
 export function availabilityPoolLabel(produkt: string): string {
-  if (produkt === "textilband") return "Textilband-Lager"
+  if (produkt === "textilband") return "LED-Textilarmband-Lager"
   if (produkt === "armband") return "LED-Armband-Lager (Nylon)"
   return PRODUKT_ANZEIGE[produkt] ?? produkt
 }
@@ -475,6 +481,28 @@ export const DRUCK_ART_OPTIONS: ReadonlyArray<{
   },
 ]
 
+/** Druckarten inkl. produktabhängiger Vorschaubilder (LED-Textilarmband) */
+export function getDruckArtOptions(produkt: string): typeof DRUCK_ART_OPTIONS {
+  if (produkt !== "textilband") return DRUCK_ART_OPTIONS
+  return DRUCK_ART_OPTIONS.map((opt) => {
+    if (opt.value === "logo") {
+      return {
+        ...opt,
+        label: "Druck LED-Element",
+        description:
+          "UV-Direktdruck auf dem LED-Gehäuse (CMYK + Weiß). PNG (transparent) oder Vektor (AI, EPS, SVG).",
+        imageSrc: TEXTILBAND_DRUCK_IMAGES.logo,
+      }
+    }
+    return {
+      ...opt,
+      description:
+        "Vollflächiger Druck auf LED-Gehäuse und Textilband – starkes Branding ohne Logo-Upload im Konfigurator.",
+      imageSrc: TEXTILBAND_DRUCK_IMAGES.vollflaechig,
+    }
+  })
+}
+
 export function normalizeDruckArt(config: {
   druck?: boolean
   druckArt?: string
@@ -489,6 +517,7 @@ export const PROBEDRUCK_OPTIONS: ReadonlyArray<{
   label: string
   description: string
   preisNetto: number
+  imageSrc?: string
 }> = [
   {
     value: "none",
@@ -509,6 +538,15 @@ export const PROBEDRUCK_OPTIONS: ReadonlyArray<{
     preisNetto: PROBEDRUCK_VERSAND_NETTO,
   },
 ]
+
+export function getProbedruckOptions(produkt: string): typeof PROBEDRUCK_OPTIONS {
+  if (produkt !== "textilband") return PROBEDRUCK_OPTIONS
+  return PROBEDRUCK_OPTIONS.map((opt) =>
+    opt.value === "none"
+      ? opt
+      : { ...opt, imageSrc: TEXTILBAND_DRUCK_IMAGES.probedruck },
+  )
+}
 
 export function normalizeProbedruckOption(config: {
   probedruckOption?: string

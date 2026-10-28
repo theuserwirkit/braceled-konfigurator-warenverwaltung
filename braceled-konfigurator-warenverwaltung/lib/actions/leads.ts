@@ -1,5 +1,6 @@
 "use server"
 
+import { timingSafeEqual } from "node:crypto"
 import { getDb } from "@/lib/db"
 import {
   generateVerificationToken,
@@ -12,6 +13,13 @@ import { CONSENT_TEXT_VERSION } from "@/lib/konfigurator/consent"
 import { EMAIL_TESTMODE_DEFAULT } from "@/lib/contact-emails"
 import { sendVerificationEmail } from "@/lib/konfigurator/email"
 import type { Lead } from "@/lib/konfigurator/types"
+
+function safeEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, "utf8")
+  const bBuf = Buffer.from(b, "utf8")
+  if (aBuf.length !== bBuf.length) return false
+  return timingSafeEqual(aBuf, bBuf)
+}
 
 const TOKEN_TTL_HOURS = 24
 const RATE_LIMIT_PER_HOUR = 5
@@ -168,9 +176,19 @@ function isTestmodeAllowed(): boolean {
 /** DOI umgehen – nur für interne Tests (Testmode-Button). */
 export async function bypassEmailVerificationForTestmode(
   email?: string,
+  options?: { secret?: string },
 ): Promise<{ success: boolean; error?: string }> {
   if (!isTestmodeAllowed()) {
     return { success: false, error: "Testmode ist deaktiviert" }
+  }
+
+  // Production + Testmode: gleiches Secret wie die Route (Defense in Depth).
+  if (process.env.NODE_ENV === "production") {
+    const expected = process.env.KONFIGURATOR_TESTMODE_SECRET
+    const provided = options?.secret
+    if (!expected || !provided || !safeEqual(provided, expected)) {
+      return { success: false, error: "Forbidden" }
+    }
   }
 
   const normalized = (email?.trim() || TESTMODE_DEFAULT_EMAIL).toLowerCase()
@@ -217,32 +235,5 @@ export async function getVerifiedLead(): Promise<Lead | null> {
   return rows[0] as Lead
 }
 
-// A-12: `getLeadById` wurde nach `lib/actions/leads-internal.ts` verschoben (kein
-// "use server"-Export mehr, siehe Kommentar dort) – Re-Export hier entfernt, damit
-// keine Server-Action-Referenz für diese Datei mehr entsteht. Aufrufer importieren
-// jetzt direkt aus `@/lib/actions/leads-internal`.
-
-/** Lead für externe Kanäle (n8n) – automatisch verifiziert. */
-export async function getOrCreateVerifiedLeadForEmail(email: string): Promise<Lead> {
-  const normalized = email.trim().toLowerCase()
-  const sql = getDb()
-
-  const existing = await sql`
-    SELECT id, email, name, firma, telefon, verified_at, marketing_consent, consent_text_version, consent_ip, customer_id, created_at
-    FROM leads WHERE email = ${normalized} LIMIT 1
-  `
-
-  if (existing.length > 0) {
-    if (!existing[0].verified_at) {
-      await sql`UPDATE leads SET verified_at = NOW(), updated_at = NOW() WHERE id = ${existing[0].id}`
-    }
-    return { ...existing[0], verified_at: existing[0].verified_at || new Date().toISOString() } as Lead
-  }
-
-  const created = await sql`
-    INSERT INTO leads (email, marketing_consent, consent_text_version, verified_at)
-    VALUES (${normalized}, false, ${CONSENT_TEXT_VERSION}, NOW())
-    RETURNING id, email, name, firma, telefon, verified_at, marketing_consent, consent_text_version, consent_ip, customer_id, created_at
-  `
-  return created[0] as Lead
-}
+// `getLeadById` und `getOrCreateVerifiedLeadForEmail` leben in
+// `lib/actions/leads-internal.ts` (server-only, kein "use server"-Export).

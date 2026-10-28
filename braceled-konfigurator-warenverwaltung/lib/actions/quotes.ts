@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { getDb } from "@/lib/db"
 import { checkProductAvailability } from "@/lib/actions/n8n-api"
-import { getOrCreateVerifiedLeadForEmail, getVerifiedLead } from "@/lib/actions/leads"
+import { getVerifiedLead } from "@/lib/actions/leads"
+import { getLeadById, getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
 import { renderEmailPreview } from "@/lib/konfigurator/email"
 import type { PaymentMethod, QuoteConfig, QuoteRequest, QuoteSource, QuoteStatus, FulfillmentStatus } from "@/lib/konfigurator/types"
@@ -21,7 +22,11 @@ import {
   rejectQuoteRequest,
   type ExternalQuoteInput,
 } from "@/lib/quotes-internal"
-import { getLeadById } from "@/lib/actions/leads-internal"
+import {
+  angebotRequiresPlzGate,
+  hasAngebotAccess,
+} from "@/lib/konfigurator/angebot-access"
+import { getQuoteAccessPlz } from "@/lib/konfigurator/kontakt-adresse"
 import {
   compareFulfillmentUrgency,
   isFulfillmentWorkOpen,
@@ -204,12 +209,20 @@ export async function getQuoteByPublicToken(token: string): Promise<QuoteRequest
   return mapQuoteRow(rows[0])
 }
 
-export async function getPublicFulfillmentEvents(quoteId: number) {
+export async function getPublicFulfillmentEvents(publicToken: string) {
+  const quote = await getQuoteByPublicToken(publicToken)
+  if (!quote) return []
+
+  const expectedPlz = getQuoteAccessPlz(quote.config_json)
+  if (angebotRequiresPlzGate(expectedPlz) && !(await hasAngebotAccess(publicToken))) {
+    return []
+  }
+
   const sql = getDb()
   const rows = await sql`
     SELECT to_status, created_at, tracking_number, versand_dienstleister
     FROM quote_fulfillment_events
-    WHERE quote_id = ${quoteId}
+    WHERE quote_id = ${quote.id}
     ORDER BY created_at ASC
   `
   return rows.map((row) => ({
@@ -322,6 +335,7 @@ export async function listPriorityFulfillmentOrders(limit = 3): Promise<QuoteReq
 }
 
 export async function getQuoteRequestStats(options?: { skipExpire?: boolean }): Promise<Record<string, number>> {
+  await requireRole(["ADMIN"])
   if (!options?.skipExpire) {
     await expireStaleQuotes()
   }

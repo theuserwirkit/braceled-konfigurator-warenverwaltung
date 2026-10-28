@@ -25,7 +25,7 @@ export const TECHNIKER_KM_NETTO = 0.5
 
 export const FLEX_NETTO = 199
 export const OVERNIGHT_NETTO = 299
-export const PROBEDRUCK_FOTOS_NETTO = 149
+export const PROBEDRUCK_FOTOS_NETTO = 99
 export const PROBEDRUCK_VERSAND_NETTO = 189
 /** @deprecated Nutze PROBEDRUCK_FOTOS_NETTO */
 export const PROBEDRUCK_NETTO = PROBEDRUCK_FOTOS_NETTO

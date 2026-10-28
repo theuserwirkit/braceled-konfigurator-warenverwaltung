@@ -101,7 +101,7 @@ const DEFAULT_CONFIG: QuoteConfig = {
   szenario: "corporate",
   variante: "standard",
   produkt: "armband",
-  modus: "miete",
+  modus: "kauf",
   menge: 300,
   kanalanzahl: 40,
   druck: false,

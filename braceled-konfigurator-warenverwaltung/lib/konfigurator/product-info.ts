@@ -294,7 +294,7 @@ export const PRODUCT_OPTIONS: ReadonlyArray<{
     label: "LED Textilarmband",
     description: "LED-Armband mit Textilband und Einmalverschluss",
     available: true,
-    imageSrc: "/images/konfigurator/products/textilband.jpg",
+    imageSrc: "/images/konfigurator/products/textilband.png",
   },
   {
     value: "ball",

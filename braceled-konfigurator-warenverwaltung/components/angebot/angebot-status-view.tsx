@@ -106,6 +106,24 @@ export function AngebotStatusView({
           </Card>
         )}
 
+        <section className="rounded-xl border bg-card p-6 shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Aktueller Status</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <p className="text-3xl font-semibold tracking-tight">{statusInfo.label}</p>
+            <Badge variant={statusInfo.variant} className="text-sm px-3 py-1">
+              {statusInfo.label}
+            </Badge>
+          </div>
+          {quote.status === "submitted" && (
+            <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+              <p>
+                Wir prüfen Ihre Konfiguration. In der Regel melden wir uns innerhalb von 24 Stunden.
+              </p>
+            </div>
+          )}
+        </section>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -115,13 +133,6 @@ export function AngebotStatusView({
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </CardHeader>
           <CardContent className="space-y-4">
-            {quote.status === "submitted" && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                Wir prüfen Ihre Konfiguration – Sie hören bald von uns.
-              </div>
-            )}
-
             {quote.status === "rejected" && (
               <div className="flex items-start gap-2 text-destructive">
                 <XCircle className="h-4 w-4 mt-0.5" />

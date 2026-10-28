@@ -90,7 +90,15 @@ export async function POST(request: NextRequest) {
       bis: config.bis,
       kanalanzahl: config.kanalanzahl,
     })
-    return Response.json({ ...result, kanalanzahl })
+    // Keine exakten Stückzahlen an den Konfigurator-Client
+    const {
+      frei: _frei,
+      bestand: _bestand,
+      belegt: _belegt,
+      fehlt: _fehlt,
+      ...publicResult
+    } = result
+    return Response.json({ ...publicResult, kanalanzahl })
   }
 
   if (action === "station-availability") {

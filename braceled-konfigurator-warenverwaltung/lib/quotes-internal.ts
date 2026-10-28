@@ -149,7 +149,7 @@ function configSummary(config: QuoteConfig): string {
       `Fahrt: ${config.technikerKm ?? 0} km`,
     )
     if (config.technikerSteuerpult === "mitbuchen") {
-      lines.push("Steuerpult: zur Programmierung mitbuchen")
+      lines.push("Licht-Steuerpult für LED Armbänder")
     } else if (config.technikerSteuerpult === "vorhanden") {
       lines.push("Steuerpult: über Eventtechnik vorhanden")
     }

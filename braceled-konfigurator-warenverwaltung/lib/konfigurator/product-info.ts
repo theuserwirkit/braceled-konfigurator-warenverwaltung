@@ -408,29 +408,33 @@ export const TECHNIKER_INFO = {
   kmNetto: TECHNIKER_KM_NETTO,
 } as const
 
+export const LICHT_STEUERPULT_NETTO = 200
+
 export const TECHNIKER_STEUERPULT_OPTIONS = [
   {
     value: "mitbuchen" as const,
-    label: "Steuerpult zur Programmierung mitbuchen",
-    description: "WIRKUNG stellt ein Steuerpult zur Programmierung vor Ort bereit.",
+    label: "Licht-Steuerpult für LED Armbänder",
+    description:
+      "Wristlink stellt ein kleines Lichtsteuerpult für die LED Armbänder bereit.",
+    preisNetto: LICHT_STEUERPULT_NETTO,
   },
   {
     value: "vorhanden" as const,
     label: "Lichtsteuerpult ist über Eventtechnik vorhanden",
     description: "Ihr Eventtechnik-Partner stellt das Lichtsteuerpult vor Ort.",
+    preisNetto: 0,
   },
 ] as const
 
 export const VORPROGRAMMIERT_INFO = {
   title: "Szenen vorprogrammieren",
   description:
-    "Programmieren von bis zu 8 Szenen im Vorfeld inkl. intelligentem Steuerpult (zur Miete).",
+    "Bis zu 8 Szenen im Vorfeld, inkl. 1 Korrekturschleife und Video vorab. Intelligentes Steuerpult zur Miete.",
   imageSrc: "/images/steuerkonsole-vorprogrammiert.png",
-  /** Preisabstimmung durch Team – Position erscheint mit 0,00 EUR bis Freigabe */
-  preisNetto: 0,
+  preisNetto: 700,
 } as const
 
-export const TECHNIKER_CARD_IMAGE = "/images/techniker-kontur.jpg"
+export const TECHNIKER_CARD_IMAGE = "/images/techniker-kontur.png"
 
 export const REPEATER_BASIS_INFO = {
   title: "Mehr Reichweite oder verschiedene Räume?",
@@ -438,7 +442,6 @@ export const REPEATER_BASIS_INFO = {
     "Bitte Details mit dem Team besprechen. Diese Option ist nicht über den Konfigurator buchbar.",
   description:
     "Bei großen Event-Locations eine zweite Basisstation (Repeater) – ebenfalls ans DMX anschließen. Rückfragen beantwortet unser Team.",
-  preisNetto: 0,
 } as const
 
 export const WRISTBAND_MOCKUP_URL = "/images/ledband-mockup-web.png"

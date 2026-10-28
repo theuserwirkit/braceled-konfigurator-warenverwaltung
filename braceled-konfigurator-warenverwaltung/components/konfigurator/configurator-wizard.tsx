@@ -1455,7 +1455,7 @@ export function ConfiguratorWizard({
                         description={VORPROGRAMMIERT_INFO.description}
                         imageSrc={VORPROGRAMMIERT_INFO.imageSrc}
                         imageAlt={VORPROGRAMMIERT_INFO.title}
-                        priceHint="Preisabstimmung durch Team"
+                        priceHint={`${formatEur(VORPROGRAMMIERT_INFO.preisNetto)} netto`}
                       />
                     </div>
 
@@ -1480,6 +1480,11 @@ export function ConfiguratorWizard({
                                 }
                                 title={opt.label}
                                 description={opt.description}
+                                priceHint={
+                                  opt.preisNetto > 0
+                                    ? `${formatEur(opt.preisNetto)} netto`
+                                    : undefined
+                                }
                               />
                             ))}
                           </div>
@@ -1574,7 +1579,6 @@ export function ConfiguratorWizard({
                       }
                       title={REPEATER_BASIS_INFO.title}
                       description={REPEATER_BASIS_INFO.description}
-                      priceHint="0,00 € · Info"
                     />
                     {config.repeaterBasisstation && (
                       <p className="text-sm font-semibold text-foreground">
@@ -1768,7 +1772,7 @@ export function ConfiguratorWizard({
                       : null,
                     config.techniker ? `Techniker ${config.technikerTage}d` : null,
                     config.technikerSteuerpult === "mitbuchen"
-                      ? "Steuerpult mitbuchen"
+                      ? "Licht-Steuerpult für LED Armbänder"
                       : config.technikerSteuerpult === "vorhanden"
                         ? "Steuerpult vorhanden"
                         : null,

@@ -30,8 +30,6 @@ export function AvailabilityIndicator({
 
   const markerLeft = `clamp(0px, ${availability.stressScore}%, calc(100% - 12px))`
   const poolLabel = produkt ? availabilityPoolLabel(produkt) : null
-  const frei = Number(availability.frei ?? 0)
-  const bestand = Number(availability.bestand ?? 0)
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
@@ -76,18 +74,6 @@ export function AvailabilityIndicator({
           </span>
         )}
       </p>
-
-      {!hideDetails && Number.isFinite(frei) && (
-        <p className="text-sm tabular-nums">
-          <span className="font-medium">{frei.toLocaleString("de-DE")}</span>
-          <span className="text-muted-foreground">
-            {" "}
-            Stück frei
-            {bestand > 0 ? ` · ${bestand.toLocaleString("de-DE")} Bestand` : ""}
-            {poolLabel ? ` in diesem Pool` : ""}
-          </span>
-        </p>
-      )}
 
       {!hideDetails && availability.hinweis && (
         <p className="text-xs text-muted-foreground leading-relaxed">{availability.hinweis}</p>

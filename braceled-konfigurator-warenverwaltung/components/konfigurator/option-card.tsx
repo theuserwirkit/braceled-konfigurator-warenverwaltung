@@ -52,7 +52,7 @@ export function OptionCard({
       )}
     >
       {imageSrc && (
-        <div className="mb-3 flex h-28 items-center justify-center rounded-md bg-muted/40 p-2">
+        <div className="mb-3 flex h-28 items-center justify-center rounded-md bg-transparent p-2">
           <Image
             src={imageSrc}
             alt={imageAlt ?? title}

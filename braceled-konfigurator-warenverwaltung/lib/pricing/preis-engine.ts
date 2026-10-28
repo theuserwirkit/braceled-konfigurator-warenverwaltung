@@ -13,6 +13,8 @@ import {
   modusAnzeige,
   TEXTILBAND_MAX_GRUPPEN,
   textilbandDruckPreisNetto,
+  LICHT_STEUERPULT_NETTO,
+  VORPROGRAMMIERT_INFO,
 } from "@/lib/konfigurator/product-info"
 import {
   getProbedruckLabel,
@@ -322,23 +324,22 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
         summe: eur(technikerKm * TECHNIKER_KM_NETTO),
       })
     }
+    if (String(input.technikerSteuerpult || "") === "mitbuchen") {
+      positionen.push({
+        pos: "Licht-Steuerpult für LED Armbänder",
+        menge: 1,
+        einzel: LICHT_STEUERPULT_NETTO,
+        summe: LICHT_STEUERPULT_NETTO,
+      })
+    }
   }
 
   if (Boolean(input.vorprogrammiertZusenden) && station === "pro") {
     positionen.push({
-      pos: "Szenen vorprogrammieren (bis 8 Szenen inkl. Steuerpult Miete)",
+      pos: "Szenen vorprogrammieren (inkl. 1 Korrekturschleife, Video vorab)",
       menge: 1,
-      einzel: 0,
-      summe: 0,
-    })
-  }
-
-  if (Boolean(input.repeaterBasisstation) && station === "pro") {
-    positionen.push({
-      pos: "Repeater / Reichweite (Info – nicht über Konfigurator buchbar)",
-      menge: 1,
-      einzel: 0,
-      summe: 0,
+      einzel: VORPROGRAMMIERT_INFO.preisNetto,
+      summe: VORPROGRAMMIERT_INFO.preisNetto,
     })
   }
 

@@ -1,9 +1,12 @@
 import type { Kanalanzahl } from "@/lib/konfigurator/kanalanzahl"
-import { isKanalanzahl, normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { isKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 
 export const LEUCHTGRUPPE_MAX_SLOT = 20
 
-/** Ab dieser Anzahl programmierter Gruppen ist 80 CH Pflicht */
+/** Textilband: eigene physische SKUs, nur 40 CH, max. 10 Lagergruppen */
+export const TEXTILBAND_LEUCHTGRUPPE_MAX_SLOT = 10
+
+/** Ab dieser Anzahl programmierter Gruppen ist 80 CH Pflicht (nur LED-Armband) */
 export const GRUPPEN_80CH_MIN = 11
 
 export const LEUCHTGRUPPE_SLOTS = Array.from(
@@ -11,12 +14,27 @@ export const LEUCHTGRUPPE_SLOTS = Array.from(
   (_, i) => i + 1,
 )
 
+export const TEXTILBAND_LEUCHTGRUPPE_SLOTS = Array.from(
+  { length: TEXTILBAND_LEUCHTGRUPPE_MAX_SLOT },
+  (_, i) => i + 1,
+)
+
 const LEUCHTGRUPPE_NAME_RE = /^G([1-9]|1[0-9]|20)_(40|80)ch$/i
+const TEXTILBAND_LEUCHTGRUPPE_NAME_RE = /^T([1-9]|10)_40ch$/i
 
 export function formatLeuchtgruppeName(slot: number, kanalanzahl: Kanalanzahl): string {
   const s = Math.min(Math.max(Math.floor(slot), 1), LEUCHTGRUPPE_MAX_SLOT)
   const ch = kanalanzahl === 80 ? 80 : 40
   return `G${s}_${ch}ch`
+}
+
+/** Technische Gruppen-ID für Textilband-Bestand (eigene SKUs) */
+export function formatTextilbandGruppeName(slot: number): string {
+  const s = Math.min(
+    Math.max(Math.floor(slot), 1),
+    TEXTILBAND_LEUCHTGRUPPE_MAX_SLOT,
+  )
+  return `T${s}_40ch`
 }
 
 export function parseLeuchtgruppeName(
@@ -30,8 +48,20 @@ export function parseLeuchtgruppeName(
   return { slot, kanalanzahl }
 }
 
+export function parseTextilbandGruppeName(
+  name: string,
+): { slot: number; kanalanzahl: 40 } | null {
+  const match = name.trim().match(TEXTILBAND_LEUCHTGRUPPE_NAME_RE)
+  if (!match) return null
+  return { slot: parseInt(match[1], 10), kanalanzahl: 40 }
+}
+
 export function isLeuchtgruppeName(name: string): boolean {
   return LEUCHTGRUPPE_NAME_RE.test(name.trim())
+}
+
+export function isTextilbandLeuchtgruppe(name: string): boolean {
+  return TEXTILBAND_LEUCHTGRUPPE_NAME_RE.test(name.trim())
 }
 
 export function getMandatoryKanalanzahl(gruppen: number): Kanalanzahl | null {
@@ -44,4 +74,17 @@ export function getKanalanzahlOptions(gruppen: number): Kanalanzahl[] {
 
 export function formatLeuchtgruppeSlotLabel(slot: number): string {
   return `G${slot}`
+}
+
+/** Lesbare Bezeichnung in Warenverwaltung / Allokation */
+export function formatGroupDisplayLabel(name: string): string {
+  const textil = parseTextilbandGruppeName(name)
+  if (textil) {
+    return `Textilband 40 CH Gruppe ${textil.slot}`
+  }
+  const armband = parseLeuchtgruppeName(name)
+  if (armband) {
+    return `LED Armband ${armband.kanalanzahl} CH Gruppe ${armband.slot}`
+  }
+  return name
 }

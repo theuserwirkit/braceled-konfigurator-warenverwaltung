@@ -124,25 +124,30 @@ Alle Preise **netto (B2B)**. Zahlung in Deutschland: zzgl. 19 % MwSt.
 
 | Produkt | `value` | UI | Hinweis |
 |---------|---------|-----|---------|
-| LED Armband | `armband` | ✓ wählbar | Einziges aktives Produkt; Strichzeichnung in der Karte |
+| LED Armband | `armband` | ✓ wählbar | Strichzeichnung; Lagerpool `G*_40/80ch` |
+| Textilband mit Einlass-Verschluss | `textilband` | ✓ wählbar | Eigene SKUs `T1_40ch`–`T10_40ch` (Anzeige: „Textilband 40 CH Gruppe N“); gleiche Controller 40 CH; max. 10 Gruppen |
 | LED Ball | `ball` | ausgegraut | „Aktuell hier nicht konfigurierbar“ |
 | LED Platine | `platine` | ausgegraut | LED Platine zum Einbau in eigene Event-Elemente (nicht Untersetzer) |
 | LED Lanyard | `lanyard` | ausgegraut | „Aktuell hier nicht konfigurierbar“ |
 | LED-Licht | `licht` | ausgegraut | IP68-EventLights (Pool/See/Eiskühler) – nur Vorschau |
 | LED Zauberstab | `zauberstab` | – | Nicht in der Produktauswahl (nur API/Legacy) |
 
-- Produktkarten mit Strichzeichnungen: `public/images/konfigurator/products/` (Quelle: [led-leuchtarmbaender.com/produkte](https://www.led-leuchtarmbaender.com/produkte))
+- Produktkarten mit Strichzeichnungen: `public/images/konfigurator/products/`
 - Konfiguration: `PRODUCT_OPTIONS` + `PRODUCT_UNAVAILABLE_HINT` in `lib/konfigurator/product-info.ts`
 - Preis-Engine blockiert alle Produkte mit `available: false` über `isProductKonfiguratorAvailable()`
+- **Warenverwaltung:** Soft-Hold/Controller wie Armband (`usesArmbandLager`), aber **eigene** Gruppen/SKUs `T*_40ch` (Seed: `scripts/seed-textilband-groups.sql` oder Admin → Neue Leuchtgruppe → Textilband). Bases bleiben die 40-CH-Controller.
 
-Staffelpreise **100–4.000** (Schritt 50) für Kauf und Miete pro Stück (nur `armband` im Konfigurator). Tabellen in `lib/pricing/preis-engine.ts` (`armband` bis 4.000; `zauberstab`/`licht` bis 2.500 für API/Legacy).
+Staffelpreise **100–4.000** (Schritt 50). Tabellen in `lib/pricing/preis-engine.ts` (`armband`/`textilband` bis 4.000; `zauberstab`/`licht` bis 2.500 für API/Legacy).
+
+**Textilband:** Kauf 100–500 → 4,30 · 501–1000 → 4,10 · ab 1001 → 3,90; Miete flat 3,90. Nur 40 CH, max. 10 Gruppen.
 
 ### Zuschläge & Positionen
 
 | Position | Regel |
 |----------|--------|
 | Premium-Variante | +10 % auf Produkt-Stückpreis (nur Armband) |
-| Bedruckung (Kauf) | Setup 120 EUR + Stückpreis nach Staffel |
+| Bedruckung LED-Element (Kauf) | Setup 120 EUR + Stückpreis nach Staffel (Armband & Textilband) |
+| Textilband-Bedruckung | 0,70 €/Stk. bis 250, darüber 0,66 €/Stk.; **Kauf und Miete** (`druckTextilband`) |
 | Probedruck + Fotos | 99 EUR netto (optional, nur Kauf + Bedruckung, Schritt Umfang; `probedruckOption: "fotos"`) |
 | Probedruck + Versand | 189 EUR netto (optional, nur Kauf + Bedruckung; `probedruckOption: "versand"`) |
 | Gruppenprogrammierung | 65 EUR netto **pro programmierter Gruppe** (nur PRO-Station) |

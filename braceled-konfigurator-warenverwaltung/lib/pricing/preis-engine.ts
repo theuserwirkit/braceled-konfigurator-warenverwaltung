@@ -11,6 +11,8 @@ import {
   MIN_MENGE,
   MENGE_STEP,
   modusAnzeige,
+  TEXTILBAND_MAX_GRUPPEN,
+  textilbandDruckPreisNetto,
 } from "@/lib/konfigurator/product-info"
 import {
   getProbedruckLabel,
@@ -43,6 +45,12 @@ const PREISE: Record<WristlinkProdukt, [number, number, number, number][]> = {
     [501, 1000, 3.83, 3.82],
     [1001, 4000, 3.76, 3.8],
   ],
+  /** Kauf-Staffel; Miete flat 3,90 */
+  textilband: [
+    [100, 500, 4.3, 3.9],
+    [501, 1000, 4.1, 3.9],
+    [1001, 4000, 3.9, 3.9],
+  ],
   zauberstab: [
     [100, 300, 4.1, 3.9],
     [301, 500, 3.89, 3.85],
@@ -66,7 +74,8 @@ const DRUCK_PRO_STK: [number, number, number][] = [
 const DRUCK_SETUP = 120.0
 
 const GRUPPE = 65.0
-const VERSAND: Record<string, number> = { DE: 90.0 }
+const VERSAND: Record<string, number> = { DE: 90.0, AT: 0, CH: 0, EU: 0 }
+const VERSAND_NACH_ABSPRACHE = new Set(["AT", "CH", "EU"])
 
 const eur = (n: number) => Math.round(n * 100) / 100
 
@@ -85,6 +94,7 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
   const modus = String(input.modus || "").toLowerCase()
   const menge = Number(input.menge)
   const druck = Boolean(input.druck)
+  const druckTextilband = Boolean(input.druckTextilband)
   const gruppen = Number(input.gruppen || 0)
   const station = String(input.station || "keine").toLowerCase()
   const stationModusRaw = String(input.stationModus || input.modus || "miete").toLowerCase()
@@ -121,6 +131,9 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
   if (gruppen < 0 || gruppen > 20) {
     fehler.push(`Gruppen ${gruppen} außerhalb 0–20`)
   }
+  if (produkt === "textilband" && gruppen > TEXTILBAND_MAX_GRUPPEN) {
+    fehler.push(`Textilband: maximal ${TEXTILBAND_MAX_GRUPPEN} Gruppen (nur 40 CH)`)
+  }
   if (station === "pro" && gruppen < 1) {
     fehler.push("Gruppenprogrammierung erfordert mindestens 1 Gruppe")
   }
@@ -128,7 +141,10 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
     fehler.push("Gruppenprogrammierung nur mit PRO-Basis-Station")
   }
   if (druck && modus === "miete") {
-    fehler.push("Druck ist nur beim Kauf möglich")
+    fehler.push("Druck des LED-Elements ist nur beim Kauf möglich")
+  }
+  if (druckTextilband && produkt !== "textilband") {
+    fehler.push("Textilband-Bedruckung nur für Textilband mit Einlass-Verschluss")
   }
   if (variante === "premium" && produkt !== "armband") {
     fehler.push("Premium-Variante nur für LED-Armbänder")
@@ -225,6 +241,16 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
     }
   }
 
+  if (druckTextilband && produkt === "textilband") {
+    const tp = textilbandDruckPreisNetto(menge)
+    positionen.push({
+      pos: "Textilband-Bedruckung – pro Stück",
+      menge,
+      einzel: tp,
+      summe: eur(menge * tp),
+    })
+  }
+
   const paketPreis = LIEFERPAKET_PREIS[lieferpaket as Lieferpaket]
   positionen.push({
     pos: `Lieferpaket ${getLieferpaketLabel(lieferpaket as Lieferpaket)}`,
@@ -265,11 +291,14 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
     })
   }
 
+  const versandPreis = VERSAND[land] ?? 0
   positionen.push({
-    pos: `Versand ${land}`,
+    pos: VERSAND_NACH_ABSPRACHE.has(land)
+      ? `Versand ${land} (nach Absprache)`
+      : `Versand ${land}`,
     menge: 1,
-    einzel: VERSAND[land],
-    summe: VERSAND[land],
+    einzel: versandPreis,
+    summe: versandPreis,
   })
 
   if (techniker && technikerTage >= 1) {
@@ -297,7 +326,7 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
 
   if (Boolean(input.vorprogrammiertZusenden) && station === "pro") {
     positionen.push({
-      pos: "Vorprogrammiert zusenden (bis 8 Szenen inkl. Steuerpult Miete)",
+      pos: "Szenen vorprogrammieren (bis 8 Szenen inkl. Steuerpult Miete)",
       menge: 1,
       einzel: 0,
       summe: 0,
@@ -306,7 +335,7 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
 
   if (Boolean(input.repeaterBasisstation) && station === "pro") {
     positionen.push({
-      pos: "Repeater-Basisstation gewünscht (Info – keine Lagerbuchung, DMX vor Ort)",
+      pos: "Repeater / Reichweite (Info – nicht über Konfigurator buchbar)",
       menge: 1,
       einzel: 0,
       summe: 0,

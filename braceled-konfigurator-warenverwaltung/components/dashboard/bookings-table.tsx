@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import type { BookingWithRelations } from "@/lib/types"
 import { formatDateTime } from "@/lib/utils/date"
 import { getBookingTypeLabel, getBookingTypeColor } from "@/lib/utils/booking"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, FileText, ChevronDown, Package, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -411,7 +412,9 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
                             <>
                               <div className="flex items-center gap-1.5">
                                 <Badge variant="outline" className="text-xs px-1.5 py-0 shrink-0">Band</Badge>
-                                <span className="font-medium">{item.group.name}</span>
+                                <span className="font-medium">
+                                  {formatGroupDisplayLabel(item.group.name)}
+                                </span>
                               </div>
                               {item?.batch?.funktionsumfang && (
                                 <span className="text-xs text-muted-foreground pl-0">{item.batch.funktionsumfang}</span>

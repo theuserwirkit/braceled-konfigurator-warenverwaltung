@@ -22,6 +22,7 @@ export const quoteConfigSchema = z
     von: z.string().max(30).optional(),
     bis: z.string().max(30).optional(),
     druck: z.boolean(),
+    druckTextilband: z.boolean().optional(),
     probedruckOption: z.enum(["none", "fotos", "versand"]).optional(),
     probedruck: z.boolean().optional(),
     logoId: z.string().max(200).optional(),

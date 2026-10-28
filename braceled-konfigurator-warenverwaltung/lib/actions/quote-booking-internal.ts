@@ -13,7 +13,7 @@ import { createN8nBooking } from "@/lib/actions/n8n-api"
 import { createBookingInternal } from "@/lib/actions/bookings-internal"
 import { getAvailabilityForGroupInternal } from "@/lib/actions/bookings"
 import { getFulfillmentDueDate } from "@/lib/konfigurator/fulfillment-timing"
-import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { resolveLagerKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import {
   isWristlinkProdukt,
   resolveGroupsForProduct,
@@ -102,10 +102,7 @@ export async function createQuoteHoldBooking(
     menge: config.menge,
     von: config.von,
     bis: config.bis || config.von,
-    kanalanzahl:
-      config.produkt === "armband"
-        ? normalizeKanalanzahl(config.kanalanzahl)
-        : undefined,
+    kanalanzahl: resolveLagerKanalanzahl(config.produkt, config.kanalanzahl),
     kunde_email: email,
     event: `Auftrag #${quoteId}`,
     status: "ANFRAGE",
@@ -161,9 +158,7 @@ export async function finalizeQuoteBookingOnPayment(
         von: config.von,
         bis: config.bis || config.von,
         kanalanzahl:
-          config.produkt === "armband"
-            ? normalizeKanalanzahl(config.kanalanzahl)
-            : undefined,
+          resolveLagerKanalanzahl(config.produkt, config.kanalanzahl),
         kunde_email: options?.leadEmail,
         event: `Auftrag #${quoteId}`,
         status: "BESTAETIGT",
@@ -187,8 +182,7 @@ export async function finalizeQuoteBookingOnPayment(
       return { success: false, error: `Unbekanntes Produkt: ${config.produkt}` }
     }
 
-    const kanalanzahl =
-      produkt === "armband" ? normalizeKanalanzahl(config.kanalanzahl) : undefined
+    const kanalanzahl = resolveLagerKanalanzahl(produkt, config.kanalanzahl)
     const allocation = await findBestSaleAllocation(produkt, config.menge, kanalanzahl)
 
     if (!allocation) {

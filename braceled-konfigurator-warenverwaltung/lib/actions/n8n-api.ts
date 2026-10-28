@@ -10,10 +10,11 @@ import {
   monthsUntilEvent,
   type AvailabilityStressLevel,
 } from "@/lib/konfigurator/availability-stress"
-import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { resolveLagerKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import {
   isWristlinkProdukt,
   resolveGroupsForProduct,
+  usesArmbandLager,
   type WristlinkProdukt,
 } from "@/lib/product-mapping"
 import type { BookingStatus } from "@/lib/types"
@@ -214,8 +215,7 @@ export async function checkProductAvailability(
     }
   }
 
-  const kanalanzahl =
-    produkt === "armband" ? normalizeKanalanzahl(input.kanalanzahl) : undefined
+  const kanalanzahl = resolveLagerKanalanzahl(produkt, input.kanalanzahl)
 
   const groups = await resolveGroupsForProduct(produkt, kanalanzahl)
   if (groups.length === 0) {
@@ -229,7 +229,7 @@ export async function checkProductAvailability(
       verfuegbar: false,
       fehlt: menge,
       hinweis:
-        produkt === "armband" && kanalanzahl
+        usesArmbandLager(produkt) && kanalanzahl
           ? `Keine Leuchtgruppen mit ${kanalanzahl} CH für '${produkt}' gefunden`
           : `Keine Gruppen für Produkt '${produkt}' gefunden`,
       standDatum: new Date().toISOString(),
@@ -306,8 +306,7 @@ export async function createN8nBooking(
   const bis = input.bis || input.von
   const ausgabe = parseDate(input.von)
   const rueckgabe = parseDate(bis)
-  const kanalanzahl =
-    produkt === "armband" ? normalizeKanalanzahl(input.kanalanzahl) : undefined
+  const kanalanzahl = resolveLagerKanalanzahl(produkt, input.kanalanzahl)
 
   const allocation = await findBestAllocation(produkt, menge, ausgabe, rueckgabe, kanalanzahl)
   if (!allocation) {

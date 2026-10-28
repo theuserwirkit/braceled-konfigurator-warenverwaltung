@@ -3,6 +3,7 @@ import { z } from "zod"
 import { submitQuoteRequest } from "@/lib/actions/quotes"
 import type { QuoteConfig } from "@/lib/konfigurator/types"
 import { resolveKanalanzahlForConfig } from "@/lib/konfigurator/resolve-kanalanzahl"
+import { usesArmbandLager } from "@/lib/konfigurator/product-info"
 import { checkSubmitRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import { quoteConfigSchema, formatZodError } from "@/lib/api-schemas"
 
@@ -31,10 +32,9 @@ export async function POST(request: NextRequest) {
 
   const rawConfig = parsed.data.config as QuoteConfig
 
-  const kanalanzahl =
-    rawConfig.produkt === "armband"
-      ? await resolveKanalanzahlForConfig(rawConfig)
-      : undefined
+  const kanalanzahl = usesArmbandLager(rawConfig.produkt)
+    ? await resolveKanalanzahlForConfig(rawConfig)
+    : undefined
   const config: QuoteConfig =
     kanalanzahl != null ? { ...rawConfig, kanalanzahl } : rawConfig
 

@@ -18,6 +18,7 @@ import {
   getBaseAvailabilityByDateRange,
 } from "@/lib/actions/bookings"
 import type { BaseRow, BookingType, BookingWithRelations, BookingStatus } from "@/lib/types"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import { Loader2, Plus, Trash2, Package } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Combobox } from "@/components/ui/combobox"
@@ -640,7 +641,7 @@ export function BookingForm({
                           <SelectContent>
                             {groups.map((group) => (
                               <SelectItem key={group.id} value={group.id.toString()}>
-                                {group.name}
+                                {formatGroupDisplayLabel(group.name)}
                               </SelectItem>
                             ))}
                           </SelectContent>

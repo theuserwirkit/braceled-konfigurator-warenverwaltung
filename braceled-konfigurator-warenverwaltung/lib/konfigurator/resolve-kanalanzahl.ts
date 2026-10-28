@@ -1,5 +1,6 @@
 import type { QuoteConfig } from "@/lib/konfigurator/types"
 import { normalizeKanalanzahl, type Kanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { usesArmbandLager } from "@/lib/konfigurator/product-info"
 import { getMandatoryKanalanzahl } from "@/lib/konfigurator/leuchtgruppen"
 import { checkProductAvailability } from "@/lib/actions/n8n-api"
 import { checkStationAvailability } from "@/lib/konfigurator/station-availability"
@@ -36,6 +37,7 @@ async function isKanalanzahlViable(config: QuoteConfig, kanalanzahl: Kanalanzahl
       von: config.von,
       bis: config.bis,
       kanalanzahl,
+      produkt: config.produkt,
       gruppenGroessen: normalizeGruppenGroessen(config).slice(0, gruppen),
     })
     if (!groupAvail.verfuegbar) return false
@@ -46,7 +48,8 @@ async function isKanalanzahlViable(config: QuoteConfig, kanalanzahl: Kanalanzahl
 
 /** Ermittelt die passende Kanalanzahl – Nutzer wählt nicht selbst. */
 export async function resolveKanalanzahlForConfig(config: QuoteConfig): Promise<Kanalanzahl> {
-  if (config.produkt !== "armband") return 40
+  if (!usesArmbandLager(config.produkt)) return 40
+  if (config.produkt === "textilband") return 40
 
   const gruppen = config.gruppen ?? 0
   const mandatory = getMandatoryKanalanzahl(gruppen)

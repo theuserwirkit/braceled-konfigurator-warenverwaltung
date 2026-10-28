@@ -65,6 +65,8 @@ export type QuoteConfig = {
   von?: string
   bis?: string
   druck: boolean
+  /** Bedruckung des Textilbands (Einlassband) – Kauf und Miete, nur textilband */
+  druckTextilband?: boolean
   /** logo = 3×2 cm mit Upload; vollflaechig = Upsell ohne Konfigurator */
   druckArt?: "logo" | "vollflaechig"
   probedruckOption?: "none" | "fotos" | "versand"

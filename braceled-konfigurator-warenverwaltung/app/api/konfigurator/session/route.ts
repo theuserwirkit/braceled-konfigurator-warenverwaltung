@@ -7,8 +7,9 @@ import { checkProductAvailability } from "@/lib/actions/n8n-api"
 import { checkStationAvailability } from "@/lib/konfigurator/station-availability"
 import { checkGroupProgrammingAvailability } from "@/lib/konfigurator/group-allocation"
 import { normalizeGruppenGroessen } from "@/lib/konfigurator/gruppen-config"
-import { MAX_PHYSICAL_GROUPS, normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { MAX_PHYSICAL_GROUPS, resolveLagerKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import { resolveKanalanzahlForConfig } from "@/lib/konfigurator/resolve-kanalanzahl"
+import { usesArmbandLager } from "@/lib/konfigurator/product-info"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
 import type { QuoteConfig } from "@/lib/konfigurator/types"
 import { quoteConfigSchema, formatZodError } from "@/lib/api-schemas"
@@ -67,16 +68,16 @@ export async function POST(request: NextRequest) {
   const rawConfig = parsed.data.config as QuoteConfig
 
   if (action === "price") {
-    const kanalanzahl =
-      rawConfig.produkt === "armband" ? normalizeKanalanzahl(rawConfig.kanalanzahl) : undefined
+    const kanalanzahl = resolveLagerKanalanzahl(rawConfig.produkt, rawConfig.kanalanzahl)
     const config: QuoteConfig =
       kanalanzahl != null ? { ...rawConfig, kanalanzahl } : rawConfig
     const price = rechnePreis(config as Parameters<typeof rechnePreis>[0])
     return Response.json({ ...price, kanalanzahl })
   }
 
-  const kanalanzahl =
-    rawConfig.produkt === "armband" ? await resolveKanalanzahlForConfig(rawConfig) : undefined
+  const kanalanzahl = usesArmbandLager(rawConfig.produkt)
+    ? await resolveKanalanzahlForConfig(rawConfig)
+    : undefined
   const config: QuoteConfig =
     kanalanzahl != null ? { ...rawConfig, kanalanzahl } : rawConfig
 
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
       von: config.von,
       bis: config.bis,
       kanalanzahl: config.kanalanzahl,
+      produkt: config.produkt,
       gruppenGroessen: normalizeGruppenGroessen(config).slice(0, config.gruppen),
     })
     return Response.json({ ...result, kanalanzahl })

@@ -51,7 +51,7 @@ assert(
 
 const alloc = readFileSync(join(root, "lib/konfigurator/group-allocation.ts"), "utf8")
 assert(
-  /resolveGroupsForProduct\("armband", ch\)/.test(alloc) ||
+  /resolveGroupsForProduct\(produkt,\s*ch\)/.test(alloc) ||
     /resolveGroupsForProduct\("armband",/.test(alloc),
   "Gruppen-Pools nur für eine CH",
 )

@@ -13,7 +13,7 @@ import {
   getBaseAvailabilityByDateRange,
 } from "@/lib/actions/bookings"
 import { getQuoteByIdInternal } from "@/lib/quotes-internal"
-import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { resolveLagerKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import {
   suggestBandAllocation,
   type BandAllocationLine,
@@ -66,7 +66,7 @@ export type QuoteWarehouseData = {
 }
 
 function resolveKanalanzahlForBases(config: QuoteConfig): number {
-  return config.produkt === "armband" ? normalizeKanalanzahl(config.kanalanzahl) : 1
+  return resolveLagerKanalanzahl(config.produkt, config.kanalanzahl) ?? 1
 }
 
 function resolveDefaultBaseAnzahl(config: QuoteConfig): number {
@@ -281,8 +281,7 @@ async function loadBandBatchPools(
   const produkt = String(config.produkt || "").toLowerCase()
   if (!isWristlinkProdukt(produkt)) return []
 
-  const kanalanzahl =
-    produkt === "armband" ? normalizeKanalanzahl(config.kanalanzahl) : undefined
+  const kanalanzahl = resolveLagerKanalanzahl(produkt, config.kanalanzahl)
   const groups = await resolveGroupsForProduct(produkt, kanalanzahl)
   if (groups.length === 0) return []
 

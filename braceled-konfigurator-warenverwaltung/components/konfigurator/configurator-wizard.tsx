@@ -25,8 +25,12 @@ import {
   SZENARIO_OPTIONS,
   DRUCK_ART_OPTIONS,
   LIEFERLAND_INFO,
+  LIEFERLAND_OPTIONS,
+  TECHNIKER_CARD_IMAGE,
   GRUPPEN_INFO,
   DRUCK_INFO,
+  TEXTILBAND_DRUCK_INFO,
+  TEXTILBAND_MAX_GRUPPEN,
   PROBEDRUCK_OPTIONS,
   TECHNIKER_INFO,
   TECHNIKER_STEUERPULT_OPTIONS,
@@ -40,6 +44,7 @@ import {
   MAX_MENGE,
   MENGE_STEP,
   PRODUCT_UNAVAILABLE_HINT,
+  usesArmbandLager,
   type ProbedruckOption,
   type DruckArt,
 } from "@/lib/konfigurator/product-info"
@@ -80,13 +85,13 @@ import {
 } from "@/lib/konfigurator/gruppen-config"
 import { MAX_PHYSICAL_GROUPS } from "@/lib/konfigurator/kanalanzahl"
 import { PersonalCallBanner } from "@/components/konfigurator/personal-call-banner"
+import { LogisticsTimeline } from "@/components/konfigurator/logistics-timeline"
 import { GruppenVerteilungsSlider } from "@/components/konfigurator/gruppen-verteilungs-slider"
 
 const STEPS = [
   { label: "Event", question: "Was planen Sie?" },
   { label: "Umfang", question: "Wie viele LED-Produkte benötigen Sie?" },
   { label: "Steuerung", question: "Wie sollen die Bänder gesteuert werden?" },
-  { label: "Zeitraum", question: "Ist Ihr Wunschtermin verfügbar?" },
   { label: "Extras", question: "Welche Zusatzleistungen wünschen Sie?" },
   { label: "Angebot", question: "Ihre Zusammenfassung" },
 ] as const
@@ -109,6 +114,7 @@ const DEFAULT_CONFIG: QuoteConfig = {
   menge: 300,
   kanalanzahl: 40,
   druck: false,
+  druckTextilband: false,
   druckArt: "logo",
   probedruckOption: "none",
   probedruck: false,
@@ -193,6 +199,13 @@ export function ConfiguratorWizard({
         next.logoId = undefined
       }
       if (patch.produkt && patch.produkt !== "armband") next.variante = "standard"
+      if (patch.produkt === "textilband") {
+        next.kanalanzahl = 40
+        if (next.gruppen > TEXTILBAND_MAX_GRUPPEN) next.gruppen = TEXTILBAND_MAX_GRUPPEN
+      }
+      if (patch.produkt && patch.produkt !== "textilband") {
+        next.druckTextilband = false
+      }
       if (patch.station === "pro") next.stationModus = "miete"
       if (patch.station === "pro" && (patch.gruppen === undefined ? prev.gruppen : patch.gruppen) <= 0) {
         next.gruppen = GRUPPEN_MIN
@@ -242,12 +255,18 @@ export function ConfiguratorWizard({
         next.probedruckOption = "none"
         next.probedruck = false
       }
-      if (patch.gruppen !== undefined && patch.gruppen > 10) {
+      if (patch.gruppen !== undefined && patch.gruppen > 10 && next.produkt !== "textilband") {
         next.kanalanzahl = 80
       }
-      if (patch.menge !== undefined || patch.gruppen !== undefined) {
+      if (next.produkt === "textilband") {
+        next.kanalanzahl = 40
+      }
+      if (patch.menge !== undefined || patch.gruppen !== undefined || patch.produkt !== undefined) {
         const menge = patch.menge ?? next.menge
-        const maxGruppen = maxGruppenAnzahl(menge)
+        let maxGruppen = maxGruppenAnzahl(menge)
+        if (next.produkt === "textilband") {
+          maxGruppen = Math.min(maxGruppen, TEXTILBAND_MAX_GRUPPEN)
+        }
         if (next.gruppen > maxGruppen) {
           next.gruppen = maxGruppen
         }
@@ -544,7 +563,10 @@ export function ConfiguratorWizard({
   ])
 
   const gruppenGroessen = normalizeGruppenGroessen(config)
-  const maxGruppen = maxGruppenAnzahl(config.menge)
+  const maxGruppen =
+    config.produkt === "textilband"
+      ? Math.min(maxGruppenAnzahl(config.menge), TEXTILBAND_MAX_GRUPPEN)
+      : maxGruppenAnzahl(config.menge)
   const tageBisEvent = config.von ? daysUntilEvent(config.von) : null
   const werktageBisEvent = config.von ? workdaysUntilEvent(config.von) : null
   const kurzeLieferzeit =
@@ -576,6 +598,7 @@ export function ConfiguratorWizard({
       return true
     }
     if (step === 2) {
+      if (!config.von) return false
       if (config.station === "pro" && config.gruppen < GRUPPEN_MIN) return false
       if (config.gruppen > 0 && config.station !== "pro") return false
       if (config.station === "pro" && !gruppenVerteilungGueltig(gruppenGroessen, config.menge)) {
@@ -588,14 +611,10 @@ export function ConfiguratorWizard({
         if (config.technikerKm === undefined || config.technikerKm < 0) return false
         if (!config.technikerSteuerpult) return false
       }
-      // Basis-/Gruppen-Verfügbarkeit blockiert nicht (rote Warnung bleibt sichtbar).
+      // Band-/Controller-/Gruppen-Ampel blockiert nicht (Warnung bleibt sichtbar).
       return true
     }
     if (step === 3) {
-      // Rote Ampel blockiert nicht: Anfrage geht in manuelle Prüfung.
-      return Boolean(config.von)
-    }
-    if (step === 4) {
       if (!hasAllowedLieferpaket(werktageBisEvent)) return false
       if (!isLieferpaketAllowed(lieferpaket, werktageBisEvent)) return false
       if (flexRueckgabe && !isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket)) return false
@@ -1031,112 +1050,182 @@ export function ConfiguratorWizard({
                   </p>
                 </div>
 
-                {config.produkt === "armband" && (
-                  <div className="rounded-lg border p-4 space-y-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <Label>{DRUCK_INFO.title}</Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {config.modus === "miete"
-                            ? "Individuelle Bedruckung ist nur beim Kauf möglich."
-                            : DRUCK_INFO.summary}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={config.druck}
-                        disabled={config.modus === "miete"}
-                        onCheckedChange={(v) => updateConfig({ druck: v })}
-                      />
-                    </div>
-
-                    {config.modus === "kauf" && (
-                      <div className="pt-2 border-t space-y-4">
-                        <div className="space-y-3">
-                          <Label>Druckart</Label>
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            {DRUCK_ART_OPTIONS.map((option) => (
-                              <OptionCard
-                                key={option.value}
-                                selected={config.druck && druckArt === option.value}
-                                onClick={() =>
-                                  updateConfig({
-                                    druck: true,
-                                    druckArt: option.value as DruckArt,
-                                  })
-                                }
-                                title={option.label}
-                                description={option.description}
-                                priceHint={option.priceHint}
-                                imageSrc={option.imageSrc}
-                                imageAlt={option.label}
-                              />
-                            ))}
-                          </div>
-                        </div>
-
-                        {config.druck && druckArt === "logo" && (
-                          <div
-                            className={cn(
-                              fieldError(Boolean(config.logoId)) &&
-                                "rounded-lg ring-2 ring-destructive p-2",
-                            )}
-                          >
-                            <RequiredLabel showError={fieldError(Boolean(config.logoId))}>
-                              Logo hochladen
-                            </RequiredLabel>
-                            <LogoPreview
-                              logoUrl={logoPreviewUrl}
-                              onFileSelect={handleLogoUpload}
-                              uploading={logoUploading}
-                              uploadError={logoError}
-                              onBrowseRequest={() =>
-                                updateConfig({ druck: true, druckArt: "logo" })
-                              }
-                            />
-                            {fieldError(Boolean(config.logoId)) && (
-                              <p className="text-xs text-destructive mt-2">
-                                Bitte laden Sie Ihr Logo hoch.
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {config.druck && druckArt === "vollflaechig" && (
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Vollflächiger Druck ohne Logo-Konfigurator – Motiv und Freigabe klären
-                            wir nach Ihrer Anfrage.
+                {usesArmbandLager(config.produkt) && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border p-4 space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <Label>
+                            {config.produkt === "textilband"
+                              ? "LED-Element bedrucken"
+                              : DRUCK_INFO.title}
+                          </Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {config.modus === "miete"
+                              ? "Bedruckung des LED-Elements ist nur beim Kauf möglich."
+                              : DRUCK_INFO.summary}
                           </p>
-                        )}
+                        </div>
+                        <Switch
+                          checked={config.druck}
+                          disabled={config.modus === "miete"}
+                          onCheckedChange={(v) => updateConfig({ druck: v })}
+                        />
+                      </div>
 
-                        {config.druck && druckArt === "logo" && (
+                      {config.modus === "kauf" && (
+                        <div className="pt-2 border-t space-y-4">
                           <div className="space-y-3">
-                            <Label>Probedruck (optional)</Label>
-                            <div className="grid gap-3 sm:grid-cols-3">
-                              {PROBEDRUCK_OPTIONS.map((option) => (
+                            <Label>Druckart</Label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {DRUCK_ART_OPTIONS.map((option) => (
                                 <OptionCard
                                   key={option.value}
-                                  selected={probedruckOption === option.value}
+                                  selected={config.druck && druckArt === option.value}
                                   onClick={() =>
                                     updateConfig({
-                                      probedruckOption: option.value as ProbedruckOption,
+                                      druck: true,
+                                      druckArt: option.value as DruckArt,
                                     })
                                   }
                                   title={option.label}
                                   description={option.description}
-                                  priceHint={
-                                    option.preisNetto > 0
-                                      ? `+${formatEur(option.preisNetto)} netto`
-                                      : "Kein Aufpreis"
-                                  }
+                                  priceHint={option.priceHint}
+                                  imageSrc={option.imageSrc}
+                                  imageAlt={option.label}
                                 />
                               ))}
                             </div>
                           </div>
-                        )}
+
+                          {config.druck && druckArt === "logo" && (
+                            <div
+                              className={cn(
+                                fieldError(Boolean(config.logoId)) &&
+                                  "rounded-lg ring-2 ring-destructive p-2",
+                              )}
+                            >
+                              <RequiredLabel showError={fieldError(Boolean(config.logoId))}>
+                                Logo hochladen
+                              </RequiredLabel>
+                              <LogoPreview
+                                logoUrl={logoPreviewUrl}
+                                onFileSelect={handleLogoUpload}
+                                uploading={logoUploading}
+                                uploadError={logoError}
+                                onBrowseRequest={() =>
+                                  updateConfig({ druck: true, druckArt: "logo" })
+                                }
+                              />
+                              {fieldError(Boolean(config.logoId)) && (
+                                <p className="text-xs text-destructive mt-2">
+                                  Bitte laden Sie Ihr Logo hoch.
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {config.druck && druckArt === "vollflaechig" && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              Vollflächiger Druck ohne Logo-Konfigurator – Motiv und Freigabe klären
+                              wir nach Ihrer Anfrage.
+                            </p>
+                          )}
+
+                          {config.druck && druckArt === "logo" && (
+                            <div className="space-y-3">
+                              <Label>Probedruck (optional)</Label>
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                {PROBEDRUCK_OPTIONS.map((option) => (
+                                  <OptionCard
+                                    key={option.value}
+                                    selected={probedruckOption === option.value}
+                                    onClick={() =>
+                                      updateConfig({
+                                        probedruckOption: option.value as ProbedruckOption,
+                                      })
+                                    }
+                                    title={option.label}
+                                    description={option.description}
+                                    priceHint={
+                                      option.preisNetto > 0
+                                        ? `+${formatEur(option.preisNetto)} netto`
+                                        : "Kein Aufpreis"
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {config.produkt === "textilband" && (
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <Label>{TEXTILBAND_DRUCK_INFO.title}</Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {TEXTILBAND_DRUCK_INFO.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatEur(TEXTILBAND_DRUCK_INFO.preisBis250)}/Stk. bis 250 ·{" "}
+                              {formatEur(TEXTILBAND_DRUCK_INFO.preisAb251)}/Stk. darüber
+                            </p>
+                          </div>
+                          <Switch
+                            checked={Boolean(config.druckTextilband)}
+                            onCheckedChange={(v) => updateConfig({ druckTextilband: v })}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
+
+                <div className="space-y-3 rounded-lg border p-4">
+                  <Label>Verfügbarkeit LED-Bänder</Label>
+                  <div className="min-h-[300px]">
+                    <AvailabilityIndicator
+                      availability={availability}
+                      loading={loadingAvailability}
+                      hideDetails={editMode}
+                    />
+                    {!loadingAvailability && !availability && config.von && (
+                      <p className="text-sm text-muted-foreground py-2">
+                        Verfügbarkeit wird geladen …
+                      </p>
+                    )}
+                    {!config.von && (
+                      <p className="text-sm text-muted-foreground py-2">
+                        Eventdatum fehlt – bitte im Schritt Event nachtragen.
+                      </p>
+                    )}
+                    <div className="min-h-[88px] mt-3">
+                      {!availability?.verfuegbar && availability ? (
+                        <p className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                          Für Deinen Termin sind laut Lagerbestand nicht genug LED-Bänder verfügbar. Wir
+                          prüfen natürlich trotzdem, ob wir Dir helfen können – eventuell kommt in der
+                          Zwischenzeit noch eine Lieferung oder wir bekommen Refurbished-Bänder zurück
+                          ins Lager.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="min-h-[72px]">
+                      {kurzeLieferzeit ? (
+                        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
+                          <AlertDescription>
+                            Achtung: Noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "e"} bis zum
+                            Event. Wir müssen prüfen, ob eine Lieferung in der kurzen Zeit möglich ist.
+                          </AlertDescription>
+                        </Alert>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
@@ -1276,197 +1365,79 @@ export function ConfiguratorWizard({
                           onChange={(next) => updateConfig({ gruppenGroessen: next })}
                         />
 
-                        {loadingGroupAvailability ? (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Gruppen-Verfügbarkeit wird geprüft …
-                          </div>
-                        ) : groupAvailability ? (
-                          <div className="rounded-md border p-3 space-y-2">
-                            {groupAvailability.verfuegbar ? (
-                              <p className="text-sm text-green-700 font-medium">
-                                Gruppenprogrammierung voraussichtlich möglich
-                                {groupAvailability.physischeGruppen > 0 &&
-                                  ` (über ${groupAvailability.physischeGruppen} physische Lagergruppe${groupAvailability.physischeGruppen === 1 ? "" : "n"})`}
-                              </p>
-                            ) : (
-                              <p className="text-sm text-destructive font-medium rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                                Gruppenprogrammierung voraussichtlich nicht vollständig möglich. Wir
-                                prüfen natürlich trotzdem, ob wir Dir helfen können.
-                              </p>
-                            )}
-                            {groupAvailability.hinweis && (
-                              <p className="text-xs text-muted-foreground">{groupAvailability.hinweis}</p>
-                            )}
-                            {groupAvailability.slots.map((slot) => (
-                              <p
-                                key={slot.slot}
-                                className={`text-xs ${
-                                  groupAvailability.fehlendeSlots.includes(slot.slot)
-                                    ? "text-destructive"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                Gruppe {slot.slot}:{" "}
-                                {groupAvailability.fehlendeSlots.includes(slot.slot)
-                                  ? "Bestand im Zeitraum nicht ausreichend"
-                                  : "voraussichtlich abdeckbar"}
-                              </p>
-                            ))}
-                          </div>
-                        ) : null}
+                        <div className="min-h-[160px]">
+                          {loadingGroupAvailability ? (
+                            <div className="flex h-full min-h-[140px] items-center gap-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Gruppen-Verfügbarkeit wird geprüft …
+                            </div>
+                          ) : groupAvailability ? (
+                            <div className="rounded-md border p-3 space-y-2">
+                              {groupAvailability.verfuegbar ? (
+                                <p className="text-sm text-green-700 font-medium">
+                                  Gruppenprogrammierung voraussichtlich möglich
+                                  {groupAvailability.physischeGruppen > 0 &&
+                                    ` (über ${groupAvailability.physischeGruppen} physische Lagergruppe${groupAvailability.physischeGruppen === 1 ? "" : "n"})`}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-destructive font-medium rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                                  Gruppenprogrammierung voraussichtlich nicht vollständig möglich. Wir
+                                  prüfen natürlich trotzdem, ob wir Dir helfen können.
+                                </p>
+                              )}
+                              {groupAvailability.hinweis && (
+                                <p className="text-xs text-muted-foreground">{groupAvailability.hinweis}</p>
+                              )}
+                              {groupAvailability.slots.map((slot) => (
+                                <p
+                                  key={slot.slot}
+                                  className={`text-xs ${
+                                    groupAvailability.fehlendeSlots.includes(slot.slot)
+                                      ? "text-destructive"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  Gruppe {slot.slot}:{" "}
+                                  {groupAvailability.fehlendeSlots.includes(slot.slot)
+                                    ? "Bestand im Zeitraum nicht ausreichend"
+                                    : "voraussichtlich abdeckbar"}
+                                </p>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
 
                 {config.station === "pro" && (
-                  <div className="space-y-4 rounded-lg border p-4">
+                  <div className="space-y-4">
                     <div>
                       <Label className="text-base">PRO-Zusatzoptionen</Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Techniker und Vorprogrammierung können gleichzeitig gewählt werden.
+                        Optionen sind einzeln anklickbar und kombinierbar.
                       </p>
                     </div>
 
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <div className="rounded-lg border p-4 space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="space-y-1">
-                            <Label>{TECHNIKER_INFO.title}</Label>
-                            <p className="text-xs text-muted-foreground">{TECHNIKER_INFO.description}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Buchbar ab {TECHNIKER_INFO.minVorlaufTage} Tagen Vorlauf.{" "}
-                              {formatEur(TECHNIKER_INFO.reiseNetto)} Reisepauschale ·{" "}
-                              {formatEur(TECHNIKER_INFO.tagNetto)}/Tag ·{" "}
-                              {formatEur(TECHNIKER_INFO.kmNetto)}/km
-                            </p>
-                            {!isTechnikerAllowed(tageBisEvent) && (
-                              <p className="text-xs text-amber-700">
-                                Bei nur noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "en"} bis zum
-                                Event ist ein Techniker-Einsatz nicht mehr buchbar.
-                              </p>
-                            )}
-                          </div>
-                          <Switch
-                            checked={config.techniker}
-                            disabled={!isTechnikerAllowed(tageBisEvent)}
-                            onCheckedChange={(v) => updateConfig({ techniker: v })}
-                          />
-                        </div>
-                        {config.techniker && (
-                          <div
-                            className={cn(
-                              "space-y-3 pt-2 border-t",
-                              showFieldErrors &&
-                                step2TechnikerInvalid &&
-                                "rounded-lg ring-2 ring-destructive p-2",
-                            )}
-                          >
-                            <div className="space-y-2">
-                              <Label>Steuerpult</Label>
-                              <div className="grid gap-2">
-                                {TECHNIKER_STEUERPULT_OPTIONS.map((opt) => (
-                                  <OptionCard
-                                    key={opt.value}
-                                    selected={config.technikerSteuerpult === opt.value}
-                                    onClick={() =>
-                                      updateConfig({ technikerSteuerpult: opt.value })
-                                    }
-                                    title={opt.label}
-                                    description={opt.description}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <RequiredLabel
-                                htmlFor="techniker-tage"
-                                showError={fieldError(
-                                  Boolean(config.technikerTage && config.technikerTage >= 1),
-                                )}
-                              >
-                                Einsatztage
-                              </RequiredLabel>
-                              <Input
-                                id="techniker-tage"
-                                type="number"
-                                min={1}
-                                max={14}
-                                value={config.technikerTage ?? 1}
-                                onChange={(e) =>
-                                  updateConfig({ technikerTage: Number(e.target.value) })
-                                }
-                                className={cn(
-                                  fieldError(
-                                    Boolean(config.technikerTage && config.technikerTage >= 1),
-                                  ) && INVALID_INPUT_CLASS,
-                                )}
-                                aria-invalid={fieldError(
-                                  Boolean(config.technikerTage && config.technikerTage >= 1),
-                                )}
-                              />
-                            </div>
-                            {config.technikerKm === undefined ? (
-                              <div className="space-y-2">
-                                <RequiredLabel
-                                  htmlFor="techniker-event-adresse"
-                                  showError={fieldError(Boolean(config.technikerAdresse?.trim()))}
-                                >
-                                  Eventadresse
-                                </RequiredLabel>
-                                <Input
-                                  id="techniker-event-adresse"
-                                  placeholder="Straße, PLZ Ort"
-                                  value={config.technikerAdresse || ""}
-                                  onChange={(e) => {
-                                    setDistanceError(null)
-                                    updateConfig({
-                                      technikerAdresse: e.target.value,
-                                      technikerKm: undefined,
-                                    })
-                                  }}
-                                  className={cn(
-                                    fieldError(Boolean(config.technikerAdresse?.trim())) &&
-                                      INVALID_INPUT_CLASS,
-                                  )}
-                                  aria-invalid={fieldError(
-                                    Boolean(config.technikerAdresse?.trim()),
-                                  )}
-                                />
-                                {distanceLoading && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-2">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Entfernung wird berechnet …
-                                  </p>
-                                )}
-                                {distanceError && (
-                                  <p className="text-xs text-destructive">{distanceError}</p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">
-                                Eventort: {config.technikerAdresse}
-                                {" · "}
-                                ca. {config.technikerKm} km (
-                                {formatEur(config.technikerKm * TECHNIKER_INFO.kmNetto)} netto)
-                                <Button
-                                  type="button"
-                                  variant="link"
-                                  className="h-auto p-0 ml-1 text-xs"
-                                  onClick={() => {
-                                    setDistanceError(null)
-                                    updateConfig({ technikerKm: undefined })
-                                  }}
-                                >
-                                  ändern
-                                </Button>
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
+                    <div className="grid items-start gap-4 lg:grid-cols-2">
+                      <OptionCard
+                        selected={Boolean(config.techniker)}
+                        disabled={!isTechnikerAllowed(tageBisEvent)}
+                        onClick={() => {
+                          if (!isTechnikerAllowed(tageBisEvent)) return
+                          updateConfig({ techniker: !config.techniker })
+                        }}
+                        title={TECHNIKER_INFO.title}
+                        description={
+                          !isTechnikerAllowed(tageBisEvent)
+                            ? `Nicht buchbar: weniger als ${TECHNIKER_INFO.minVorlaufTage} Tage Vorlauf.`
+                            : `${TECHNIKER_INFO.description} Ab ${TECHNIKER_INFO.minVorlaufTage} Tagen Vorlauf.`
+                        }
+                        imageSrc={TECHNIKER_CARD_IMAGE}
+                        imageAlt={TECHNIKER_INFO.title}
+                        priceHint={`${formatEur(TECHNIKER_INFO.reiseNetto)} Reise · ${formatEur(TECHNIKER_INFO.tagNetto)}/Tag`}
+                      />
                       <OptionCard
                         selected={Boolean(config.vorprogrammiertZusenden)}
                         onClick={() =>
@@ -1482,90 +1453,166 @@ export function ConfiguratorWizard({
                       />
                     </div>
 
-                    <div className="rounded-lg border p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="space-y-1">
-                          <Label>{REPEATER_BASIS_INFO.title}</Label>
-                          <p className="text-xs text-muted-foreground">
-                            {REPEATER_BASIS_INFO.description}
-                          </p>
-                          <p className="text-xs font-medium">
-                            {formatEur(0)} netto · nur Info auf dem Angebot, keine Lagerbuchung
-                          </p>
+                    {config.techniker && (
+                      <div
+                        className={cn(
+                          "space-y-3 rounded-lg border p-4",
+                          showFieldErrors &&
+                            step2TechnikerInvalid &&
+                            "ring-2 ring-destructive",
+                        )}
+                      >
+                        <div className="space-y-2">
+                          <Label>Steuerpult</Label>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {TECHNIKER_STEUERPULT_OPTIONS.map((opt) => (
+                              <OptionCard
+                                key={opt.value}
+                                selected={config.technikerSteuerpult === opt.value}
+                                onClick={() =>
+                                  updateConfig({ technikerSteuerpult: opt.value })
+                                }
+                                title={opt.label}
+                                description={opt.description}
+                              />
+                            ))}
+                          </div>
                         </div>
-                        <Switch
-                          checked={Boolean(config.repeaterBasisstation)}
-                          onCheckedChange={(v) => updateConfig({ repeaterBasisstation: v })}
-                        />
+                        <div className="space-y-2">
+                          <RequiredLabel
+                            htmlFor="techniker-tage"
+                            showError={fieldError(
+                              Boolean(config.technikerTage && config.technikerTage >= 1),
+                            )}
+                          >
+                            Einsatztage
+                          </RequiredLabel>
+                          <Input
+                            id="techniker-tage"
+                            type="number"
+                            min={1}
+                            max={14}
+                            value={config.technikerTage ?? 1}
+                            onChange={(e) =>
+                              updateConfig({ technikerTage: Number(e.target.value) })
+                            }
+                            className={cn(
+                              fieldError(
+                                Boolean(config.technikerTage && config.technikerTage >= 1),
+                              ) && INVALID_INPUT_CLASS,
+                            )}
+                          />
+                        </div>
+                        {config.technikerKm === undefined ? (
+                          <div className="space-y-2">
+                            <RequiredLabel
+                              htmlFor="techniker-event-adresse"
+                              showError={fieldError(Boolean(config.technikerAdresse?.trim()))}
+                            >
+                              Eventadresse
+                            </RequiredLabel>
+                            <Input
+                              id="techniker-event-adresse"
+                              placeholder="Straße, PLZ Ort"
+                              value={config.technikerAdresse || ""}
+                              onChange={(e) => {
+                                setDistanceError(null)
+                                updateConfig({
+                                  technikerAdresse: e.target.value,
+                                  technikerKm: undefined,
+                                })
+                              }}
+                              className={cn(
+                                fieldError(Boolean(config.technikerAdresse?.trim())) &&
+                                  INVALID_INPUT_CLASS,
+                              )}
+                            />
+                            {distanceLoading && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Entfernung wird berechnet …
+                              </p>
+                            )}
+                            {distanceError && (
+                              <p className="text-xs text-destructive">{distanceError}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Eventort: {config.technikerAdresse}
+                            {" · "}
+                            ca. {config.technikerKm} km (
+                            {formatEur(config.technikerKm * TECHNIKER_INFO.kmNetto)} netto)
+                            <Button
+                              type="button"
+                              variant="link"
+                              className="h-auto p-0 ml-1 text-xs"
+                              onClick={() => {
+                                setDistanceError(null)
+                                updateConfig({ technikerKm: undefined })
+                              }}
+                            >
+                              ändern
+                            </Button>
+                          </p>
+                        )}
                       </div>
-                    </div>
+                    )}
+
+                    <OptionCard
+                      selected={Boolean(config.repeaterBasisstation)}
+                      onClick={() =>
+                        updateConfig({
+                          repeaterBasisstation: !config.repeaterBasisstation,
+                        })
+                      }
+                      title={REPEATER_BASIS_INFO.title}
+                      description={REPEATER_BASIS_INFO.description}
+                      priceHint="0,00 € · Info"
+                    />
+                    {config.repeaterBasisstation && (
+                      <p className="text-sm font-semibold text-foreground">
+                        {REPEATER_BASIS_INFO.boldHinweis}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+
+                {config.station !== "keine" && (
+                  <div className="min-h-[72px] rounded-lg border p-4">
+                    <StationAvailabilityIndicator
+                      station={config.station}
+                      availability={stationAvailability}
+                    />
                   </div>
                 )}
 
               </div>
             )}
 
-            {/* Schritt 3: Zeitraum */}
+            {/* Schritt 3: Extras */}
             {step === 3 && (
               <div className="space-y-4">
-                {config.von && (
-                  <p className="text-sm rounded-lg border bg-muted/30 p-4">
-                    Eventzeitraum: <strong>{config.von}</strong>
-                    {config.bis && config.bis !== config.von ? (
-                      <>
-                        {" "}
-                        – <strong>{config.bis}</strong>
-                      </>
-                    ) : null}
-                    {config.technikerAdresse ? (
-                      <>
-                        <br />
-                        Ort: <strong>{config.technikerAdresse}</strong>
-                      </>
-                    ) : null}
-                  </p>
-                )}
-                <AvailabilityIndicator
-                  availability={availability}
-                  loading={loadingAvailability}
-                  hideDetails={editMode}
-                />
-
-                {!availability?.verfuegbar && availability && (
-                  <p className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                    Für Deinen Termin sind laut Lagerbestand nicht genug LED-Bänder verfügbar. Wir
-                    prüfen natürlich trotzdem, ob wir Dir helfen können – eventuell kommt in der
-                    Zwischenzeit noch eine Lieferung oder wir bekommen Refurbished-Bänder zurück
-                    ins Lager.
-                  </p>
-                )}
-
-                {kurzeLieferzeit && (
-                  <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
-                    <AlertDescription>
-                      Achtung: Noch {tageBisEvent} Tag{tageBisEvent === 1 ? "" : "e"} bis zum
-                      Event. Wir müssen prüfen, ob eine Lieferung in der kurzen Zeit möglich ist.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {config.station !== "keine" && (
-                  <StationAvailabilityIndicator
-                    station={config.station}
-                    availability={stationAvailability}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Schritt 4: Extras */}
-            {step === 4 && (
-              <div className="space-y-4">
-                <div className="rounded-lg border p-4 space-y-1">
+                <div className="space-y-3">
                   <Label>{LIEFERLAND_INFO.title}</Label>
-                  <p className="text-sm font-medium">{LIEFERLAND_INFO.land}</p>
                   <p className="text-xs text-muted-foreground">{LIEFERLAND_INFO.hinweis}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {LIEFERLAND_OPTIONS.map((opt) => (
+                      <OptionCard
+                        key={opt.value}
+                        selected={config.land === opt.value}
+                        onClick={() => updateConfig({ land: opt.value })}
+                        title={opt.label}
+                        description={opt.hinweis}
+                        priceHint={
+                          opt.nachAbsprache
+                            ? "nach Absprache"
+                            : `+${formatEur(opt.preisNetto)} netto`
+                        }
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1636,6 +1683,8 @@ export function ConfiguratorWizard({
                     </p>
                   </div>
                 )}
+
+                <LogisticsTimeline config={config} />
               </div>
             )}
 
@@ -1674,9 +1723,10 @@ export function ConfiguratorWizard({
                     `${PRODUCT_OPTIONS.find((p) => p.value === config.produkt)?.label} · ${config.modus} · ${config.menge} Stk.`,
                     config.druck
                       ? druckArt === "vollflaechig"
-                        ? "vollflächig bedruckt"
-                        : "mit Logo-Bedruckung"
+                        ? "LED vollflächig bedruckt"
+                        : "LED mit Logo-Bedruckung"
                       : null,
+                    config.druckTextilband ? "Textilband bedruckt" : null,
                     config.logoId ? "Logo hochgeladen" : null,
                   ]
                     .filter(Boolean)
@@ -1693,7 +1743,7 @@ export function ConfiguratorWizard({
                           ? "Voraussichtlich nicht verfügbar"
                           : "Wird geprüft"
                     }
-                    onEdit={() => setStep(3)}
+                    onEdit={() => setStep(1)}
                   />
                 )}
                 <SummaryRow
@@ -1716,8 +1766,8 @@ export function ConfiguratorWizard({
                       : config.technikerSteuerpult === "vorhanden"
                         ? "Steuerpult vorhanden"
                         : null,
-                    config.vorprogrammiertZusenden ? "Vorprogrammiert zusenden" : null,
-                    config.repeaterBasisstation ? "Repeater-Basisstation (Info)" : null,
+                    config.vorprogrammiertZusenden ? "Szenen vorprogrammieren" : null,
+                    config.repeaterBasisstation ? "Repeater / Reichweite (Info)" : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -1726,18 +1776,21 @@ export function ConfiguratorWizard({
                 <SummaryRow
                   label="Extras"
                   value={[
+                    LIEFERLAND_OPTIONS.find((o) => o.value === config.land)?.label ||
+                      config.land,
                     config.druck
                       ? druckArt === "vollflaechig"
                         ? "Vollflächiger Druck"
                         : "Logo-Bedruckung"
                       : null,
+                    config.druckTextilband ? "Textilband-Bedruckung" : null,
                     getProbedruckLabel(probedruckOption),
                     getLieferpaketLabel(lieferpaket),
                     flexRueckgabe ? "Flex-Rückgabe" : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
-                  onEdit={() => setStep(4)}
+                  onEdit={() => setStep(3)}
                 />
 
                 {loadingPrice ? (

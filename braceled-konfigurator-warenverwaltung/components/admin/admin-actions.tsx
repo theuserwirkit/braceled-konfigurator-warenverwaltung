@@ -12,9 +12,12 @@ import { getBufferSettings } from "@/lib/actions/bookings"
 import { BASE_STATION_TYP_OPTIONS } from "@/lib/konfigurator/station-types"
 import { KANALANZAHL_OPTIONS } from "@/lib/konfigurator/kanalanzahl"
 import {
+  formatGroupDisplayLabel,
   formatLeuchtgruppeName,
   formatLeuchtgruppeSlotLabel,
+  formatTextilbandGruppeName,
   LEUCHTGRUPPE_SLOTS,
+  TEXTILBAND_LEUCHTGRUPPE_SLOTS,
 } from "@/lib/konfigurator/leuchtgruppen"
 import { Loader2, Plus, RefreshCw, Settings } from "lucide-react"
 
@@ -28,6 +31,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
   const [loading, setLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
 
+  const [groupProdukt, setGroupProdukt] = useState<"armband" | "textilband">("armband")
   const [groupSlot, setGroupSlot] = useState("")
   const [groupKanalanzahl, setGroupKanalanzahl] = useState("")
 
@@ -74,22 +78,31 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
   const existingGroupNames = new Set(existingGroups.map((g) => g.name))
 
   const previewGroupName =
-    groupSlot && groupKanalanzahl
-      ? formatLeuchtgruppeName(parseInt(groupSlot, 10), parseInt(groupKanalanzahl, 10) as 40 | 80)
-      : null
+    groupProdukt === "textilband"
+      ? groupSlot
+        ? formatTextilbandGruppeName(parseInt(groupSlot, 10))
+        : null
+      : groupSlot && groupKanalanzahl
+        ? formatLeuchtgruppeName(parseInt(groupSlot, 10), parseInt(groupKanalanzahl, 10) as 40 | 80)
+        : null
 
   const isGroupComboTaken = previewGroupName ? existingGroupNames.has(previewGroupName) : false
 
   const handleCreateGroup = async () => {
-    if (!groupSlot || !groupKanalanzahl) return
+    if (!groupSlot) return
+    if (groupProdukt === "armband" && !groupKanalanzahl) return
     setLoading(true)
     const result = await createGroup({
       slot: parseInt(groupSlot, 10),
-      kanalanzahl: parseInt(groupKanalanzahl, 10),
+      kanalanzahl: groupProdukt === "textilband" ? 40 : parseInt(groupKanalanzahl, 10),
+      produkt: groupProdukt,
     })
     setLoading(false)
     if (result.success) {
-      toast({ title: "Erfolg", description: `Leuchtgruppe ${previewGroupName} wurde erstellt` })
+      toast({
+        title: "Erfolg",
+        description: `${formatGroupDisplayLabel(previewGroupName!)} (${previewGroupName}) erstellt`,
+      })
       setGroupSlot("")
       setGroupKanalanzahl("")
     } else {
@@ -261,17 +274,50 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
         <CardContent>
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Leuchtgruppen G1–G20 mit 40 CH oder 80 CH. Gespeichert wird die Kombination, z. B.{" "}
-              <span className="font-mono">G1_40ch</span>.
+              LED-Armband: <span className="font-mono">G1_40ch</span>–G20. Textilband (eigene SKUs):{" "}
+              <span className="font-mono">T1_40ch</span>–T10. Anzeige z. B. „Textilband 40 CH Gruppe 1“.
             </p>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="groupSlot">Gruppe (G1–G20)</Label>
+              <Label htmlFor="groupProdukt">Produkt</Label>
+              <Select
+                value={groupProdukt}
+                onValueChange={(v) => {
+                  setGroupProdukt(v as "armband" | "textilband")
+                  setGroupSlot("")
+                  setGroupKanalanzahl(v === "textilband" ? "40" : "")
+                }}
+              >
+                <SelectTrigger id="groupProdukt">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="armband">LED Armband</SelectItem>
+                  <SelectItem value="textilband">Textilband mit Einlass-Verschluss</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="groupSlot">
+                {groupProdukt === "textilband" ? "Gruppe (T1–T10)" : "Gruppe (G1–G20)"}
+              </Label>
               <Select value={groupSlot} onValueChange={setGroupSlot}>
                 <SelectTrigger id="groupSlot">
                   <SelectValue placeholder="Gruppe wählen …" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LEUCHTGRUPPE_SLOTS.map((slot) => {
+                  {(groupProdukt === "textilband"
+                    ? TEXTILBAND_LEUCHTGRUPPE_SLOTS
+                    : LEUCHTGRUPPE_SLOTS
+                  ).map((slot) => {
+                    if (groupProdukt === "textilband") {
+                      const taken = existingGroupNames.has(formatTextilbandGruppeName(slot))
+                      return (
+                        <SelectItem key={slot} value={String(slot)} disabled={taken}>
+                          Textilband 40 CH Gruppe {slot}
+                          {taken ? " (belegt)" : ""}
+                        </SelectItem>
+                      )
+                    }
                     const taken40 = existingGroupNames.has(formatLeuchtgruppeName(slot, 40))
                     const taken80 = existingGroupNames.has(formatLeuchtgruppeName(slot, 80))
                     const fullyTaken = taken40 && taken80
@@ -289,32 +335,38 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="groupKanalanzahl">Kanalanzahl (Pflicht)</Label>
-              <Select value={groupKanalanzahl} onValueChange={setGroupKanalanzahl}>
-                <SelectTrigger id="groupKanalanzahl">
-                  <SelectValue placeholder="40 CH oder 80 CH …" />
-                </SelectTrigger>
-                <SelectContent>
-                  {KANALANZAHL_OPTIONS.map((ch) => {
-                    const taken =
-                      groupSlot &&
-                      existingGroupNames.has(
-                        formatLeuchtgruppeName(parseInt(groupSlot, 10), ch),
+            {groupProdukt === "armband" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="groupKanalanzahl">Kanalanzahl (Pflicht)</Label>
+                <Select value={groupKanalanzahl} onValueChange={setGroupKanalanzahl}>
+                  <SelectTrigger id="groupKanalanzahl">
+                    <SelectValue placeholder="40 CH oder 80 CH …" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KANALANZAHL_OPTIONS.map((ch) => {
+                      const taken =
+                        groupSlot &&
+                        existingGroupNames.has(
+                          formatLeuchtgruppeName(parseInt(groupSlot, 10), ch),
+                        )
+                      return (
+                        <SelectItem key={ch} value={String(ch)} disabled={Boolean(taken)}>
+                          {ch} CH Bändchen{taken ? " (existiert bereits)" : ""}
+                        </SelectItem>
                       )
-                    return (
-                      <SelectItem key={ch} value={String(ch)} disabled={Boolean(taken)}>
-                        {ch} CH Bändchen{taken ? " (existiert bereits)" : ""}
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {previewGroupName && (
               <p className="text-sm">
-                Wird gespeichert als:{" "}
-                <span className="font-mono font-medium">{previewGroupName}</span>
+                Anzeige:{" "}
+                <span className="font-medium">{formatGroupDisplayLabel(previewGroupName)}</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · ID <span className="font-mono">{previewGroupName}</span>
+                </span>
                 {isGroupComboTaken && (
                   <span className="text-destructive ml-2">– existiert bereits</span>
                 )}
@@ -322,7 +374,12 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
             )}
             <Button
               onClick={handleCreateGroup}
-              disabled={loading || !groupSlot || !groupKanalanzahl || isGroupComboTaken}
+              disabled={
+                loading ||
+                !groupSlot ||
+                isGroupComboTaken ||
+                (groupProdukt === "armband" && !groupKanalanzahl)
+              }
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Leuchtgruppe erstellen

@@ -6,17 +6,31 @@ import { requireRole } from "@/lib/auth"
 import { isValidEmailAddress } from "@/lib/konfigurator/email-settings"
 import {
   formatLeuchtgruppeName,
+  formatTextilbandGruppeName,
   LEUCHTGRUPPE_MAX_SLOT,
+  TEXTILBAND_LEUCHTGRUPPE_MAX_SLOT,
 } from "@/lib/konfigurator/leuchtgruppen"
 import { toSafeErrorMessage } from "@/lib/safe-error"
 
-export async function createGroup(input: { slot: number; kanalanzahl: number }) {
+export async function createGroup(input: {
+  slot: number
+  kanalanzahl: number
+  /** armband = G*_ch · textilband = T*_40ch (eigene SKUs) */
+  produkt?: "armband" | "textilband"
+}) {
   try {
     await requireRole(["ADMIN"])
     const sql = getDb()
-    const slot = Math.min(Math.max(Math.floor(input.slot), 1), LEUCHTGRUPPE_MAX_SLOT)
-    const kanalanzahl = input.kanalanzahl === 80 ? 80 : 40
-    const name = formatLeuchtgruppeName(slot, kanalanzahl)
+    const produkt = input.produkt === "textilband" ? "textilband" : "armband"
+    const kanalanzahl =
+      produkt === "textilband" ? 40 : input.kanalanzahl === 80 ? 80 : 40
+    const maxSlot =
+      produkt === "textilband" ? TEXTILBAND_LEUCHTGRUPPE_MAX_SLOT : LEUCHTGRUPPE_MAX_SLOT
+    const slot = Math.min(Math.max(Math.floor(input.slot), 1), maxSlot)
+    const name =
+      produkt === "textilband"
+        ? formatTextilbandGruppeName(slot)
+        : formatLeuchtgruppeName(slot, kanalanzahl)
 
     const existing = await sql`SELECT id FROM groups WHERE name = ${name} LIMIT 1`
     if (existing.length > 0) {
@@ -28,7 +42,9 @@ export async function createGroup(input: { slot: number; kanalanzahl: number }) 
     `
     const group = groups[0]
 
-    const skus = await sql`INSERT INTO skus (item_type, group_id) VALUES ('LED_BAND', ${group.id}) RETURNING *`
+    const skus = await sql`
+      INSERT INTO skus (item_type, group_id) VALUES ('LED_BAND', ${group.id}) RETURNING *
+    `
     const newSKU = skus[0]
 
     if (newSKU) {

@@ -10,7 +10,7 @@ import {
   finalizeQuoteBookingOnPayment,
   releaseQuoteBooking,
 } from "@/lib/actions/quote-booking-internal"
-import { normalizeKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
+import { resolveLagerKanalanzahl } from "@/lib/konfigurator/kanalanzahl"
 import { getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads-internal"
 import { getLeadById } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
@@ -35,7 +35,11 @@ import {
 } from "@/lib/konfigurator/quote-versions"
 import type { AvailabilityStressLevel } from "@/lib/konfigurator/availability-stress"
 import type { PaymentMethod, QuoteConfig, QuoteRequest, QuoteSource } from "@/lib/konfigurator/types"
-import { getProbedruckLabel, normalizeProbedruckOption } from "@/lib/konfigurator/product-info"
+import {
+  getProbedruckLabel,
+  normalizeProbedruckOption,
+  usesArmbandLager,
+} from "@/lib/konfigurator/product-info"
 import { getLieferpaketLabel, normalizeLieferpaket } from "@/lib/konfigurator/lieferpaket"
 import { normalizeGruppenGroessen } from "@/lib/konfigurator/gruppen-config"
 import { formatKontaktAdresse } from "@/lib/konfigurator/kontakt-adresse"
@@ -110,8 +114,11 @@ function configSummary(config: QuoteConfig): string {
   if (config.produkt === "armband" && config.variante) {
     lines.push(`Variante: ${config.variante}`)
   }
-  if (config.produkt === "armband" && config.kanalanzahl) {
+  if (usesArmbandLager(config.produkt) && config.kanalanzahl) {
     lines.push(`Kanalanzahl: ${config.kanalanzahl} CH`)
+  }
+  if (config.druckTextilband) {
+    lines.push("Textilband-Bedruckung: ja")
   }
   if (config.modus === "miete" && config.von) {
     lines.push(`Zeitraum: ${config.von} – ${config.bis || config.von}`)
@@ -543,10 +550,7 @@ async function revalidateAvailability(quote: QuoteRequest): Promise<string | nul
     menge: config.menge,
     von: config.von,
     bis: config.bis || config.von,
-    kanalanzahl:
-      config.produkt === "armband"
-        ? normalizeKanalanzahl(config.kanalanzahl)
-        : undefined,
+    kanalanzahl: resolveLagerKanalanzahl(config.produkt, config.kanalanzahl),
   })
 
   if (!availability.verfuegbar) {

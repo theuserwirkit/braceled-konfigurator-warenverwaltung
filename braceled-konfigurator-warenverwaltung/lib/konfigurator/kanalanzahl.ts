@@ -1,3 +1,5 @@
+import { usesArmbandLager } from "@/lib/konfigurator/product-info"
+
 export const KANALANZAHL_OPTIONS = [40, 80] as const
 export type Kanalanzahl = (typeof KANALANZAHL_OPTIONS)[number]
 
@@ -10,6 +12,16 @@ export function isKanalanzahl(value: unknown): value is Kanalanzahl {
 
 export function normalizeKanalanzahl(value: unknown, fallback: Kanalanzahl = 40): Kanalanzahl {
   return isKanalanzahl(value) ? value : fallback
+}
+
+/** Kanalanzahl für Soft-Hold / Lager (Textilband immer 40; sonst Armband-Logik) */
+export function resolveLagerKanalanzahl(
+  produkt: string,
+  kanalanzahl?: unknown,
+): Kanalanzahl | undefined {
+  if (!usesArmbandLager(produkt)) return undefined
+  if (produkt === "textilband") return 40
+  return normalizeKanalanzahl(kanalanzahl)
 }
 
 export function formatKanalanzahl(value: number): string {

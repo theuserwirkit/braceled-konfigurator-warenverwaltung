@@ -1,10 +1,13 @@
 import type { AvailabilityStressLevel } from "@/lib/konfigurator/availability-stress"
 import { getAvailabilityForGroupBatchesByDateRange } from "@/lib/actions/bookings"
-import { resolveGroupsForProduct } from "@/lib/product-mapping"
+import {
+  isWristlinkProdukt,
+  resolveGroupsForProduct,
+  type WristlinkProdukt,
+} from "@/lib/product-mapping"
 import {
   MAX_PHYSICAL_GROUPS,
   normalizeKanalanzahl,
-  type Kanalanzahl,
 } from "@/lib/konfigurator/kanalanzahl"
 
 export type InventoryGroupPool = {
@@ -38,9 +41,10 @@ export async function getInventoryGroupPools(
   von: string,
   bis: string,
   kanalanzahl?: number,
+  produkt: WristlinkProdukt = "armband",
 ): Promise<InventoryGroupPool[]> {
-  const ch = kanalanzahl != null ? normalizeKanalanzahl(kanalanzahl) : undefined
-  const groups = await resolveGroupsForProduct("armband", ch)
+  const ch = kanalanzahl != null ? normalizeKanalanzahl(kanalanzahl) : 40
+  const groups = await resolveGroupsForProduct(produkt, ch)
   const ausgabe = parseDate(von)
   const rueckgabe = parseDate(bis)
   const stats = await getAvailabilityForGroupBatchesByDateRange(
@@ -167,10 +171,13 @@ export async function checkGroupProgrammingAvailability(input: {
   bis?: string
   gruppenGroessen: number[]
   kanalanzahl?: number
+  produkt?: string
 }): Promise<GroupProgrammingAvailability> {
   const bis = input.bis || input.von
   const sizes = input.gruppenGroessen
   const kanalanzahl = normalizeKanalanzahl(input.kanalanzahl)
+  const produkt: WristlinkProdukt =
+    input.produkt && isWristlinkProdukt(input.produkt) ? input.produkt : "armband"
 
   if (sizes.length === 0 || sizes.every((n) => n <= 0)) {
     return {
@@ -183,7 +190,7 @@ export async function checkGroupProgrammingAvailability(input: {
     }
   }
 
-  const inventory = await getInventoryGroupPools(input.von, bis, kanalanzahl)
+  const inventory = await getInventoryGroupPools(input.von, bis, kanalanzahl, produkt)
   return allocateGroupProgramming(sizes, inventory)
 }
 

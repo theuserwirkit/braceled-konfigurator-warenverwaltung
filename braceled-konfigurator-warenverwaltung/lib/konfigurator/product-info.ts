@@ -78,11 +78,43 @@ export const LIEFERART_OPTIONS: ReadonlyArray<{
   },
 ]
 
+export const LIEFERLAND_OPTIONS = [
+  {
+    value: "DE" as const,
+    label: "Deutschland",
+    hinweis: "Versandpreis wird im Angebot berechnet.",
+    preisNetto: 90,
+    nachAbsprache: false,
+  },
+  {
+    value: "AT" as const,
+    label: "Österreich",
+    hinweis: "Versand nach Absprache – unser Team meldet sich mit den Kosten.",
+    preisNetto: 0,
+    nachAbsprache: true,
+  },
+  {
+    value: "CH" as const,
+    label: "Schweiz",
+    hinweis: "Versand nach Absprache – unser Team meldet sich mit den Kosten.",
+    preisNetto: 0,
+    nachAbsprache: true,
+  },
+  {
+    value: "EU" as const,
+    label: "EU (andere Länder)",
+    hinweis: "Versand nach Absprache – bitte Lieferland im Freitext ergänzen.",
+    preisNetto: 0,
+    nachAbsprache: true,
+  },
+] as const
+
+export type LieferlandCode = (typeof LIEFERLAND_OPTIONS)[number]["value"]
+
 export const LIEFERLAND_INFO = {
   title: "Lieferland",
   land: "Deutschland",
-  hinweis:
-    "Der Online-Konfigurator berechnet Angebote derzeit nur für Lieferungen nach Deutschland. Für andere Länder kontaktieren Sie uns bitte direkt.",
+  hinweis: "DE, AT, CH oder EU – außerhalb DE Versand nach Absprache.",
 } as const
 
 export function normalizeLieferart(config: {
@@ -258,6 +290,14 @@ export const PRODUCT_OPTIONS: ReadonlyArray<{
     imageSrc: "/images/konfigurator/products/armband.webp",
   },
   {
+    value: "textilband",
+    label: "Textilband mit Einlass-Verschluss",
+    description:
+      "Einlass-Textilband mit LED-Element – gleiche 40-CH-Steuerung, optional Textilband-Druck",
+    available: true,
+    imageSrc: "/images/konfigurator/products/textilband.png",
+  },
+  {
     value: "ball",
     label: "LED Ball",
     description: "90 cm LED-Ball für leuchtende Effekte im Publikum",
@@ -299,11 +339,34 @@ export function modusAnzeige(modus: string): string {
 
 export const PRODUKT_ANZEIGE: Record<string, string> = {
   armband: "LED Armband",
+  textilband: "Textilband mit Einlass-Verschluss",
   ball: "LED Ball",
   platine: "LED Platine",
   lanyard: "LED Lanyard",
   zauberstab: "LED Zauberstab",
   licht: "LED-Licht",
+}
+
+/** Max. Anfragegruppen für Textilband (nur 40 CH) */
+export const TEXTILBAND_MAX_GRUPPEN = 10
+
+export const TEXTILBAND_DRUCK_INFO = {
+  title: "Textilband bedrucken",
+  description:
+    "Bedruckung des Textilbands (Einlassband). Auch bei Miete möglich – unabhängig vom LED-Element.",
+  /** bis 250 Stk. netto/Stk. */
+  preisBis250: 0.7,
+  /** ab 251 Stk. netto/Stk. */
+  preisAb251: 0.66,
+} as const
+
+export function textilbandDruckPreisNetto(menge: number): number {
+  return menge <= 250 ? TEXTILBAND_DRUCK_INFO.preisBis250 : TEXTILBAND_DRUCK_INFO.preisAb251
+}
+
+/** Produkte, die den LED-Armband-Lagerpool (Leuchtgruppen) nutzen */
+export function usesArmbandLager(produkt: string): boolean {
+  return produkt === "armband" || produkt === "textilband"
 }
 
 export const LIEFERZEIT_OPTIONS = [
@@ -346,7 +409,7 @@ export const TECHNIKER_STEUERPULT_OPTIONS = [
 ] as const
 
 export const VORPROGRAMMIERT_INFO = {
-  title: "Vorprogrammiert zusenden",
+  title: "Szenen vorprogrammieren",
   description:
     "Programmieren von bis zu 8 Szenen im Vorfeld inkl. intelligentem Steuerpult (zur Miete).",
   imageSrc: "/images/steuerkonsole-vorprogrammiert.png",
@@ -354,10 +417,14 @@ export const VORPROGRAMMIERT_INFO = {
   preisNetto: 0,
 } as const
 
+export const TECHNIKER_CARD_IMAGE = "/images/techniker-kontur.jpg"
+
 export const REPEATER_BASIS_INFO = {
-  title: "Repeater-Basisstation gewünscht",
+  title: "Mehr Reichweite oder verschiedene Räume?",
+  boldHinweis:
+    "Bitte Details mit dem Team besprechen. Diese Option ist nicht über den Konfigurator buchbar.",
   description:
-    "Bei großen Event-Locations eine zweite Basisstation mitbuchen. Diese muss ebenfalls ans DMX angeschlossen werden. Rückfragen beantwortet unser Team.",
+    "Bei großen Event-Locations eine zweite Basisstation (Repeater) – ebenfalls ans DMX anschließen. Rückfragen beantwortet unser Team.",
   preisNetto: 0,
 } as const
 

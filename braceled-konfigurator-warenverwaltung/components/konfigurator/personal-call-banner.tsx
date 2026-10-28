@@ -7,10 +7,10 @@ export function PersonalCallBanner() {
       <p className="text-sm font-semibold tracking-tight text-[#5b21b6] sm:text-base">
         Lieber persönlich? Ruf unser Team an:{" "}
         <a
-          href="tel:08009475864"
+          href="tel:+498009475864"
           className="underline decoration-[#14b8a6]/70 underline-offset-2 hover:text-[#0f766e]"
         >
-          0800 WIRKUNG!
+          0800 WIRKUNG (+49 800 9475 864)
         </a>
       </p>
     </aside>

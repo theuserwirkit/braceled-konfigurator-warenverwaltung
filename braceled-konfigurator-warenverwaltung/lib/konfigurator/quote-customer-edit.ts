@@ -37,6 +37,9 @@ export function buildChangeSummary(before: QuoteConfig, after: QuoteConfig): str
   if (before.menge !== after.menge) parts.push(`Menge ${before.menge}→${after.menge}`)
   if (before.logoId !== after.logoId) parts.push("Logo")
   if (before.druck !== after.druck || before.druckArt !== after.druckArt) parts.push("Druck")
+  if (Boolean(before.druckTextilband) !== Boolean(after.druckTextilband)) {
+    parts.push("Textilband-Druck")
+  }
   if (before.probedruckOption !== after.probedruckOption) parts.push("Probedruck")
   if (
     Boolean(before.techniker) !== Boolean(after.techniker) ||

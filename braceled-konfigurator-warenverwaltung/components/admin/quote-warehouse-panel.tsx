@@ -21,6 +21,7 @@ import { ensureQuoteBooking } from "@/lib/actions/quote-booking"
 import type { QuoteStationInfo, QuoteWarehouseBaseOption } from "@/lib/actions/quote-warehouse"
 import type { BandBatchPool } from "@/lib/konfigurator/band-allocation"
 import { modusAnzeige } from "@/lib/konfigurator/product-info"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import {
   isBaseStationTyp,
   STATION_TYP_LABELS,
@@ -431,7 +432,7 @@ function ReturnSection({
 
   const groupNameById = useMemo(() => {
     const map = new Map<number, string>()
-    for (const group of groups) map.set(group.id, group.name)
+    for (const group of groups) map.set(group.id, formatGroupDisplayLabel(group.name))
     return map
   }, [groups])
 

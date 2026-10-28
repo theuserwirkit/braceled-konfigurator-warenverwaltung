@@ -1,4 +1,4 @@
-export type WristlinkProdukt = "armband" | "zauberstab" | "licht"
+export type WristlinkProdukt = "armband" | "textilband" | "zauberstab" | "licht"
 export type WristlinkModus = "kauf" | "miete"
 export type WristlinkStation = "keine" | "eco" | "pro"
 export type WristlinkLieferzeit = "standard" | "express" | "hyperexpress"
@@ -8,6 +8,7 @@ export type PreisEngineInput = {
   modus: WristlinkModus | string
   menge: number
   druck?: boolean
+  druckTextilband?: boolean
   druckArt?: string
   gruppen?: number
   station?: WristlinkStation | string

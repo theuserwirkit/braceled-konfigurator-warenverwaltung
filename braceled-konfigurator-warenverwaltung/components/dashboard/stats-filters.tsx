@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ItemType } from "@/lib/types"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 
 interface StatsFiltersProps {
   groups: Array<{ id: number; name: string }>
@@ -72,7 +73,7 @@ export function StatsFilters({ groups, features, onFilterChange }: StatsFiltersP
             <SelectItem value="ALL">Alle</SelectItem>
             {groups.map((group) => (
               <SelectItem key={group.id} value={group.id.toString()}>
-                {group.name}
+                {formatGroupDisplayLabel(group.name)}
               </SelectItem>
             ))}
           </SelectContent>

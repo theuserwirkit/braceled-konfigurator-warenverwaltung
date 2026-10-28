@@ -1,13 +1,26 @@
 import { getDb } from "@/lib/db"
+import { usesArmbandLager } from "@/lib/konfigurator/product-info"
+import {
+  isLeuchtgruppeName,
+  isTextilbandLeuchtgruppe,
+} from "@/lib/konfigurator/leuchtgruppen"
 import { cache } from "react"
 
-export type WristlinkProdukt = "armband" | "zauberstab" | "licht"
+export { usesArmbandLager }
 
-export const WRISTLINK_PRODUKTE: WristlinkProdukt[] = ["armband", "zauberstab", "licht"]
+export type WristlinkProdukt = "armband" | "textilband" | "zauberstab" | "licht"
+
+export const WRISTLINK_PRODUKTE: WristlinkProdukt[] = [
+  "armband",
+  "textilband",
+  "zauberstab",
+  "licht",
+]
 
 /** Standard-Suchmuster für Gruppennamen je Produktkategorie (Groß/Kleinschreibung ignoriert). */
 export const DEFAULT_PRODUCT_PATTERNS: Record<WristlinkProdukt, string[]> = {
   armband: ["armband"],
+  textilband: ["textil"],
   zauberstab: ["zauberstab", "stab"],
   licht: ["licht"],
 }
@@ -20,7 +33,13 @@ function parseMappingJson(raw: string): ProductMappingConfig | null {
     const result = {} as ProductMappingConfig
     for (const produkt of WRISTLINK_PRODUKTE) {
       const patterns = parsed[produkt]
-      if (!Array.isArray(patterns) || patterns.length === 0) return null
+      if (!Array.isArray(patterns) || patterns.length === 0) {
+        if (produkt === "textilband") {
+          result[produkt] = DEFAULT_PRODUCT_PATTERNS.textilband
+          continue
+        }
+        return null
+      }
       result[produkt] = patterns.map(String)
     }
     return result
@@ -61,8 +80,9 @@ export function groupMatchesPatterns(groupName: string, patterns: string[]): boo
   return patterns.some((pattern) => normalized.includes(pattern.toLowerCase()))
 }
 
+/** @deprecated use isLeuchtgruppeName – Alias für bestehende Imports */
 export function isArmbandLeuchtgruppe(groupName: string): boolean {
-  return /^G([1-9]|1[0-9]|20)_(40|80)ch$/i.test(groupName.trim())
+  return isLeuchtgruppeName(groupName)
 }
 
 export const resolveGroupsForProduct = cache(async (
@@ -76,10 +96,14 @@ export const resolveGroupsForProduct = cache(async (
     SELECT id, name, kanalanzahl FROM groups ORDER BY name ASC
   `) as Array<{ id: number; name: string; kanalanzahl: number }>
 
+  const effectiveKanal =
+    produkt === "textilband" ? 40 : kanalanzahl
+
   return groups
     .filter((group) => {
-      if (produkt === "armband" && isArmbandLeuchtgruppe(group.name)) return true
+      if (produkt === "armband" && isLeuchtgruppeName(group.name)) return true
+      if (produkt === "textilband" && isTextilbandLeuchtgruppe(group.name)) return true
       return groupMatchesPatterns(group.name, patterns)
     })
-    .filter((group) => kanalanzahl == null || group.kanalanzahl === kanalanzahl)
+    .filter((group) => effectiveKanal == null || group.kanalanzahl === effectiveKanal)
 })

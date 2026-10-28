@@ -11,6 +11,7 @@ import { formatKontaktAdresse } from "@/lib/konfigurator/kontakt-adresse"
 import type { FulfillmentStatus, QuoteConfig, QuoteRequest } from "@/lib/konfigurator/types"
 import type { QuoteVersionRow } from "@/lib/konfigurator/quote-versions"
 import { QuoteVersionTimeline } from "@/components/angebot/quote-version-timeline"
+import { LogisticsTimeline } from "@/components/konfigurator/logistics-timeline"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -253,6 +254,8 @@ export function AngebotStatusView({
             </CardContent>
           </Card>
         )}
+
+        <LogisticsTimeline config={config} />
 
         <Card>
           <CardHeader>

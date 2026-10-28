@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/auth"
 import type { EmailTemplate } from "@/lib/konfigurator/types"
 import {
-  getEmailTemplateByKey,
   listEmailTemplatesFromDb,
   updateEmailTemplateInDb,
 } from "@/lib/konfigurator/email-template-store"
@@ -24,5 +23,3 @@ export async function updateEmailTemplate(
   revalidatePath("/admin/einstellungen/e-mails")
   return { success: true }
 }
-
-export { getEmailTemplateByKey }

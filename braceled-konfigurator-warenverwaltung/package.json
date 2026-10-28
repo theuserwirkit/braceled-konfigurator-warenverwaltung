@@ -22,10 +22,14 @@
     "test:miete-window": "tsx scripts/test-miete-booking-window.ts",
     "test:soft-cancel": "tsx scripts/test-soft-cancel-storniert.ts",
     "test:submit-roles": "tsx scripts/test-submit-roles-hardening.ts",
+    "test:security-actions": "tsx scripts/test-security-remediation-actions.ts",
     "db:migrate": "node scripts/run-migrations.mjs",
     "db:indexes": "node scripts/run-performance-indexes.mjs",
     "db:seed": "node scripts/seed-starter.mjs",
-    "telegram:webhook": "node scripts/setup-telegram-webhook.mjs"
+    "telegram:webhook": "node scripts/setup-telegram-webhook.mjs",
+    "test:security-secrets": "tsx scripts/test-security-remediation-secrets.ts",
+    "test:security-apikey": "tsx scripts/test-security-remediation-apikey.ts",
+    "test:security-stripe": "tsx scripts/test-security-remediation-stripe.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.0.2",

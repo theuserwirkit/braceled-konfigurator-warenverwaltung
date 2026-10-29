@@ -66,6 +66,10 @@ const CARRIER_SHORT = "UPS/DHL/TNT/FedEx"
 export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   value: Lieferpaket
   label: string
+  /** Kompaktes Tempo-Badge in der Karte */
+  badge: string
+  /** Ein Satz Nutzen für die Karten-Auswahl */
+  shortDescription: string
   description: string
   minWerktage: number
   preisNetto: number
@@ -73,6 +77,8 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   {
     value: "regulaer",
     label: "Regulär",
+    badge: "20 WT",
+    shortDescription: `Anlieferung bis 2 Tage vor Event · Rückversand 3 WT (${CARRIER_SHORT})`,
     description: `Produktion 20 Werktage · Anlieferung bis 2 Tage vor Event (${CARRIER_SHORT}) · Rückversand 3 Werktage`,
     minWerktage: minWerktageForPaket("regulaer", false),
     preisNetto: LIEFERPAKET_PREIS.regulaer,
@@ -80,6 +86,8 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   {
     value: "express",
     label: "Express",
+    badge: "10 WT",
+    shortDescription: `Schnellere Produktion · Anlieferung bis 2 Tage vor Event (${CARRIER_SHORT})`,
     description: `Produktion 10 Werktage · Anlieferung bis 2 Tage vor Event (${CARRIER_SHORT}) · Rückversand 3 Werktage`,
     minWerktage: minWerktageForPaket("express", false),
     preisNetto: LIEFERPAKET_PREIS.express,
@@ -87,6 +95,8 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
   {
     value: "eil",
     label: "Eilauftrag",
+    badge: "48 Std",
+    shortDescription: `Overnight-Versand · Druck möglich (${CARRIER_SHORT})`,
     description: `Produktion 48 Std · Overnight per ${CARRIER_SHORT} · Rückversand 3 Werktage · Bedruckung möglich`,
     minWerktage: minWerktageForPaket("eil", false),
     preisNetto: LIEFERPAKET_PREIS.eil,
@@ -192,7 +202,7 @@ export function getLieferpaketBlockReason(
   ctx?: LieferungContext,
 ): string | null {
   if (isLieferpaketAllowed(paket, werktageBisEvent, ctx)) return null
-  return "Zu kurzer Vorlauf bis zum Event"
+  return "Zu wenig Vorlauf"
 }
 
 export function isFlexRueckgabeAllowed(

@@ -151,7 +151,7 @@ function configSummary(config: QuoteConfig): string {
     if (config.technikerSteuerpult === "mitbuchen") {
       lines.push("Licht-Steuerpult für LED Armbänder")
     } else if (config.technikerSteuerpult === "vorhanden") {
-      lines.push("Steuerpult: über Eventtechnik vorhanden")
+      lines.push("Licht-Steuerpult: über Eventtechnik vorhanden")
     }
   }
   if (config.vorprogrammiertZusenden) {

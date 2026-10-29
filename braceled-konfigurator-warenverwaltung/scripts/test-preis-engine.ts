@@ -35,11 +35,11 @@ function jsReference(input: typeof testCases[0]) {
   let netto = menge * stueck
   if (input.gruppen > 0) netto += input.gruppen * 65
   const lieferpaketPreis: Record<string, number> = {
-    standard: 100,
+    standard: 0,
     express: 349,
     hyperexpress: 919,
   }
-  netto += stationPreisNetto(input.station, stationModus) + lieferpaketPreis[input.lieferzeit] + 90
+  netto += stationPreisNetto(input.station, stationModus) + lieferpaketPreis[input.lieferzeit] + 99
   const gesamt_netto = eur(netto)
   const mwst_19 = eur(gesamt_netto * 0.19)
   const gesamt_brutto = eur(gesamt_netto + mwst_19)

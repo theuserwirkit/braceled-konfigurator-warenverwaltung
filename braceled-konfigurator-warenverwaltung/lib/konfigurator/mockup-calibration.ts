@@ -26,12 +26,12 @@ export const DEFAULT_WRISTBAND_PRINT_CALIBRATION: WristbandPrintCalibration = {
 
 /** Druckfläche auf dem LED-Gehäuse des Textilarmband-Mock-ups */
 export const TEXTILBAND_PRINT_CALIBRATION: WristbandPrintCalibration = {
-  left: 38,
-  top: 38,
-  width: 22,
-  height: 28,
-  rotateX: 0,
-  rotateZ: -8,
+  left: 42.75,
+  top: 47.75,
+  width: 18,
+  height: 18,
+  rotateX: -6,
+  rotateZ: 1,
 }
 
 export function getPrintCalibrationForProdukt(produkt: string): WristbandPrintCalibration {
@@ -51,19 +51,48 @@ export function getPrintOverlayRect(cal: WristbandPrintCalibration) {
 
 export const WRISTBAND_CALIBRATION_STORAGE_KEY = "wristlink-mockup-calibration"
 
-export function loadWristbandCalibration(): WristbandPrintCalibration {
-  if (typeof window === "undefined") return DEFAULT_WRISTBAND_PRINT_CALIBRATION
+/** Query `?mockupCalibrate=1` (toleriert Tippfehler wie trailing `.`) */
+export function isMockupCalibrateParam(raw: string | null | undefined): boolean {
+  if (!raw) return false
+  const normalized = raw.trim().replace(/[.,;]+$/g, "").toLowerCase()
+  return normalized === "1" || normalized === "true" || normalized === "yes"
+}
+
+export function readMockupCalibrateFromLocation(
+  search = typeof window !== "undefined" ? window.location.search : "",
+): boolean {
   try {
-    const raw = sessionStorage.getItem(WRISTBAND_CALIBRATION_STORAGE_KEY)
-    if (!raw) return DEFAULT_WRISTBAND_PRINT_CALIBRATION
-    return { ...DEFAULT_WRISTBAND_PRINT_CALIBRATION, ...JSON.parse(raw) }
+    return isMockupCalibrateParam(new URLSearchParams(search).get("mockupCalibrate"))
   } catch {
-    return DEFAULT_WRISTBAND_PRINT_CALIBRATION
+    return false
   }
 }
 
-export function saveWristbandCalibration(cal: WristbandPrintCalibration) {
-  sessionStorage.setItem(WRISTBAND_CALIBRATION_STORAGE_KEY, JSON.stringify(cal))
+export function calibrationStorageKey(produkt: string): string {
+  return `${WRISTBAND_CALIBRATION_STORAGE_KEY}:${produkt || "armband"}`
+}
+
+export function loadWristbandCalibration(produkt = "armband"): WristbandPrintCalibration {
+  const defaults = getPrintCalibrationForProdukt(produkt)
+  if (typeof window === "undefined") return defaults
+  try {
+    const raw = sessionStorage.getItem(calibrationStorageKey(produkt))
+    if (!raw) return defaults
+    return { ...defaults, ...JSON.parse(raw) }
+  } catch {
+    return defaults
+  }
+}
+
+export function saveWristbandCalibration(
+  cal: WristbandPrintCalibration,
+  produkt = "armband",
+) {
+  sessionStorage.setItem(calibrationStorageKey(produkt), JSON.stringify(cal))
+}
+
+export function clearWristbandCalibration(produkt = "armband") {
+  sessionStorage.removeItem(calibrationStorageKey(produkt))
 }
 
 export function formatCalibrationForCopy(cal: WristbandPrintCalibration): string {

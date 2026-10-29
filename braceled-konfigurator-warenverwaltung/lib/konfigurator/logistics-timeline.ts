@@ -22,6 +22,73 @@ export type LogisticsMilestone = {
   kind: "today" | "deadline" | "event" | "return"
 }
 
+/** Sichtbare Reise-Phasen fürs Journey-UI (ohne Heute/Beauftragung/Druckdaten) */
+export type LogisticsJourneyPhase = {
+  id: "produktion" | "versand" | "ankunft" | "event" | "ruecksendung"
+  label: string
+  dateLabel: string
+  date: Date | null
+  kind: LogisticsMilestone["kind"]
+  /** Bei Eil: Produktion+Versand als ein Sprint-Segment */
+  sprint?: boolean
+}
+
+export function buildLogisticsJourney(
+  milestones: LogisticsMilestone[],
+  paket: string,
+): LogisticsJourneyPhase[] {
+  const byId = new Map(milestones.map((m) => [m.id, m]))
+  const pick = (id: string, label: string, kind: LogisticsMilestone["kind"]): LogisticsJourneyPhase => {
+    const m = byId.get(id)
+    return {
+      id: id as LogisticsJourneyPhase["id"],
+      label,
+      dateLabel: m?.dateLabel ?? "—",
+      date: m?.date ?? null,
+      kind,
+    }
+  }
+
+  const produktion = pick("produktion", "Produktion", "deadline")
+  const versand = pick("versand", "Versand", "deadline")
+  const ankunft = pick("ankunft", "Ankunft", "deadline")
+  const event = pick("event", "Event", "event")
+  const rueck = pick("ruecksendung", "Rückgabe", "return")
+
+  if (paket === "eil") {
+    return [
+      {
+        ...produktion,
+        id: "produktion",
+        label: "48h-Sprint",
+        dateLabel:
+          produktion.dateLabel === versand.dateLabel
+            ? produktion.dateLabel
+            : `${produktion.dateLabel} → ${versand.dateLabel}`,
+        sprint: true,
+      },
+      ankunft,
+      event,
+      rueck,
+    ]
+  }
+
+  return [produktion, versand, ankunft, event, rueck]
+}
+
+/** Index der nächsten noch nicht abgeschlossenen Phase (0-basiert); -1 wenn alles vorbei */
+export function activeJourneyPhaseIndex(
+  phases: LogisticsJourneyPhase[],
+  from = new Date(),
+): number {
+  const today = startOfDay(from).getTime()
+  for (let i = 0; i < phases.length; i++) {
+    const t = phases[i]?.date?.getTime()
+    if (t == null || t >= today) return i
+  }
+  return Math.max(0, phases.length - 1)
+}
+
 function parseDateOnly(iso: string): Date {
   return new Date(`${iso.slice(0, 10)}T12:00:00`)
 }

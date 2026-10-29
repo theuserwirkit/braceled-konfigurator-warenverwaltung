@@ -87,6 +87,8 @@ import { MAX_PHYSICAL_GROUPS } from "@/lib/konfigurator/kanalanzahl"
 import { PersonalCallBanner } from "@/components/konfigurator/personal-call-banner"
 import { LogisticsTimeline } from "@/components/konfigurator/logistics-timeline"
 import { GruppenVerteilungsSlider } from "@/components/konfigurator/gruppen-verteilungs-slider"
+import { WristbandMockup } from "@/components/konfigurator/wristband-mockup"
+import { readMockupCalibrateFromLocation } from "@/lib/konfigurator/mockup-calibration"
 
 const STEPS = [
   { label: "Event", question: "Was planen Sie?" },
@@ -181,8 +183,13 @@ export function ConfiguratorWizard({
   const [distanceError, setDistanceError] = useState<string | null>(null)
   const [stationInfoModal, setStationInfoModal] = useState<"eco" | "pro" | null>(null)
   const [stationComparisonOpen, setStationComparisonOpen] = useState(false)
+  const [mockupCalibrate, setMockupCalibrate] = useState(false)
   const requestAbortRef = useRef<AbortController | null>(null)
   const distanceDebounceRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    setMockupCalibrate(readMockupCalibrateFromLocation())
+  }, [])
 
   useEffect(() => {
     setShowFieldErrors(false)
@@ -721,8 +728,45 @@ export function ConfiguratorWizard({
     : null
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
+    <div className="mx-auto w-full max-w-5xl min-w-0 space-y-4">
       <PersonalCallBanner />
+      {mockupCalibrate && (
+        <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-amber-950">
+              Mock-up-Kalibrierung aktiv
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={config.produkt === "armband" ? "default" : "outline"}
+                onClick={() => updateConfig({ produkt: "armband" })}
+              >
+                LED Armband
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={config.produkt === "textilband" ? "default" : "outline"}
+                onClick={() => updateConfig({ produkt: "textilband" })}
+              >
+                LED Textilband
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-amber-900/80">
+            Overlay und Slider erscheinen hier direkt – unabhängig vom Wizard-Schritt.
+            URL ohne trailing Punkt:{" "}
+            <code className="text-[10px]">?mockupCalibrate=1</code>
+          </p>
+          <WristbandMockup
+            printPreviewUrl={logoPreviewUrl}
+            forceCalibrate
+            produkt={config.produkt}
+          />
+        </div>
+      )}
       {editMode && (
         <Alert className="border-blue-200 bg-blue-50 text-blue-900">
           <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -1427,7 +1471,7 @@ export function ConfiguratorWizard({
                       </p>
                     </div>
 
-                    <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <div className="grid items-stretch gap-4 lg:grid-cols-2">
                       <OptionCard
                         selected={Boolean(config.techniker)}
                         disabled={!isTechnikerAllowed(tageBisEvent)}
@@ -1471,7 +1515,7 @@ export function ConfiguratorWizard({
                       >
                         <div className="space-y-2">
                           <Label>Steuerpult</Label>
-                          <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="grid items-stretch gap-2 sm:grid-cols-2">
                             {TECHNIKER_STEUERPULT_OPTIONS.map((opt) => (
                               <OptionCard
                                 key={opt.value}
@@ -1484,7 +1528,7 @@ export function ConfiguratorWizard({
                                 priceHint={
                                   opt.preisNetto > 0
                                     ? `${formatEur(opt.preisNetto)} netto`
-                                    : undefined
+                                    : "+0,00 € netto"
                                 }
                               />
                             ))}
@@ -1589,26 +1633,16 @@ export function ConfiguratorWizard({
                   </div>
                 )}
 
-
-                {config.station !== "keine" && (
-                  <div className="min-h-[72px] rounded-lg border p-4">
-                    <StationAvailabilityIndicator
-                      station={config.station}
-                      availability={stationAvailability}
-                    />
-                  </div>
-                )}
-
               </div>
             )}
 
             {/* Schritt 3: Extras */}
             {step === 3 && (
-              <div className="space-y-4">
+              <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden">
                 <div className="space-y-3">
                   <Label>{LIEFERLAND_INFO.title}</Label>
                   <p className="text-xs text-muted-foreground">{LIEFERLAND_INFO.hinweis}</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid items-stretch gap-3 sm:grid-cols-2">
                     {LIEFERLAND_OPTIONS.map((opt) => (
                       <OptionCard
                         key={opt.value}
@@ -1626,25 +1660,30 @@ export function ConfiguratorWizard({
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <SectionLabel required showError={showFieldErrors && step4LieferpaketInvalid}>
-                    Produktion, Lieferung &amp; Logistik
-                  </SectionLabel>
-                  {lieferpaketWarning && (
-                    <p className="text-xs text-amber-700">{lieferpaketWarning}</p>
+                <div
+                  className={cn(
+                    "space-y-4 rounded-xl border bg-card p-4",
+                    showFieldErrors &&
+                      step4LieferpaketInvalid &&
+                      "ring-2 ring-destructive",
                   )}
-                  {!hasAllowedLieferpaket(werktageBisEvent) && (
-                    <p className="text-xs text-destructive">
-                      Mit dem gewählten Eventtermin ist kein Lieferpaket mehr möglich (mindestens
-                      48 Stunden Vorlauf erforderlich). Bitte wählen Sie einen späteren Termin.
-                    </p>
-                  )}
-                  <div
-                    className={cn(
-                      "grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
-                      showFieldErrors && step4LieferpaketInvalid && "rounded-lg ring-2 ring-destructive p-1",
+                >
+                  <div className="space-y-1">
+                    <SectionLabel required showError={showFieldErrors && step4LieferpaketInvalid}>
+                      Produktion, Lieferung &amp; Logistik
+                    </SectionLabel>
+                    {lieferpaketWarning && (
+                      <p className="text-xs text-amber-700">{lieferpaketWarning}</p>
                     )}
-                  >
+                    {!hasAllowedLieferpaket(werktageBisEvent) && (
+                      <p className="text-xs text-destructive">
+                        Mit dem gewählten Eventtermin ist kein Lieferpaket mehr möglich (mindestens
+                        48 Stunden Vorlauf erforderlich). Bitte wählen Sie einen späteren Termin.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid items-stretch gap-3 sm:grid-cols-1 md:grid-cols-3">
                     {LIEFERPAKET_OPTIONS.map((p) => {
                       const allowed = isLieferpaketAllowed(p.value, werktageBisEvent)
                       const blockReason = getLieferpaketBlockReason(p.value, werktageBisEvent)
@@ -1655,47 +1694,48 @@ export function ConfiguratorWizard({
                           disabled={!allowed}
                           onClick={() => updateConfig({ lieferpaket: p.value })}
                           title={p.label}
-                          description={p.description}
-                          warning={blockReason ?? undefined}
+                          badge={p.badge}
+                          description={p.shortDescription}
+                          warning={!allowed ? (blockReason ?? undefined) : undefined}
                           priceHint={
                             p.preisNetto > 0
                               ? `+${formatEur(p.preisNetto)} netto`
-                              : undefined
+                              : "kein Aufpreis"
                           }
                         />
                       )
                     })}
                   </div>
-                </div>
 
-                {lieferpaket !== "eil" && (
-                  <div className="rounded-lg border p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <Label>{FLEX_RUECKGABE_INFO.label}</Label>
-                        <p className="text-xs text-muted-foreground">
-                          {FLEX_RUECKGABE_INFO.description}
-                        </p>
-                        {!isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket) && (
-                          <p className="text-xs text-amber-700">
-                            Bei nur noch {werktageBisEvent} Werktag
-                            {werktageBisEvent === 1 ? "" : "en"} bis zum Event nicht verfügbar.
+                  <LogisticsTimeline config={config} />
+
+                  {lieferpaket !== "eil" && (
+                    <div className="rounded-lg border bg-background/80 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <Label>{FLEX_RUECKGABE_INFO.label}</Label>
+                          <p className="text-xs text-muted-foreground">
+                            {FLEX_RUECKGABE_INFO.description}
                           </p>
-                        )}
+                          {!isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket) && (
+                            <p className="text-xs text-amber-700">
+                              Bei nur noch {werktageBisEvent} Werktag
+                              {werktageBisEvent === 1 ? "" : "en"} bis zum Event nicht verfügbar.
+                            </p>
+                          )}
+                        </div>
+                        <Switch
+                          checked={flexRueckgabe}
+                          disabled={!isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket)}
+                          onCheckedChange={(v) => updateConfig({ flexRueckgabe: v })}
+                        />
                       </div>
-                      <Switch
-                        checked={flexRueckgabe}
-                        disabled={!isFlexRueckgabeAllowed(werktageBisEvent, lieferpaket)}
-                        onCheckedChange={(v) => updateConfig({ flexRueckgabe: v })}
-                      />
+                      <p className="text-xs font-medium text-foreground mt-2">
+                        +{formatEur(FLEX_RUECKGABE_INFO.preisNetto)} netto
+                      </p>
                     </div>
-                    <p className="text-xs font-medium text-foreground mt-2">
-                      +{formatEur(FLEX_RUECKGABE_INFO.preisNetto)} netto
-                    </p>
-                  </div>
-                )}
-
-                <LogisticsTimeline config={config} />
+                  )}
+                </div>
               </div>
             )}
 
@@ -1775,7 +1815,7 @@ export function ConfiguratorWizard({
                     config.technikerSteuerpult === "mitbuchen"
                       ? "Licht-Steuerpult für LED Armbänder"
                       : config.technikerSteuerpult === "vorhanden"
-                        ? "Steuerpult vorhanden"
+                        ? "Licht-Steuerpult vorhanden"
                         : null,
                     config.vorprogrammiertZusenden ? "Szenen vorprogrammieren" : null,
                     config.repeaterBasisstation ? "Repeater / Reichweite (Info)" : null,

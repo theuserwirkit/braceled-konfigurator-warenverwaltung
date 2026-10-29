@@ -42,7 +42,7 @@ assert(
 
 assert("20 Werktage → 28 Kalendertage", werktageToCalendarDays(20) === 28)
 
-assert("Regulär = 100 EUR", LIEFERPAKET_PREIS.regulaer === 100)
+assert("Regulär = 0 EUR", LIEFERPAKET_PREIS.regulaer === 0)
 assert("Eilauftrag = 919 EUR", LIEFERPAKET_PREIS.eil === 919)
 
 assert("Regulär min = 24", minWerktageForPaket("regulaer", false) === 24)

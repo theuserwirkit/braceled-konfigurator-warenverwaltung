@@ -39,7 +39,7 @@ export function OptionCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "relative w-full text-left rounded-lg border p-4 transition-all",
+        "relative flex h-full w-full flex-col text-left rounded-lg border p-4 transition-all",
         disabled
           ? "opacity-50 cursor-not-allowed border-border bg-muted/30"
           : "hover:border-primary/50",
@@ -103,7 +103,7 @@ export function OptionCard({
           )}
         </div>
       </div>
-      <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{description}</p>
+      <p className="mt-1.5 flex-1 text-xs text-muted-foreground leading-relaxed">{description}</p>
       {warning && (
         <p className="mt-2 text-xs text-amber-700 leading-relaxed">{warning}</p>
       )}

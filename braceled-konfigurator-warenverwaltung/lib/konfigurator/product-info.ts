@@ -83,7 +83,7 @@ export const LIEFERLAND_OPTIONS = [
     value: "DE" as const,
     label: "Deutschland",
     hinweis: "Versandpreis wird im Angebot berechnet.",
-    preisNetto: 90,
+    preisNetto: 99,
     nachAbsprache: false,
   },
   {
@@ -412,17 +412,17 @@ export const LICHT_STEUERPULT_NETTO = 200
 
 export const TECHNIKER_STEUERPULT_OPTIONS = [
   {
+    value: "vorhanden" as const,
+    label: "Licht-Steuerpult ist über Eventtechnik vorhanden",
+    description: "Ihr Eventtechnik-Partner stellt das Licht-Steuerpult vor Ort.",
+    preisNetto: 0,
+  },
+  {
     value: "mitbuchen" as const,
     label: "Licht-Steuerpult für LED Armbänder",
     description:
-      "Wristlink stellt ein kleines Lichtsteuerpult für die LED Armbänder bereit.",
+      "Wristlink stellt ein kleines Licht-Steuerpult für die LED Armbänder bereit.",
     preisNetto: LICHT_STEUERPULT_NETTO,
-  },
-  {
-    value: "vorhanden" as const,
-    label: "Lichtsteuerpult ist über Eventtechnik vorhanden",
-    description: "Ihr Eventtechnik-Partner stellt das Lichtsteuerpult vor Ort.",
-    preisNetto: 0,
   },
 ] as const
 
@@ -492,7 +492,7 @@ export const DRUCK_ART_OPTIONS: ReadonlyArray<{
   },
 ]
 
-/** Druckarten inkl. produktabhängiger Vorschaubilder (LED-Textilarmband) */
+/** Druckarten für LED-Textilarmband: gleicher Text wie Armband, ohne Vorschaugrafik */
 export function getDruckArtOptions(produkt: string): typeof DRUCK_ART_OPTIONS {
   if (produkt !== "textilband") return DRUCK_ART_OPTIONS
   return DRUCK_ART_OPTIONS.map((opt) => {
@@ -500,16 +500,14 @@ export function getDruckArtOptions(produkt: string): typeof DRUCK_ART_OPTIONS {
       return {
         ...opt,
         label: "Druck LED-Element",
-        description:
-          "UV-Direktdruck auf dem LED-Gehäuse (CMYK + Weiß). PNG (transparent) oder Vektor (AI, EPS, SVG).",
-        imageSrc: TEXTILBAND_DRUCK_IMAGES.logo,
+        description: DRUCK_INFO.summary,
+        imageSrc: undefined,
       }
     }
     return {
       ...opt,
-      description:
-        "Vollflächiger Druck auf LED-Gehäuse und Textilband – starkes Branding ohne Logo-Upload im Konfigurator.",
-      imageSrc: TEXTILBAND_DRUCK_IMAGES.vollflaechig,
+      description: VOLLFLAECHIG_DRUCK_INFO.description,
+      imageSrc: undefined,
     }
   })
 }

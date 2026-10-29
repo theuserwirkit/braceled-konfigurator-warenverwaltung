@@ -76,7 +76,7 @@ const DRUCK_PRO_STK: [number, number, number][] = [
 const DRUCK_SETUP = 120.0
 
 const GRUPPE = 65.0
-const VERSAND: Record<string, number> = { DE: 90.0, AT: 0, CH: 0, EU: 0 }
+const VERSAND: Record<string, number> = { DE: 99.0, AT: 0, CH: 0, EU: 0 }
 const VERSAND_NACH_ABSPRACHE = new Set(["AT", "CH", "EU"])
 
 const eur = (n: number) => Math.round(n * 100) / 100
@@ -169,7 +169,7 @@ export function rechnePreis(input: PreisEngineInput): PreisEngineResult {
   if (!["keine", "eco", "pro"].includes(station)) {
     fehler.push(`Unbekannte Basis-Station: "${input.station}"`)
   }
-  if (!LIEFERPAKET_PREIS[lieferpaket as Lieferpaket]) {
+  if (!(lieferpaket in LIEFERPAKET_PREIS)) {
     fehler.push(`Unbekanntes Lieferpaket: "${lieferpaket}"`)
   }
   if (!Object.prototype.hasOwnProperty.call(VERSAND, land)) {

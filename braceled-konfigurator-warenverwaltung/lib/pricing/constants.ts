@@ -13,7 +13,7 @@ export const STATION_PREIS_MIETE: Record<string, number> = {
 }
 
 export const LIEFERZEIT_PREIS: Record<string, number> = {
-  standard: 100,
+  standard: 0,
   express: 349,
   hyperexpress: 620,
 }

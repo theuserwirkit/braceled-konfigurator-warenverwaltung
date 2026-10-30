@@ -14,79 +14,25 @@ import { addDays, addWorkdays, subtractWorkdays } from "@/lib/utils/date"
 export const RUECKVERSAND_WERKTAGE_STANDARD = 3
 export const RUECKVERSAND_WERKTAGE_FLEX = 8
 
+/** Wer ist am Zug / wem gehört die Phase */
+export type LogisticsOwner = "wir" | "event" | "logistik"
+
 export type LogisticsMilestone = {
   id: string
   label: string
   date: Date | null
   dateLabel: string
   kind: "today" | "deadline" | "event" | "return"
+  owner?: LogisticsOwner
 }
 
-/** Sichtbare Reise-Phasen fürs Journey-UI (ohne Heute/Beauftragung/Druckdaten) */
 export type LogisticsJourneyPhase = {
-  id: "produktion" | "versand" | "ankunft" | "event" | "ruecksendung"
+  id: string
   label: string
   dateLabel: string
   date: Date | null
+  owner: LogisticsOwner
   kind: LogisticsMilestone["kind"]
-  /** Bei Eil: Produktion+Versand als ein Sprint-Segment */
-  sprint?: boolean
-}
-
-export function buildLogisticsJourney(
-  milestones: LogisticsMilestone[],
-  paket: string,
-): LogisticsJourneyPhase[] {
-  const byId = new Map(milestones.map((m) => [m.id, m]))
-  const pick = (id: string, label: string, kind: LogisticsMilestone["kind"]): LogisticsJourneyPhase => {
-    const m = byId.get(id)
-    return {
-      id: id as LogisticsJourneyPhase["id"],
-      label,
-      dateLabel: m?.dateLabel ?? "—",
-      date: m?.date ?? null,
-      kind,
-    }
-  }
-
-  const produktion = pick("produktion", "Produktion", "deadline")
-  const versand = pick("versand", "Versand", "deadline")
-  const ankunft = pick("ankunft", "Ankunft", "deadline")
-  const event = pick("event", "Event", "event")
-  const rueck = pick("ruecksendung", "Rückgabe", "return")
-
-  if (paket === "eil") {
-    return [
-      {
-        ...produktion,
-        id: "produktion",
-        label: "48h-Sprint",
-        dateLabel:
-          produktion.dateLabel === versand.dateLabel
-            ? produktion.dateLabel
-            : `${produktion.dateLabel} → ${versand.dateLabel}`,
-        sprint: true,
-      },
-      ankunft,
-      event,
-      rueck,
-    ]
-  }
-
-  return [produktion, versand, ankunft, event, rueck]
-}
-
-/** Index der nächsten noch nicht abgeschlossenen Phase (0-basiert); -1 wenn alles vorbei */
-export function activeJourneyPhaseIndex(
-  phases: LogisticsJourneyPhase[],
-  from = new Date(),
-): number {
-  const today = startOfDay(from).getTime()
-  for (let i = 0; i < phases.length; i++) {
-    const t = phases[i]?.date?.getTime()
-    if (t == null || t >= today) return i
-  }
-  return Math.max(0, phases.length - 1)
 }
 
 function parseDateOnly(iso: string): Date {
@@ -105,12 +51,23 @@ function startOfDay(d: Date): Date {
   return new Date(`${d.toISOString().slice(0, 10)}T12:00:00`)
 }
 
+function earlier(a: Date, b: Date): Date {
+  return a.getTime() <= b.getTime() ? a : b
+}
+
+function later(a: Date, b: Date): Date {
+  return a.getTime() >= b.getTime() ? a : b
+}
+
 /**
  * Kunden-Zeitstrahl für Produktion/Logistik (Werktage, ab Event rückwärts).
  * Ohne Eventdatum nur „Heute“.
  */
 export function buildLogisticsTimeline(
-  config: Pick<QuoteConfig, "von" | "bis" | "druck" | "lieferpaket" | "lieferzeit" | "lieferart" | "flexRueckgabe" | "flex">,
+  config: Pick<
+    QuoteConfig,
+    "von" | "bis" | "druck" | "lieferpaket" | "lieferzeit" | "lieferart" | "flexRueckgabe" | "flex"
+  >,
   from = new Date(),
 ): LogisticsMilestone[] {
   const today = startOfDay(from)
@@ -144,14 +101,22 @@ export function buildLogisticsTimeline(
   const produktionStart =
     paket === "eil" ? addDays(versand, -2) : subtractWorkdays(versand, produktionWd)
   const beauftragungBis = subtractWorkdays(event, minWerktageForPaket(paket, flex))
-  const druckdatenBis = config.druck ? produktionStart : null
-  const ruecksendungBis = addWorkdays(eventEnd, rueckWd)
+  /** Zahlung parallel zur Beauftragung (gleicher Cut-off), sichtbar als eigener Schritt */
+  const zahlungBis = beauftragungBis
+  // Chronologie erzwingen: Beauftragung ≤ Druckdaten ≤ Freigabe ≤ Produktion
+  const druckdatenBis = later(produktionStart, beauftragungBis)
+  const freigabeCandidate =
+    paket === "eil" ? addDays(druckdatenBis, 1) : addWorkdays(druckdatenBis, 2)
+  const freigabeBis = later(druckdatenBis, earlier(freigabeCandidate, produktionBis))
+  const rueckAufgabe = addWorkdays(eventEnd, 1)
+  const ruecklieferungBis = addWorkdays(eventEnd, rueckWd)
 
   const push = (
     id: string,
     label: string,
     date: Date | null,
     kind: LogisticsMilestone["kind"],
+    owner: LogisticsOwner,
   ) => {
     milestones.push({
       id,
@@ -159,18 +124,67 @@ export function buildLogisticsTimeline(
       date,
       dateLabel: date ? formatDe(date) : "—",
       kind,
+      owner,
     })
   }
 
-  push("beauftragung", "Beauftragung bis", beauftragungBis, "deadline")
-  if (druckdatenBis) {
-    push("druckdaten", "Druckdaten bis", druckdatenBis, "deadline")
-  }
-  push("produktion", "Produktion bis", produktionBis, "deadline")
-  push("versand", "Versand bis", versand, "deadline")
-  push("ankunft", "Ankunft am", ankunft, "deadline")
-  push("event", "Event", event, "event")
-  push("ruecksendung", "Rücksendung bis", ruecksendungBis, "return")
+  push("beauftragung", "Beauftragung", beauftragungBis, "deadline", "wir")
+  push("zahlungseingang", "Zahlungseingang", zahlungBis, "deadline", "wir")
+  push("druckdaten", "Druckdaten", druckdatenBis, "deadline", "wir")
+  push("freigabe", "Freigabe Druck-Proof", freigabeBis, "deadline", "wir")
+  push("produktion", "Produktion", produktionBis, "deadline", "wir")
+  push("versand", "Versand", versand, "deadline", "logistik")
+  push("ankunft", "Ankunft", ankunft, "deadline", "logistik")
+  push("event", "Event", event, "event", "event")
+  push("rueckAufgabe", "Aufgabe Rückversand", rueckAufgabe, "return", "logistik")
+  push("ruecklieferung", "späteste Rücklieferung", ruecklieferungBis, "return", "logistik")
 
   return milestones
+}
+
+const JOURNEY_ORDER = [
+  "beauftragung",
+  "zahlungseingang",
+  "druckdaten",
+  "freigabe",
+  "produktion",
+  "versand",
+  "ankunft",
+  "event",
+  "rueckAufgabe",
+  "ruecklieferung",
+] as const
+
+export function buildLogisticsJourney(
+  milestones: LogisticsMilestone[],
+  _paket?: string,
+): LogisticsJourneyPhase[] {
+  const byId = new Map(milestones.map((m) => [m.id, m]))
+  return JOURNEY_ORDER.flatMap((id) => {
+    const m = byId.get(id)
+    if (!m || !m.owner) return []
+    return [
+      {
+        id: m.id,
+        label: m.label,
+        dateLabel: m.dateLabel,
+        date: m.date,
+        owner: m.owner,
+        kind: m.kind,
+      },
+    ]
+  })
+}
+
+/** Index der nächsten noch nicht abgeschlossenen Phase (0-basiert) */
+export function activeJourneyPhaseIndex(
+  phases: LogisticsJourneyPhase[],
+  from = new Date(),
+): number {
+  const today = startOfDay(from).getTime()
+  for (let i = 0; i < phases.length; i++) {
+    const t = phases[i]?.date?.getTime()
+    if (t == null || t >= today) return i
+  }
+  return Math.max(0, phases.length - 1)
 }

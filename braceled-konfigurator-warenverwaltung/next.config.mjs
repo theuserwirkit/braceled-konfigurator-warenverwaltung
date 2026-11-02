@@ -12,15 +12,16 @@ if (
 const contentSecurityPolicy = [
   "default-src 'self'",
   // Dev: unsafe-eval für Next.js HMR; Prod: ohne eval
+  // OpenAI Ads Pixel: https://developers.openai.com/ads/measurement-pixel
   isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
-    : "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://bzrcdn.openai.com"
+    : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://bzrcdn.openai.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com",
+  "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://bzr.openai.com",
   "font-src 'self' data:",
   isDev
-    ? "connect-src 'self' https://api.stripe.com ws: wss:"
-    : "connect-src 'self' https://api.stripe.com https://vitals.vercel-insights.com",
+    ? "connect-src 'self' https://api.stripe.com https://bzr.openai.com https://bzrcdn.openai.com ws: wss:"
+    : "connect-src 'self' https://api.stripe.com https://vitals.vercel-insights.com https://bzr.openai.com https://bzrcdn.openai.com",
   "frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com",
   "form-action 'self' https://checkout.stripe.com",
   "frame-ancestors 'none'",

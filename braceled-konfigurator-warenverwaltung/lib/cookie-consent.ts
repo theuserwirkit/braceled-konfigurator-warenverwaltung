@@ -1,7 +1,8 @@
 /** Cookie-/Tracking-Consent (Client, localStorage). */
 
 export const CONSENT_STORAGE_KEY = "wristlink_cookie_consent"
-export const CONSENT_VERSION = 1
+/** Bei Zweck-/Vendor-Erweiterung erhöhen → erneute Einwilligung. */
+export const CONSENT_VERSION = 2
 /** Ca. 12 Monate – erneute Abfrage danach. */
 export const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000
 

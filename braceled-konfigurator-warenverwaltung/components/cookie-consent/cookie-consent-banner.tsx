@@ -31,9 +31,8 @@ export function CookieConsentBanner({
             Cookie-Einstellungen
           </h2>
           <p id="cookie-consent-desc" className="mt-1 text-sm text-muted-foreground">
-            Wir verwenden technisch notwendige Cookies sowie – nur mit Ihrer Einwilligung –
-            Marketing-Technologien (OpenAI Ads Pixel). Details in der{" "}
-            <Link href="/datenschutz" className="underline underline-offset-2 hover:text-foreground">
+            Wir nutzen notwendige Cookies und – nur mit Ihrer Einwilligung – Marketing. Mehr in der{" "}
+            <Link href="/datenschutz#cookies" className="underline underline-offset-2 hover:text-foreground">
               Datenschutzerklärung
             </Link>
             .
@@ -44,9 +43,7 @@ export function CookieConsentBanner({
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label className="text-sm font-medium">Notwendig</Label>
-              <p className="text-xs text-muted-foreground">
-                Session, Sicherheit, Consent-Speicherung – immer aktiv.
-              </p>
+              <p className="text-xs text-muted-foreground">Für Betrieb und Sicherheit der Website.</p>
             </div>
             <Switch checked disabled aria-label="Notwendige Cookies immer aktiv" />
           </div>
@@ -56,7 +53,7 @@ export function CookieConsentBanner({
                 Marketing
               </Label>
               <p className="text-xs text-muted-foreground">
-                OpenAI Ads Pixel zur Messung von Kampagnen und Conversions.
+                Messung und Optimierung von Werbung (optional, standardmäßig aus).
               </p>
             </div>
             <Switch

@@ -19,6 +19,7 @@ import {
 } from "@/lib/cookie-consent"
 import { CookieConsentBanner } from "@/components/cookie-consent/cookie-consent-banner"
 import { OpenAIPixel } from "@/components/cookie-consent/openai-pixel"
+import { GoogleAdsPixel } from "@/components/cookie-consent/google-ads-pixel"
 
 type CookieConsentContextValue = {
   consent: CookieConsentState | null
@@ -96,7 +97,12 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   return (
     <CookieConsentContext.Provider value={value}>
       {children}
-      {publicPath && <OpenAIPixel enabled={value.marketingEnabled} />}
+      {publicPath && (
+        <>
+          <OpenAIPixel enabled={value.marketingEnabled} />
+          <GoogleAdsPixel enabled={value.marketingEnabled} />
+        </>
+      )}
       {showBanner && (
         <CookieConsentBanner
           marketing={draftMarketing}

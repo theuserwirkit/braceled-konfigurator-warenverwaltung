@@ -143,7 +143,7 @@ export default function DatenschutzPage() {
             </p>
           </section>
 
-          <section>
+          <section id="cookies">
             <h2 className="text-lg font-semibold text-white">11. Cookies & lokale Speicherung</h2>
             <p>Wir setzen folgende technisch notwendige Cookies bzw. Speicherungen ein:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -163,28 +163,46 @@ export default function DatenschutzPage() {
               Technisch notwendige Cookies und Speicherungen erfolgen auf Grundlage von Art. 6 Abs. 1 lit. f
               DSGVO bzw. § 25 Abs. 2 TTDSG.
             </p>
-            <h3 className="mt-6 text-base font-semibold text-white">11.1 Marketing: OpenAI Ads Pixel</h3>
+            <h3 className="mt-6 text-base font-semibold text-white">11.1 Marketing</h3>
             <p className="mt-2">
-              Mit Ihrer ausdrücklichen Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TTDSG) laden wir
-              das OpenAI Ads Pixel (Skript von <code className="text-white/90">bzrcdn.openai.com</code>).
-              Dadurch können Seitenaufrufe und Conversion-Ereignisse (z.&nbsp;B. Start der Konfiguration nach
-              E-Mail-Bestätigung) für Werbezwecke gemessen werden. Ohne Einwilligung wird das Pixel nicht
-              geladen.
-            </p>
-            <p className="mt-2">
-              Anbieter: OpenAI, L.L.C., USA. Dabei kann eine Übermittlung in die USA erfolgen. Soweit
-              einschlägig, stützen wir uns auf geeignete Garantien (z.&nbsp;B. EU-US Data Privacy Framework /
-              Standardvertragsklauseln). Weitere Informationen entnehmen Sie den Datenschutzhinweisen von
-              OpenAI.
-            </p>
-            <p className="mt-2">
-              Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen:{" "}
+              Mit Ihrer ausdrücklichen Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TTDSG) setzen wir
+              Marketing-Technologien ein, um Reichweite und Wirksamkeit unserer Werbung zu messen und
+              Kampagnen zu optimieren (z.&nbsp;B. Seitenaufrufe und Conversion-Ereignisse). Marketing ist im
+              Cookie-Banner standardmäßig deaktiviert und wird nur nach aktiver Zustimmung geladen. Widerruf
+              jederzeit über{" "}
               <CookieSettingsButton className="inline bg-transparent p-0 text-cyan-400 underline hover:text-cyan-300" />
               .
             </p>
+            <p className="mt-4 font-medium text-white/85">Eingebundene Dienste (nur bei Einwilligung):</p>
+            <ul className="mt-2 list-disc space-y-2 pl-5">
+              <li>
+                <strong>OpenAI Ads / Measurement Pixel</strong> (OpenAI, L.L.C., USA) – Skript u.&nbsp;a. von{" "}
+                <code className="text-white/90">bzrcdn.openai.com</code>, Ereignisübertragung an{" "}
+                <code className="text-white/90">bzr.openai.com</code>. Es kann eine Übermittlung in die USA
+                erfolgen; soweit einschlägig nutzen wir geeignete Garantien (z.&nbsp;B. EU-US Data Privacy
+                Framework / Standardvertragsklauseln).
+              </li>
+              <li>
+                <strong>Google Ads</strong> (Google Ireland Limited / Google LLC) – Conversion- und
+                Remarketing-Tags über Google-Tag (<code className="text-white/90">googletagmanager.com</code>{" "}
+                / Google-Domains). Dabei können Cookies gesetzt und Daten in die USA übermittelt werden;
+                Rechtsgrundlage der Einwilligung wie oben, ergänzend geeignete Übermittlungsgarantien soweit
+                erforderlich. Hinweise:{" "}
+                <a
+                  href="https://policies.google.com/privacy"
+                  className="text-cyan-400 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google-Datenschutz
+                </a>
+                .
+              </li>
+            </ul>
             <p className="mt-2">
               Schriftarten (Google Fonts) werden über Next.js lokal auf unserem Server eingebunden; beim
-              Seitenaufruf erfolgt kein Abruf von Google-Servern durch Ihren Browser.
+              Seitenaufruf erfolgt kein Abruf von Google-Servern durch Ihren Browser allein wegen der
+              Schriftarten.
             </p>
           </section>
 

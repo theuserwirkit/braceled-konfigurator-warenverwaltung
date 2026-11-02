@@ -12,17 +12,17 @@ if (
 const contentSecurityPolicy = [
   "default-src 'self'",
   // Dev: unsafe-eval für Next.js HMR; Prod: ohne eval
-  // OpenAI Ads Pixel: https://developers.openai.com/ads/measurement-pixel
+  // Marketing: OpenAI Ads Pixel + Google Ads (nur nach Consent geladen)
   isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://bzrcdn.openai.com"
-    : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://bzrcdn.openai.com",
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://bzrcdn.openai.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com"
+    : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://bzrcdn.openai.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://bzr.openai.com",
+  "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://bzr.openai.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
   "font-src 'self' data:",
   isDev
-    ? "connect-src 'self' https://api.stripe.com https://bzr.openai.com https://bzrcdn.openai.com ws: wss:"
-    : "connect-src 'self' https://api.stripe.com https://vitals.vercel-insights.com https://bzr.openai.com https://bzrcdn.openai.com",
-  "frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com",
+    ? "connect-src 'self' https://api.stripe.com https://bzr.openai.com https://bzrcdn.openai.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com ws: wss:"
+    : "connect-src 'self' https://api.stripe.com https://vitals.vercel-insights.com https://bzr.openai.com https://bzrcdn.openai.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
+  "frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com https://www.googletagmanager.com",
   "form-action 'self' https://checkout.stripe.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",

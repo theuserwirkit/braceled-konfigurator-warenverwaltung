@@ -18,6 +18,7 @@ import { LandingNav } from "@/components/landing/landing-nav"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
 import { LandingFaq } from "@/components/landing/landing-faq"
 import { LandingReveal } from "@/components/landing/landing-reveal"
+import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 import {
   FestivaTitle,
   LandingButton,
@@ -554,6 +555,7 @@ function LandingFooter() {
             <Link href="/led-armbaender-events">LED Armbänder Events</Link>
             <Link href="/impressum">Impressum</Link>
             <Link href="/datenschutz">Datenschutz</Link>
+            <CookieSettingsButton className="bg-transparent p-0 text-inherit underline-offset-2 hover:underline" />
             <Link href="/agb">AGB</Link>
             <Link href="/konfigurator">Konfigurator</Link>
           </div>

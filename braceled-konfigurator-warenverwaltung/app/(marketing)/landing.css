@@ -1598,7 +1598,8 @@ body:has(.landing-theme) {
 }
 
 .lp-footer-links a,
-.lp-footer-links span {
+.lp-footer-links span,
+.lp-footer-links button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -1606,9 +1607,15 @@ body:has(.landing-theme) {
   color: var(--lp-text-muted);
   text-decoration: none;
   transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.lp-footer-links a:hover { color: var(--lp-cyan); }
+.lp-footer-links a:hover,
+.lp-footer-links button:hover { color: var(--lp-cyan); }
 
 .lp-footer-social {
   display: flex;

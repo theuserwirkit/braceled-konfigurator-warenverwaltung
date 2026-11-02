@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { EmailGateForm } from "@/components/konfigurator/email-gate-form"
 import { ConfiguratorWizard } from "@/components/konfigurator/configurator-wizard"
+import { TrackCheckoutStarted } from "@/components/cookie-consent/track-checkout-started"
 import type { QuoteConfig } from "@/lib/konfigurator/types"
 
 export function KonfiguratorClient({
@@ -143,13 +144,16 @@ export function KonfiguratorClient({
   }
 
   return (
-    <ConfiguratorWizard
-      userEmail={email}
-      initialContact={{
-        kontaktName: contact?.name || "",
-        kontaktFirma: contact?.firma || "",
-        kontaktTelefon: contact?.telefon || "",
-      }}
-    />
+    <>
+      <TrackCheckoutStarted active />
+      <ConfiguratorWizard
+        userEmail={email}
+        initialContact={{
+          kontaktName: contact?.name || "",
+          kontaktFirma: contact?.firma || "",
+          kontaktTelefon: contact?.telefon || "",
+        }}
+      />
+    </>
   )
 }

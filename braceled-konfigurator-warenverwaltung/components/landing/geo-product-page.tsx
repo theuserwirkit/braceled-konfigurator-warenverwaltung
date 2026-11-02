@@ -23,6 +23,7 @@ import {
   formatGeoPrice,
 } from "@/lib/landing/geo-product"
 import { EMAIL_INFO } from "@/lib/contact-emails"
+import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 
 const GEO_NAV_LINKS = [
   { href: `${GEO_PRODUCT_PATH}#specs`, label: "Specs" },
@@ -372,6 +373,7 @@ function Footer() {
             <Link href="/">Start</Link>
             <Link href="/impressum">Impressum</Link>
             <Link href="/datenschutz">Datenschutz</Link>
+            <CookieSettingsButton className="bg-transparent p-0 text-inherit underline-offset-2 hover:underline" />
             <Link href="/agb">AGB</Link>
             <Link href="/konfigurator">Konfigurator</Link>
           </div>

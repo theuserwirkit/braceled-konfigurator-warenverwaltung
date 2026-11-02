@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import { EMAIL_DATENSCHUTZ, EMAIL_INFO, EMAIL_KONFIGURATOR } from "@/lib/contact-emails"
+import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 
 export const metadata: Metadata = {
   title: "Datenschutz – BraceLED",
@@ -144,7 +145,7 @@ export default function DatenschutzPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-white">11. Cookies & lokale Speicherung</h2>
-            <p>Wir setzen folgende technisch notwendige Cookies ein:</p>
+            <p>Wir setzen folgende technisch notwendige Cookies bzw. Speicherungen ein:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>
                 <strong>wristlink_lead_session</strong> – Session nach E-Mail-Bestätigung im Konfigurator
@@ -153,11 +154,33 @@ export default function DatenschutzPage() {
               <li>
                 <strong>wristlink_auth</strong> – Admin-Session für interne Verwaltung (nur Mitarbeiter)
               </li>
+              <li>
+                <strong>wristlink_cookie_consent</strong> – Speicherung Ihrer Cookie-/Tracking-Auswahl in
+                localStorage (ca. 12 Monate)
+              </li>
             </ul>
             <p className="mt-4">
-              Technisch notwendige Cookies werden auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO gespeichert.
-              Analyse- und Marketing-Cookies setzen wir derzeit nicht ein. Sollten wir diese künftig nutzen,
-              holen wir vorher Ihre ausdrückliche Einwilligung ein (Art. 6 Abs. 1 lit. a DSGVO, TTDSG).
+              Technisch notwendige Cookies und Speicherungen erfolgen auf Grundlage von Art. 6 Abs. 1 lit. f
+              DSGVO bzw. § 25 Abs. 2 TTDSG.
+            </p>
+            <h3 className="mt-6 text-base font-semibold text-white">11.1 Marketing: OpenAI Ads Pixel</h3>
+            <p className="mt-2">
+              Mit Ihrer ausdrücklichen Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TTDSG) laden wir
+              das OpenAI Ads Pixel (Skript von <code className="text-white/90">bzrcdn.openai.com</code>).
+              Dadurch können Seitenaufrufe und Conversion-Ereignisse (z.&nbsp;B. Start der Konfiguration nach
+              E-Mail-Bestätigung) für Werbezwecke gemessen werden. Ohne Einwilligung wird das Pixel nicht
+              geladen.
+            </p>
+            <p className="mt-2">
+              Anbieter: OpenAI, L.L.C., USA. Dabei kann eine Übermittlung in die USA erfolgen. Soweit
+              einschlägig, stützen wir uns auf geeignete Garantien (z.&nbsp;B. EU-US Data Privacy Framework /
+              Standardvertragsklauseln). Weitere Informationen entnehmen Sie den Datenschutzhinweisen von
+              OpenAI.
+            </p>
+            <p className="mt-2">
+              Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen:{" "}
+              <CookieSettingsButton className="inline bg-transparent p-0 text-cyan-400 underline hover:text-cyan-300" />
+              .
             </p>
             <p className="mt-2">
               Schriftarten (Google Fonts) werden über Next.js lokal auf unserem Server eingebunden; beim
@@ -221,7 +244,7 @@ export default function DatenschutzPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-white">16. Änderungen</h2>
-            <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen. Stand: Juli 2026.</p>
+            <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen. Stand: November 2026.</p>
           </section>
         </div>
       </div>

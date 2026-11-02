@@ -69,6 +69,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/konfigurator") ||
     pathname.startsWith("/angebot/") ||
     pathname === "/led-armbaender-events" ||
+    pathname === "/led-armbaender-vergleich" ||
     pathname === "/llms.txt" ||
     pathname === "/sitemap.xml" ||
     pathname === "/robots.txt" ||

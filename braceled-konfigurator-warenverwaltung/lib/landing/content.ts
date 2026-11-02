@@ -9,6 +9,7 @@ export const HERO_COPY = {
 
 export const NAV_LINKS = [
   { href: "/led-armbaender-events", label: "Produkt" },
+  { href: "/led-armbaender-vergleich", label: "Vergleich" },
   { href: "#technik", label: "Technik" },
   { href: "#preise", label: "Preise" },
   { href: "#faq", label: "FAQ" },

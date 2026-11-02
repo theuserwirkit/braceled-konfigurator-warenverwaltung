@@ -1804,6 +1804,122 @@ body:has(.landing-theme) {
   line-height: 1.6;
 }
 
+.geo-vergleich-answer {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.geo-brand-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .geo-brand-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.geo-brand-card {
+  position: relative;
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  height: 100%;
+}
+
+.geo-brand-card--featured {
+  border-color: rgba(34, 211, 238, 0.45);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15);
+}
+
+.geo-brand-badge {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #041018;
+  background: var(--lp-cyan);
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+}
+
+.geo-brand-tier {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lp-cyan);
+}
+
+.geo-brand-card h3 {
+  margin: 0;
+  font-family: var(--lp-font-display);
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+.geo-brand-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.geo-brand-hint,
+.geo-brand-summary {
+  margin: 0;
+  color: var(--lp-text-muted);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.geo-brand-summary {
+  flex: 1;
+}
+
+.geo-compare-followup {
+  margin-top: 1.5rem;
+}
+
+.geo-compare-followup a {
+  color: var(--lp-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.geo-compare-wrap--wide .geo-compare-table--4 {
+  min-width: 920px;
+}
+
+.geo-compare-table .geo-col-sub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.geo-compare-table th.geo-col-featured,
+.geo-compare-table td.geo-col-featured {
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.geo-inline-check {
+  display: inline-block;
+  vertical-align: -0.15em;
+  margin-right: 0.35rem;
+  color: var(--lp-cyan);
+}
+
 .lp-prose a {
   color: var(--lp-cyan);
   text-decoration: underline;

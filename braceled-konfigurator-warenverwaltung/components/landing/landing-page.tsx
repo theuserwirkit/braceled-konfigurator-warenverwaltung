@@ -553,6 +553,7 @@ function LandingFooter() {
               <MapPin size={16} /> Rhein-Main-Gebiet
             </span>
             <Link href="/led-armbaender-events">LED Armbänder Events</Link>
+            <Link href="/led-armbaender-vergleich">Vergleich</Link>
             <Link href="/impressum">Impressum</Link>
             <Link href="/datenschutz">Datenschutz</Link>
             <CookieSettingsButton className="bg-transparent p-0 text-inherit underline-offset-2 hover:underline" />

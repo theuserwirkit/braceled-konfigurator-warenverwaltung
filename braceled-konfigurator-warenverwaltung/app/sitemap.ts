@@ -19,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
     },
     {
+      url: `${siteUrl}/led-armbaender-vergleich`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.94,
+    },
+    {
       url: `${siteUrl}/konfigurator`,
       lastModified: now,
       changeFrequency: "weekly",

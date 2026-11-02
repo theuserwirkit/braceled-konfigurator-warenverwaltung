@@ -27,7 +27,7 @@ import { CookieSettingsButton } from "@/components/cookie-consent/cookie-setting
 
 const GEO_NAV_LINKS = [
   { href: `${GEO_PRODUCT_PATH}#specs`, label: "Specs" },
-  { href: `${GEO_PRODUCT_PATH}#vergleich`, label: "Vergleich" },
+  { href: "/led-armbaender-vergleich", label: "Markenvergleich" },
   { href: `${GEO_PRODUCT_PATH}#preise`, label: "Preise" },
   { href: `${GEO_PRODUCT_PATH}#faq`, label: "FAQ" },
   { href: "/", label: "Start" },
@@ -216,6 +216,10 @@ function ComparisonSection() {
             </tbody>
           </table>
         </div>
+        <p className="lp-section-sub geo-compare-followup">
+          Markenvergleich Premium / Standard / Budget inkl. Funk & Zertifikate:{" "}
+          <Link href="/led-armbaender-vergleich">LED-Armbänder Vergleich Deutschland</Link>
+        </p>
       </div>
     </section>
   )
@@ -370,6 +374,7 @@ function Footer() {
               <MapPin size={16} /> Rhein-Main-Gebiet
             </span>
             <Link href={GEO_PRODUCT_PATH}>LED Armbänder Events</Link>
+            <Link href="/led-armbaender-vergleich">Vergleich</Link>
             <Link href="/">Start</Link>
             <Link href="/impressum">Impressum</Link>
             <Link href="/datenschutz">Datenschutz</Link>

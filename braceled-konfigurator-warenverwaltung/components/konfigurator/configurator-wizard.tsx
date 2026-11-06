@@ -66,7 +66,7 @@ import {
   type Lieferpaket,
 } from "@/lib/konfigurator/lieferpaket"
 import { OptionCard } from "@/components/konfigurator/option-card"
-import { StickyPriceBox } from "@/components/konfigurator/sticky-price-box"
+import { MobileOfferBar, StickyPriceBox } from "@/components/konfigurator/sticky-price-box"
 import { LogoPreview } from "@/components/konfigurator/logo-preview"
 import { AvailabilityIndicator } from "@/components/konfigurator/availability-indicator"
 import { StationAvailabilityIndicator } from "@/components/konfigurator/station-availability-indicator"
@@ -184,8 +184,11 @@ export function ConfiguratorWizard({
   const [stationInfoModal, setStationInfoModal] = useState<"eco" | "pro" | null>(null)
   const [stationComparisonOpen, setStationComparisonOpen] = useState(false)
   const [mockupCalibrate, setMockupCalibrate] = useState(false)
+  const [mobileOfferOpen, setMobileOfferOpen] = useState(false)
   const requestAbortRef = useRef<AbortController | null>(null)
   const distanceDebounceRef = useRef<number | null>(null)
+  const wizardTopRef = useRef<HTMLDivElement>(null)
+  const skipStepScrollRef = useRef(true)
 
   useEffect(() => {
     setMockupCalibrate(readMockupCalibrateFromLocation())
@@ -193,6 +196,13 @@ export function ConfiguratorWizard({
 
   useEffect(() => {
     setShowFieldErrors(false)
+    setMobileOfferOpen(false)
+    if (skipStepScrollRef.current) {
+      skipStepScrollRef.current = false
+      return
+    }
+    // Nach Schrittwechsel oben landen (Weiter / Zurück / Step-Pills / Bearbeiten)
+    wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" })
   }, [step])
 
   const updateConfig = (patch: Partial<QuoteConfig>) => {
@@ -705,8 +715,18 @@ export function ConfiguratorWizard({
     ? formatAvailabilityStandDatum(availability.standDatum)
     : null
 
+  const priceBoxProps = {
+    price,
+    loading: loadingPrice,
+    availabilityStand,
+    showPrice,
+    menge: config.menge,
+    produktLabel: PRODUKT_ANZEIGE[config.produkt] ?? config.produkt,
+    eventDatum: config.von || null,
+  } as const
+
   return (
-    <div className="mx-auto w-full max-w-5xl min-w-0 space-y-4">
+    <div ref={wizardTopRef} className="mx-auto w-full max-w-5xl min-w-0 space-y-4 max-lg:pb-24">
       <PersonalCallBanner />
       {mockupCalibrate && (
         <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
@@ -1897,31 +1917,19 @@ export function ConfiguratorWizard({
           </CardContent>
         </Card>
 
-        <div className="hidden lg:block">
-          <StickyPriceBox
-            price={price}
-            loading={loadingPrice}
-            availabilityStand={availabilityStand}
-            showPrice={showPrice}
-            menge={config.menge}
-            produktLabel={PRODUKT_ANZEIGE[config.produkt] ?? config.produkt}
-            eventDatum={config.von || null}
-          />
+        <div className="hidden lg:block w-[280px]">
+          {/* fixed nutzt die Static-Position der Spalte → immer im Viewport */}
+          <div className="fixed top-6 z-30 w-[280px] max-h-[calc(100vh-3rem)] overflow-y-auto">
+            <StickyPriceBox {...priceBoxProps} />
+          </div>
         </div>
       </div>
 
-      <div className="lg:hidden">
-        <StickyPriceBox
-          price={price}
-          loading={loadingPrice}
-          compact
-          availabilityStand={availabilityStand}
-          showPrice={showPrice}
-          menge={config.menge}
-          produktLabel={PRODUKT_ANZEIGE[config.produkt] ?? config.produkt}
-          eventDatum={config.von || null}
-        />
-      </div>
+      <MobileOfferBar
+        {...priceBoxProps}
+        open={mobileOfferOpen}
+        onOpenChange={setMobileOfferOpen}
+      />
 
       <StationInfoModal
         station={stationInfoModal}

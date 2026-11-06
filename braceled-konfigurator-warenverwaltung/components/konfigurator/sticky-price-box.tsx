@@ -1,15 +1,33 @@
 "use client"
 
-import { Loader2 } from "lucide-react"
+import { useState } from "react"
+import { ChevronUp, Loader2 } from "lucide-react"
 import type { PreisEngineResult } from "@/lib/pricing/types"
 import { formatEur } from "@/lib/pricing/preis-engine"
 import { displayPositionen, formatPriceSummary } from "@/lib/pricing/display"
 import { PRICING_NOTICE_B2B } from "@/lib/konfigurator/consent"
+import { cn } from "@/lib/utils"
 
 function formatEventDatum(iso: string): string {
   const date = new Date(`${iso}T12:00:00`)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
+}
+
+type StickyPriceBoxProps = {
+  price: PreisEngineResult | null
+  loading: boolean
+  compact?: boolean
+  availabilityStand?: string | null
+  /** Preis erst anzeigen, wenn Produkt & Lieferung gewählt wurden */
+  showPrice?: boolean
+  placeholder?: string
+  menge?: number
+  produktLabel?: string
+  eventDatum?: string | null
+  /** Äußeren Titel ausblenden (z. B. in der Mobile-Bar) */
+  hideTitle?: boolean
+  className?: string
 }
 
 export function StickyPriceBox({
@@ -22,23 +40,14 @@ export function StickyPriceBox({
   menge,
   produktLabel,
   eventDatum,
-}: {
-  price: PreisEngineResult | null
-  loading: boolean
-  compact?: boolean
-  availabilityStand?: string | null
-  /** Preis erst anzeigen, wenn Produkt & Lieferung gewählt wurden */
-  showPrice?: boolean
-  placeholder?: string
-  menge?: number
-  produktLabel?: string
-  eventDatum?: string | null
-}) {
+  hideTitle,
+  className,
+}: StickyPriceBoxProps) {
   const showKonfigSummary = showPrice && menge != null && produktLabel
 
   return (
-    <div className="lg:sticky lg:top-6 rounded-xl border bg-card p-4 shadow-sm space-y-3">
-      <p className="text-sm font-semibold">Ihr Angebot</p>
+    <div className={cn("rounded-xl border bg-card p-4 shadow-sm space-y-3", className)}>
+      {!hideTitle && <p className="text-sm font-semibold">Ihr Angebot</p>}
       <p className="text-xs text-muted-foreground">{PRICING_NOTICE_B2B}</p>
 
       {showKonfigSummary && (
@@ -109,6 +118,96 @@ export function StickyPriceBox({
           Angebot gültig zum Stand <strong>{availabilityStand}</strong>
         </p>
       )}
+    </div>
+  )
+}
+
+function mobileBarLabel({
+  price,
+  loading,
+  showPrice,
+}: {
+  price: PreisEngineResult | null
+  loading: boolean
+  showPrice: boolean
+}): string {
+  if (!showPrice) return "noch offen"
+  if (loading) return "…"
+  if (price?.gueltig) return formatPriceSummary(price).nettoLabel
+  if (price && !price.gueltig) return "nicht berechenbar"
+  return "…"
+}
+
+/** Fixierte Mobile-Bar mit nach oben aufklappbarer Angebotsbox */
+export function MobileOfferBar({
+  price,
+  loading,
+  availabilityStand,
+  showPrice = true,
+  placeholder,
+  menge,
+  produktLabel,
+  eventDatum,
+  open,
+  onOpenChange,
+}: StickyPriceBoxProps & {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const isControlled = open !== undefined
+  const isOpen = isControlled ? Boolean(open) : uncontrolledOpen
+
+  function toggleOpen() {
+    const next = !isOpen
+    if (!isControlled) setUncontrolledOpen(next)
+    onOpenChange?.(next)
+  }
+
+  const label = mobileBarLabel({ price, loading, showPrice })
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 lg:hidden border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      {isOpen && (
+        <div className="max-h-[min(70vh,32rem)] overflow-y-auto border-b px-3 pt-3 pb-2">
+          <StickyPriceBox
+            price={price}
+            loading={loading}
+            compact
+            availabilityStand={availabilityStand}
+            showPrice={showPrice}
+            placeholder={placeholder}
+            menge={menge}
+            produktLabel={produktLabel}
+            eventDatum={eventDatum}
+            hideTitle
+            className="shadow-none"
+          />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={toggleOpen}
+        aria-expanded={isOpen}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="text-sm font-semibold truncate">
+          Ihr Angebot:{" "}
+          <span className="font-bold tabular-nums">{label}</span>
+          {showPrice && price?.gueltig ? (
+            <span className="ml-1 text-xs font-normal text-muted-foreground">netto</span>
+          ) : null}
+        </span>
+        <ChevronUp
+          className={cn(
+            "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+            isOpen ? "rotate-0" : "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      {/* Safe-area für Home-Indicator */}
+      <div className="h-[env(safe-area-inset-bottom)]" />
     </div>
   )
 }

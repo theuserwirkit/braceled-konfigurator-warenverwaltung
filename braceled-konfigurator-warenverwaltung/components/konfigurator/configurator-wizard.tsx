@@ -1924,12 +1924,12 @@ export function ConfiguratorWizard({
           </CardContent>
         </Card>
 
-        <div className="hidden lg:block w-[280px]">
-          {/* fixed nutzt die Static-Position der Spalte → immer im Viewport */}
-          <div className="fixed top-6 z-30 w-[280px] max-h-[calc(100vh-3rem)] overflow-y-auto">
+        <aside className="hidden lg:block w-[280px]">
+          {/* sticky: startet bündig mit der linken Card, bleibt beim Scrollen sichtbar */}
+          <div className="sticky top-6 z-30 max-h-[calc(100vh-3rem)] overflow-y-auto">
             <StickyPriceBox {...priceBoxProps} />
           </div>
-        </div>
+        </aside>
       </div>
 
       <MobileOfferBar

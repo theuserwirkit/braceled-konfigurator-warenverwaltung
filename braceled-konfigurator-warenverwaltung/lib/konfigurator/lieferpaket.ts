@@ -104,8 +104,9 @@ export const LIEFERPAKET_OPTIONS: ReadonlyArray<{
 ]
 
 export const FLEX_RUECKGABE_INFO = {
-  label: "Flex-Rückgabe",
-  description: `Frühere Anlieferung (≥5 Werktage vor Event, ${CARRIER_SHORT}) · Rückversandfenster 8 Werktage`,
+  label: "Flex-Service",
+  description:
+    "Buchen Sie jetzt mehr Flexibilität: Eine Anlieferung mit mindestens einer Woche Vorlauf (≥5 Werktage vor Event) und den Rückversand bis 8 Werktage nach Event-Ende (statt 3 Werktage)",
   preisNetto: FLEX_NETTO,
 } as const
 

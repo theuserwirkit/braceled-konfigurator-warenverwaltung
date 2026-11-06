@@ -12,29 +12,38 @@ import type { QuoteConfig } from "@/lib/konfigurator/types"
 
 const OWNER_STYLES: Record<
   LogisticsOwner,
-  { chip: string; chipActive: string; dot: string; label: string; legend: string }
+  { chip: string; chipActive: string; dot: string; label: string }
 > = {
-  wir: {
-    chip: "border-teal-200/80 bg-teal-50/80 text-teal-950",
-    chipActive: "border-teal-500 bg-teal-50 ring-1 ring-teal-500/25 shadow-sm",
-    dot: "border-teal-600 bg-teal-500",
-    label: "text-teal-900",
-    legend: "bg-teal-100 text-teal-900 border-teal-200",
+  kunde: {
+    chip: "border-emerald-200/80 bg-emerald-50/80 text-emerald-950",
+    chipActive: "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500/25 shadow-sm",
+    dot: "border-emerald-600 bg-emerald-500",
+    label: "text-emerald-900",
   },
-  event: {
+  braceled: {
     chip: "border-violet-200/80 bg-violet-50/80 text-violet-950",
     chipActive: "border-violet-500 bg-violet-50 ring-1 ring-violet-400/30 shadow-sm",
     dot: "border-violet-600 bg-violet-500",
     label: "text-violet-800",
-    legend: "bg-violet-100 text-violet-900 border-violet-200",
   },
   logistik: {
     chip: "border-sky-200/80 bg-sky-50/80 text-sky-950",
     chipActive: "border-sky-500 bg-sky-50 ring-1 ring-sky-500/25 shadow-sm",
     dot: "border-sky-600 bg-sky-500",
     label: "text-sky-900",
-    legend: "bg-sky-100 text-sky-900 border-sky-200",
   },
+}
+
+function ownerDisplayLabel(
+  owner: LogisticsOwner,
+  kundenfirma: string | undefined,
+): string {
+  if (owner === "kunde") {
+    const name = kundenfirma?.trim()
+    return name || "Ihre Firma"
+  }
+  if (owner === "braceled") return "BraceLED"
+  return "Logistik"
 }
 
 export function LogisticsTimeline({
@@ -52,6 +61,7 @@ export function LogisticsTimeline({
     | "lieferart"
     | "flexRueckgabe"
     | "flex"
+    | "kontaktFirma"
   >
   className?: string
   compact?: boolean
@@ -76,7 +86,7 @@ export function LogisticsTimeline({
         className,
       )}
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-3">
         <p
           className={cn(
             "font-medium text-foreground",
@@ -85,25 +95,6 @@ export function LogisticsTimeline({
         >
           Ihre Logistik-Reise
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {(
-            [
-              ["wir", "Wir"],
-              ["logistik", "Logistik"],
-              ["event", "Event"],
-            ] as const
-          ).map(([key, text]) => (
-            <span
-              key={key}
-              className={cn(
-                "rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                OWNER_STYLES[key].legend,
-              )}
-            >
-              {text}
-            </span>
-          ))}
-        </div>
       </div>
 
       <ol className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
@@ -130,12 +121,8 @@ export function LogisticsTimeline({
                   )}
                   aria-hidden
                 />
-                <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-                  {phase.owner === "wir"
-                    ? "Wir"
-                    : phase.owner === "logistik"
-                      ? "Logistik"
-                      : "Event"}
+                <span className="truncate text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {ownerDisplayLabel(phase.owner, config.kontaktFirma)}
                 </span>
               </div>
               <p className={cn("text-[11px] font-semibold leading-snug", style.label)}>

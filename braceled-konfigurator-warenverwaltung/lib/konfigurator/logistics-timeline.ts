@@ -15,7 +15,7 @@ export const RUECKVERSAND_WERKTAGE_STANDARD = 3
 export const RUECKVERSAND_WERKTAGE_FLEX = 8
 
 /** Wer ist am Zug / wem gehört die Phase */
-export type LogisticsOwner = "wir" | "event" | "logistik"
+export type LogisticsOwner = "kunde" | "braceled" | "logistik"
 
 export type LogisticsMilestone = {
   id: string
@@ -128,15 +128,15 @@ export function buildLogisticsTimeline(
     })
   }
 
-  push("beauftragung", "Beauftragung", beauftragungBis, "deadline", "wir")
-  push("zahlungseingang", "Zahlungseingang", zahlungBis, "deadline", "wir")
-  push("druckdaten", "Druckdaten", druckdatenBis, "deadline", "wir")
-  push("freigabe", "Freigabe Druck-Proof", freigabeBis, "deadline", "wir")
-  push("produktion", "Produktion", produktionBis, "deadline", "wir")
-  push("versand", "Versand", versand, "deadline", "logistik")
+  push("beauftragung", "Beauftragung bis", beauftragungBis, "deadline", "kunde")
+  push("zahlungseingang", "Zahlungseingang bis", zahlungBis, "deadline", "kunde")
+  push("druckdaten", "Druckdaten bis", druckdatenBis, "deadline", "kunde")
+  push("freigabe", "Freigabe Druckproof bis", freigabeBis, "deadline", "kunde")
+  push("produktion", "Produktion", produktionBis, "deadline", "braceled")
+  push("versand", "Versand", versand, "deadline", "braceled")
   push("ankunft", "Ankunft", ankunft, "deadline", "logistik")
-  push("event", "Event", event, "event", "event")
-  push("rueckAufgabe", "Aufgabe Rückversand", rueckAufgabe, "return", "logistik")
+  push("event", "Event", event, "event", "kunde")
+  push("rueckAufgabe", "Aufgabe Rückversand", rueckAufgabe, "return", "kunde")
   push("ruecklieferung", "späteste Rücklieferung", ruecklieferungBis, "return", "logistik")
 
   return milestones

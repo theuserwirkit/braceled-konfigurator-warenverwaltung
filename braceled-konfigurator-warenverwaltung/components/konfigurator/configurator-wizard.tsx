@@ -1831,7 +1831,7 @@ export function ConfiguratorWizard({
                     config.druckTextilband ? "Textilband-Bedruckung" : null,
                     getProbedruckLabel(probedruckOption),
                     getLieferpaketLabel(lieferpaket),
-                    flexRueckgabe ? "Flex-Rückgabe" : null,
+                    flexRueckgabe ? "Flex-Service" : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}

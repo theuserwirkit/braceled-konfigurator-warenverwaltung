@@ -520,31 +520,8 @@ export function ConfiguratorWizard({
       ...config,
       gruppenGroessen: normalizeGruppenGroessen(config).slice(0, config.gruppen),
     }),
-    [
-      config.produkt,
-      config.modus,
-      config.menge,
-      config.kanalanzahl,
-      config.von,
-      config.bis,
-      config.station,
-      config.stationModus,
-      config.variante,
-      config.druck,
-      config.druckArt,
-      config.druckTextilband,
-      config.probedruckOption,
-      config.flex,
-      config.lieferpaket,
-      config.flexRueckgabe,
-      config.lieferzeit,
-      config.lieferart,
-      config.gruppen,
-      config.gruppenGroessen,
-      config.techniker,
-      config.technikerTage,
-      config.technikerKm,
-    ],
+    // Gesamtes config: sonst fallen Flags wie druckTextilband aus der Preis-API heraus
+    [config],
   )
 
   useEffect(() => {

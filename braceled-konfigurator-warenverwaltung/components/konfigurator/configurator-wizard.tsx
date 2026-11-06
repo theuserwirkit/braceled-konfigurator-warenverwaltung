@@ -798,8 +798,9 @@ export function ConfiguratorWizard({
         </div>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-6 lg:items-start">
-        <Card>
+      {/* items-stretch nötig: sonst ist die rechte Spalte nur so hoch wie die Box → sticky greift nicht */}
+      <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-6 lg:items-stretch">
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle className="text-xl">{STEPS[step].question}</CardTitle>
             <CardDescription>
@@ -1924,8 +1925,8 @@ export function ConfiguratorWizard({
           </CardContent>
         </Card>
 
-        <aside className="hidden lg:block w-[280px]">
-          {/* sticky: startet bündig mit der linken Card, bleibt beim Scrollen sichtbar */}
+        <aside className="hidden lg:block w-[280px] min-h-0">
+          {/* sticky innerhalb der gestreckten Spalte = bündig oben, folgt beim Scrollen */}
           <div className="sticky top-6 z-30 max-h-[calc(100vh-3rem)] overflow-y-auto">
             <StickyPriceBox {...priceBoxProps} />
           </div>

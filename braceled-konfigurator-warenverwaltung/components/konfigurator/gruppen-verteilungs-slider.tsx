@@ -49,9 +49,9 @@ export function GruppenVerteilungsSlider({
         ))}
       </div>
 
-      <div className="relative py-2">
+      <div className="relative py-3">
         <div
-          className="pointer-events-none absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 overflow-hidden rounded-full"
+          className="pointer-events-none absolute inset-x-0 top-1/2 h-3 -translate-y-1/2 overflow-hidden rounded-full"
           aria-hidden
         >
           <div className="flex h-full w-full">

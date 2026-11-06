@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
+import { StepperSlider } from "@/components/konfigurator/stepper-slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -726,7 +726,10 @@ export function ConfiguratorWizard({
   } as const
 
   return (
-    <div ref={wizardTopRef} className="mx-auto w-full max-w-5xl min-w-0 space-y-4 max-lg:pb-24">
+    <div
+      ref={wizardTopRef}
+      className="mx-auto w-full max-w-5xl min-w-0 space-y-4 max-lg:scroll-mt-16 max-lg:pt-16"
+    >
       <PersonalCallBanner />
       {mockupCalibrate && (
         <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
@@ -1078,13 +1081,15 @@ export function ConfiguratorWizard({
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label>Menge: {config.menge} Stück</Label>
-                  <Slider
+                  <Label>Menge: {config.menge.toLocaleString("de-DE")} Stück</Label>
+                  <StepperSlider
                     min={MIN_MENGE}
                     max={MAX_MENGE}
                     step={MENGE_STEP}
-                    value={[config.menge]}
-                    onValueChange={([v]) => updateConfig({ menge: v })}
+                    value={config.menge}
+                    onChange={(menge) => updateConfig({ menge })}
+                    suffix="Stück"
+                    aria-label="Menge"
                   />
                   <p className="text-xs text-muted-foreground">
                     {MIN_MENGE.toLocaleString("de-DE")}–{MAX_MENGE.toLocaleString("de-DE")} in{" "}
@@ -1386,12 +1391,14 @@ export function ConfiguratorWizard({
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {GRUPPEN_INFO.description}
                       </p>
-                      <Slider
+                      <StepperSlider
                         min={GRUPPEN_MIN}
                         max={maxGruppen}
                         step={1}
-                        value={[Math.min(config.gruppen, maxGruppen)]}
-                        onValueChange={([v]) => updateConfig({ gruppen: v })}
+                        value={Math.min(config.gruppen, maxGruppen)}
+                        onChange={(gruppen) => updateConfig({ gruppen })}
+                        suffix="Gruppen"
+                        aria-label="Anzahl Gruppen"
                       />
                       <p className="text-xs text-muted-foreground">
                         Je Gruppe {GRUPPEN_INFO.preisProGruppeNetto} EUR netto · max.{" "}

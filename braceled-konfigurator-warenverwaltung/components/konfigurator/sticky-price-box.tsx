@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronUp, Loader2 } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 import type { PreisEngineResult } from "@/lib/pricing/types"
 import { formatEur } from "@/lib/pricing/preis-engine"
 import { displayPositionen, formatPriceSummary } from "@/lib/pricing/display"
@@ -138,7 +138,7 @@ function mobileBarLabel({
   return "…"
 }
 
-/** Fixierte Mobile-Bar mit nach oben aufklappbarer Angebotsbox */
+/** Fixierte Mobile-Bar oben; Details klappen nach unten auf */
 export function MobileOfferBar({
   price,
   loading,
@@ -167,9 +167,31 @@ export function MobileOfferBar({
   const label = mobileBarLabel({ price, loading, showPrice })
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 lg:hidden border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+    <div className="fixed inset-x-0 top-0 z-40 lg:hidden border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+      <div className="h-[env(safe-area-inset-top)]" />
+      <button
+        type="button"
+        onClick={toggleOpen}
+        aria-expanded={isOpen}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="text-sm font-semibold truncate">
+          Ihr Angebot:{" "}
+          <span className="font-bold tabular-nums">{label}</span>
+          {showPrice && price?.gueltig ? (
+            <span className="ml-1 text-xs font-normal text-muted-foreground">netto</span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+            isOpen ? "rotate-180" : "rotate-0",
+          )}
+          aria-hidden
+        />
+      </button>
       {isOpen && (
-        <div className="max-h-[min(70vh,32rem)] overflow-y-auto border-b px-3 pt-3 pb-2">
+        <div className="max-h-[min(70vh,32rem)] overflow-y-auto border-t px-3 pt-2 pb-3">
           <StickyPriceBox
             price={price}
             loading={loading}
@@ -185,29 +207,6 @@ export function MobileOfferBar({
           />
         </div>
       )}
-      <button
-        type="button"
-        onClick={toggleOpen}
-        aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <span className="text-sm font-semibold truncate">
-          Ihr Angebot:{" "}
-          <span className="font-bold tabular-nums">{label}</span>
-          {showPrice && price?.gueltig ? (
-            <span className="ml-1 text-xs font-normal text-muted-foreground">netto</span>
-          ) : null}
-        </span>
-        <ChevronUp
-          className={cn(
-            "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
-            isOpen ? "rotate-0" : "rotate-180",
-          )}
-          aria-hidden
-        />
-      </button>
-      {/* Safe-area für Home-Indicator */}
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </div>
   )
 }

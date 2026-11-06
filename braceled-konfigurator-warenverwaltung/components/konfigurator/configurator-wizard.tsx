@@ -532,6 +532,7 @@ export function ConfiguratorWizard({
       config.variante,
       config.druck,
       config.druckArt,
+      config.druckTextilband,
       config.probedruckOption,
       config.flex,
       config.lieferpaket,
@@ -1215,10 +1216,6 @@ export function ConfiguratorWizard({
                             <Label>{TEXTILBAND_DRUCK_INFO.title}</Label>
                             <p className="text-xs text-muted-foreground mt-1">
                               {TEXTILBAND_DRUCK_INFO.description}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatEur(TEXTILBAND_DRUCK_INFO.preisBis250)}/Stk. bis 250 ·{" "}
-                              {formatEur(TEXTILBAND_DRUCK_INFO.preisAb251)}/Stk. darüber
                             </p>
                           </div>
                           <Switch

@@ -39,8 +39,8 @@ assert(
   "display label G2",
 )
 
-assert(textilbandDruckPreisNetto(250) === 0.7, "druck <=250")
-assert(textilbandDruckPreisNetto(251) === 0.66, "druck >250")
+assert(textilbandDruckPreisNetto(750) === 0.78, "druck <=750")
+assert(textilbandDruckPreisNetto(751) === 0.7, "druck >750")
 
 const base = {
   produkt: "textilband",
@@ -85,7 +85,19 @@ const mieteTextil = rechnePreis({
 assert(mieteTextil.gueltig, "miete + Textilband-Druck ok")
 if (mieteTextil.gueltig) {
   const tp = mieteTextil.positionen.find((x) => x.pos.includes("Textilband-Bedruckung"))
-  assert(tp?.einzel === 0.66, `textil druck 300 → 0.66 got ${tp?.einzel}`)
+  assert(tp?.einzel === 0.78, `textil druck 300 → 0.78 got ${tp?.einzel}`)
+}
+
+const kaufTextilGross = rechnePreis({
+  ...base,
+  druckTextilband: true,
+  menge: 800,
+})
+assert(kaufTextilGross.gueltig, "kauf + Textilband-Druck 800 ok")
+if (kaufTextilGross.gueltig) {
+  const tp = kaufTextilGross.positionen.find((x) => x.pos.includes("Textilband-Bedruckung"))
+  assert(tp?.einzel === 0.7, `textil druck 800 → 0.70 got ${tp?.einzel}`)
+  assert(tp?.summe === 560, `textil druck 800 summe 560 got ${tp?.summe}`)
 }
 
 const tooManyGroups = rechnePreis({

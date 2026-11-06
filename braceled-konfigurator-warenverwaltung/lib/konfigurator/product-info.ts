@@ -353,10 +353,10 @@ export const TEXTILBAND_DRUCK_INFO = {
   title: "Textilband bedrucken",
   description:
     "Bedruckung des Textilbands (Einlassband). Auch bei Miete möglich – unabhängig vom LED-Element.",
-  /** bis 250 Stk. netto/Stk. */
-  preisBis250: 0.7,
-  /** ab 251 Stk. netto/Stk. */
-  preisAb251: 0.66,
+  /** bis 750 Stk. netto/Stk. */
+  preisBis750: 0.78,
+  /** ab 751 Stk. netto/Stk. */
+  preisAb751: 0.7,
 } as const
 
 /** Bilder für Druck-Optionen beim LED-Textilarmband */
@@ -367,7 +367,7 @@ export const TEXTILBAND_DRUCK_IMAGES = {
 } as const
 
 export function textilbandDruckPreisNetto(menge: number): number {
-  return menge <= 250 ? TEXTILBAND_DRUCK_INFO.preisBis250 : TEXTILBAND_DRUCK_INFO.preisAb251
+  return menge <= 750 ? TEXTILBAND_DRUCK_INFO.preisBis750 : TEXTILBAND_DRUCK_INFO.preisAb751
 }
 
 /** Produkte mit Soft-Hold über Leuchtgruppen (je eigener Pool) */

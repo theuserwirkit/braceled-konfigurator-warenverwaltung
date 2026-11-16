@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { AlertCircle, Info } from "lucide-react"
+import { AI_GENERATED_CAPTION, isAiGeneratedLandingImage } from "@/lib/landing/content"
 import { cn } from "@/lib/utils"
 
 export function OptionCard({
@@ -52,17 +53,24 @@ export function OptionCard({
       )}
     >
       {imageSrc && (
-        <div className="mb-3 flex h-28 items-center justify-center overflow-hidden rounded-md bg-muted/40 p-2">
-          <Image
-            src={imageSrc}
-            alt={imageAlt ?? title}
-            width={160}
-            height={112}
-            unoptimized
-            className="max-h-24 w-auto object-contain bg-transparent"
-            style={{ backgroundColor: "transparent" }}
-          />
-        </div>
+        <figure className="mb-3">
+          <div className="flex h-28 items-center justify-center overflow-hidden rounded-md bg-muted/40 p-2">
+            <Image
+              src={imageSrc}
+              alt={imageAlt ?? title}
+              width={160}
+              height={112}
+              unoptimized
+              className="max-h-24 w-auto object-contain bg-transparent"
+              style={{ backgroundColor: "transparent" }}
+            />
+          </div>
+          {isAiGeneratedLandingImage(imageSrc) ? (
+            <figcaption className="mt-1.5 text-[11px] leading-tight text-muted-foreground">
+              {AI_GENERATED_CAPTION}
+            </figcaption>
+          ) : null}
+        </figure>
       )}
       <div className="flex items-start justify-between gap-2">
         <span className="font-medium flex items-center gap-1.5">

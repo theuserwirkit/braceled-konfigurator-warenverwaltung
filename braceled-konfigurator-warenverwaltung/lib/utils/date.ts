@@ -1,15 +1,27 @@
 import { format, parseISO, isBefore } from "date-fns"
 import { de } from "date-fns/locale"
 
+/** Neon/pg liefert timestamptz oft als Date – Client-Props erwarten ISO-Strings. */
+export function asIsoString(value: unknown): string | null {
+  if (value == null) return null
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString()
+  }
+  if (typeof value === "string") return value
+  return String(value)
+}
+
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "-"
   const dateObj = typeof date === "string" ? parseISO(date) : date
+  if (Number.isNaN(dateObj.getTime())) return "–"
   return format(dateObj, "dd.MM.yyyy", { locale: de })
 }
 
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return "-"
   const dateObj = typeof date === "string" ? parseISO(date) : date
+  if (Number.isNaN(dateObj.getTime())) return "–"
   return format(dateObj, "dd.MM.yyyy HH:mm", { locale: de })
 }
 

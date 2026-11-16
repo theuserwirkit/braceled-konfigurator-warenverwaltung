@@ -9,10 +9,56 @@ export const HERO_COPY = {
 
 export const NAV_LINKS = [
   { href: "/led-armbaender-events", label: "Produkt" },
+  { href: "/led-armbaender-einsatz", label: "Einsatzideen" },
+  { href: "/magazin", label: "Magazin" },
   { href: "/led-armbaender-vergleich", label: "Vergleich" },
   { href: "#technik", label: "Technik" },
   { href: "#preise", label: "Preise" },
   { href: "#faq", label: "FAQ" },
+] as const
+
+/** Kurzfassung der Show-Ideen für den Landing-Akkordeon (Volltext auf /led-armbaender-einsatz). */
+export const LANDING_SHOW_IDEAS = [
+  {
+    question: "Laola-Welle mit Leuchtkraft",
+    answer:
+      "Blöcke nacheinander ansteuern – die Crowd wird zur Welle. Ideal für Arena, Festival und Sport mit DMX-Cues zum Beat.",
+  },
+  {
+    question: "Beifall mit Leucht-Effekt",
+    answer:
+      "Standing Ovations sichtbar machen: bei Applaus die ganze Halle in Markenfarbe oder Weiß hochfahren.",
+  },
+  {
+    question: "Farbenfrohe Break-Outs",
+    answer:
+      "Sessions und Tracks farblich markieren – bis zu 20 Gruppen für klare Wegeführung ohne Schilderchaos.",
+  },
+  {
+    question: "Blinkendes Gewinnspiel",
+    answer:
+      "Gewinner-Gruppe blinkt, Rest bleibt gedimmt. Klassiker für Messe, Firmenfeier und Aftershow – ohne App für Gäste.",
+  },
+  {
+    question: "Pixel-Mapping für's Branding",
+    answer:
+      "Zonen in Corporate Colors leuchten lassen – stark bei Produktlaunches und Sponsor-Slots.",
+  },
+  {
+    question: "Netzwerken mit Farbwechsel",
+    answer:
+      "Branche oder Interesse am Handgelenk: gleiche Farbe findet sich schneller – umschalten nach Session in Sekunden.",
+  },
+  {
+    question: "Match-Making mit Licht",
+    answer:
+      "Teams oder Paare „finden“ sich über passende Farben – gut für Teambuilding und Speed-Networking.",
+  },
+  {
+    question: "Pausen-Timer",
+    answer:
+      "Pause endet → Farbe wechseln oder blinken. Sichtbares Signal für den gesamten Saal, ohne Durchsage-Spam.",
+  },
 ] as const
 
 export const LANDING_IMAGES = {
@@ -35,6 +81,28 @@ export const LANDING_IMAGES = {
   benefit2: "/images/landing/benefit-branding.webp",
   benefit3: "/images/landing/benefit-beratung.webp",
 } as const
+
+/** Sichtbare Caption unter KI-Bildern (kein Impressum-Ersatz). */
+export const AI_GENERATED_CAPTION = "KI-generiert" as const
+
+/**
+ * Inhaltliche KI-Bilder (kennzeichnen).
+ * Nicht enthalten: echte Produktfotos (armband-*), Logos, reine Deko (dust/glow/line/contact).
+ */
+export const AI_GENERATED_LANDING_IMAGE_SET: ReadonlySet<string> = new Set([
+  LANDING_IMAGES.hero,
+  LANDING_IMAGES.gruppen,
+  LANDING_IMAGES.bedruckt,
+  LANDING_IMAGES.batterie,
+  LANDING_IMAGES.vollflaeche,
+  LANDING_IMAGES.benefit1,
+  LANDING_IMAGES.benefit2,
+  LANDING_IMAGES.benefit3,
+])
+
+export function isAiGeneratedLandingImage(src: string): boolean {
+  return AI_GENERATED_LANDING_IMAGE_SET.has(src)
+}
 
 export const USP_ITEMS = [
   {

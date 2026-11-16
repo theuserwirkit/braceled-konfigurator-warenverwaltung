@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 export default async function AuftraegePage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; source?: string }>
+  searchParams: Promise<{ status?: string; source?: string; archiv?: string }>
 }) {
   if (!(await isAuthenticated())) redirect("/login")
 
@@ -23,19 +23,21 @@ export default async function AuftraegePage({
   const params = await searchParams
   const statusFilter = params.status as QuoteStatus | "all" | "active" | "fulfillment_open" | undefined
   const sourceFilter = params.source as QuoteSource | "all" | undefined
+  const showArchived = params.archiv === "1"
 
-  const quoteFilters: { status?: QuoteStatus | "active" | "fulfillment_open"; source?: QuoteSource } = {}
+  const quoteFilters: {
+    status?: QuoteStatus | "active" | "fulfillment_open"
+    source?: QuoteSource
+    archived?: boolean
+  } = { archived: showArchived }
   if (sourceFilter && sourceFilter !== "all") quoteFilters.source = sourceFilter
   if (statusFilter && statusFilter !== "all") quoteFilters.status = statusFilter
 
   const [_, stats, quotes, priorityOrders, quoteStats] = await Promise.all([
     expireStaleQuotes(),
-    getQuoteRequestStats({ skipExpire: true }),
-    listQuoteRequests(
-      Object.keys(quoteFilters).length > 0 ? quoteFilters : undefined,
-      { skipExpire: true, tableView: true, limit: 100 },
-    ),
-    listPriorityFulfillmentOrders(3),
+    getQuoteRequestStats({ skipExpire: true, archived: showArchived }),
+    listQuoteRequests(quoteFilters, { skipExpire: true, tableView: true, limit: 100 }),
+    showArchived ? Promise.resolve([]) : listPriorityFulfillmentOrders(3),
     getQuoteRequestStats({ skipExpire: true }),
   ])
 
@@ -61,6 +63,7 @@ export default async function AuftraegePage({
         priorityOrders={priorityOrders}
         statusFilter={statusFilter}
         sourceFilter={sourceFilter}
+        showArchived={showArchived}
       />
     </OperationsShell>
   )

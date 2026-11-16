@@ -16,6 +16,7 @@ import { getLeadById } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
 import {
   sendCustomerApprovedEmail,
+  sendCustomerCancelledEmail,
   sendCustomerPaidEmail,
   sendCustomerRejectedEmail,
   sendCustomerSubmittedEmail,
@@ -47,18 +48,9 @@ import { getRejectionMessage, type RejectionReasonId } from "@/lib/konfigurator/
 import { priceSnapshotSchema, quoteConfigSchema, formatZodError } from "@/lib/api-schemas"
 import { getQuoteOfferPdfForEmail } from "@/lib/actions/quote-offer-pdf-internal"
 import { toSafeErrorMessage } from "@/lib/safe-error"
+import { asIsoString } from "@/lib/utils/date"
 
 const PAYMENT_EXPIRY_DAYS = 7
-
-/** Neon/pg liefert timestamptz oft als Date – QuoteRequest erwartet ISO-Strings. */
-function asIsoString(value: unknown): string | null {
-  if (value == null) return null
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value.toISOString()
-  }
-  if (typeof value === "string") return value
-  return String(value)
-}
 
 export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
   const { offer_pdf_data: _pdf, offer_pdf_mime_type: _mime, ...safeRow } = row
@@ -75,6 +67,7 @@ export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
     cancelled_at: asIsoString(row.cancelled_at),
     created_at: asIsoString(row.created_at) ?? (safeRow.created_at as string),
     packing_docs_printed_at: asIsoString(row.packing_docs_printed_at),
+    archived_at: asIsoString(row.archived_at),
     fulfillment_status: (row.fulfillment_status as QuoteRequest["fulfillment_status"]) ?? null,
     tracking_number: (row.tracking_number as string | null) ?? null,
     versand_dienstleister: (row.versand_dienstleister as QuoteRequest["versand_dienstleister"]) ?? null,
@@ -696,7 +689,7 @@ export async function rejectQuoteRequest(
 
   await finalizeRejectedQuote(quote, reasonMessage)
 
-  if (lead && quote.source === "konfigurator") {
+  if (lead) {
     try {
       await sendCustomerRejectedEmail({
         email: lead.email,
@@ -711,6 +704,23 @@ export async function rejectQuoteRequest(
   return { success: true }
 }
 
+function scheduleCancelledCustomerEmail(params: {
+  email: string
+  quote: QuoteRequest
+  reason?: string
+}) {
+  after(async () => {
+    try {
+      const mailResult = await sendCustomerCancelledEmail(params)
+      if (!mailResult.success) {
+        console.error("Cancellation email failed:", mailResult.error)
+      }
+    } catch (e) {
+      console.error("Cancellation email failed:", e)
+    }
+  })
+}
+
 export async function cancelQuoteRequest(
   quoteId: number,
   reason?: string,
@@ -723,18 +733,29 @@ export async function cancelQuoteRequest(
     return { success: false, error: `Status ${quote.status} kann nicht storniert werden` }
   }
 
+  const cancelReason = reason || "Manuell storniert"
+  const lead = await getLeadById(quote.lead_id)
+
   const sql = getDb()
   await releaseQuoteBooking(quote.booking_id)
 
   await sql`
     UPDATE quote_requests SET
       status = 'cancelled',
-      rejection_reason = ${reason || "Manuell storniert"},
+      rejection_reason = ${cancelReason},
       booking_id = NULL,
       cancelled_at = NOW(),
       updated_at = NOW()
     WHERE id = ${quoteId}
   `
+
+  if (lead) {
+    scheduleCancelledCustomerEmail({
+      email: lead.email,
+      quote: { ...quote, status: "cancelled", rejection_reason: cancelReason },
+      reason: cancelReason,
+    })
+  }
 
   revalidatePath("/warenverwaltung/auftraege")
   return { success: true }

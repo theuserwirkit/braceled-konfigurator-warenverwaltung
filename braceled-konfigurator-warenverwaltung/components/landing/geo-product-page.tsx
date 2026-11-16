@@ -22,11 +22,14 @@ import {
   GEO_USE_CASES,
   formatGeoPrice,
 } from "@/lib/landing/geo-product"
+import { GEO_EINSATZ_PATH } from "@/lib/landing/geo-einsatz"
+import { MAGAZIN_PATH } from "@/lib/landing/magazin"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 
 const GEO_NAV_LINKS = [
   { href: `${GEO_PRODUCT_PATH}#specs`, label: "Specs" },
+  { href: GEO_EINSATZ_PATH, label: "Einsatzideen" },
   { href: "/led-armbaender-vergleich", label: "Markenvergleich" },
   { href: `${GEO_PRODUCT_PATH}#preise`, label: "Preise" },
   { href: `${GEO_PRODUCT_PATH}#faq`, label: "FAQ" },
@@ -176,6 +179,11 @@ function UseCasesSection() {
               </article>
             </LandingReveal>
           ))}
+        </div>
+        <div className="lp-tech-doc-row" style={{ marginTop: "1.5rem" }}>
+          <Link href={GEO_EINSATZ_PATH} className="lp-tech-doc-link">
+            8 Show-Ideen & Event-Segmente <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
     </section>
@@ -374,6 +382,8 @@ function Footer() {
               <MapPin size={16} /> Rhein-Main-Gebiet
             </span>
             <Link href={GEO_PRODUCT_PATH}>LED Armbänder Events</Link>
+            <Link href={GEO_EINSATZ_PATH}>Einsatzideen</Link>
+            <Link href={MAGAZIN_PATH}>Magazin</Link>
             <Link href="/led-armbaender-vergleich">Vergleich</Link>
             <Link href="/">Start</Link>
             <Link href="/impressum">Impressum</Link>

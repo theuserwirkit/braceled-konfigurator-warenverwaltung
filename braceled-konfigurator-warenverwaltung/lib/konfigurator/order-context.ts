@@ -9,8 +9,11 @@ import { getLieferpaketLabel, normalizeLieferpaket } from "@/lib/konfigurator/li
  * damit Aufrufer schlanke Client-DTOs ohne `public_token` übergeben können.
  */
 export function buildOrderContext(quote: Pick<QuoteRequest, "config_json">): string {
-  const config = quote.config_json
-  const parts: string[] = [`${config.menge}× ${config.produkt}`, config.modus]
+  const config = quote.config_json ?? ({} as QuoteRequest["config_json"])
+  const parts: string[] = [
+    `${config.menge ?? "?"}× ${config.produkt ?? "?"}`,
+    config.modus ?? "–",
+  ]
   if (config.modus === "miete" && config.von) {
     parts.push(`${config.von} – ${config.bis || config.von}`)
   }

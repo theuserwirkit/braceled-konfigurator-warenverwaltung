@@ -197,6 +197,21 @@ export async function sendCustomerRejectedEmail(params: {
   if (!result.success) throw new Error(result.error || "Ablehnungs-Mail fehlgeschlagen")
 }
 
+export async function sendCustomerCancelledEmail(params: {
+  email: string
+  quote: QuoteRequest
+  reason?: string
+}): Promise<{ success: boolean; error?: string }> {
+  return sendFromTemplateKey({
+    templateKey: "quote_cancelled",
+    email: params.email,
+    quote: params.quote,
+    extraVars: {
+      ablehnungsgrund: formatAblehnungsgrundBlock(params.reason),
+    },
+  })
+}
+
 export async function sendCustomerPaidEmail(params: {
   email: string
   quote: QuoteRequest

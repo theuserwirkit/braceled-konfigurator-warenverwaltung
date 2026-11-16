@@ -49,7 +49,7 @@ export default async function AuftragDetailPage({
   const [quote, quoteStats] = await Promise.all([getQuoteById(quoteId), getQuoteRequestStats()])
   if (!quote) notFound()
 
-  const config = quote.config_json
+  const config = quote.config_json ?? ({} as NonNullable<typeof quote.config_json>)
 
   const needsReturnModal =
     quote.fulfillment_status === "zurueckgepackt" &&
@@ -125,8 +125,8 @@ export default async function AuftragDetailPage({
   const warehousePanelProps = {
     quoteId: quote.id,
     quoteStatus: quote.status,
-    modus: config.modus as "miete" | "kauf",
-    requiredMenge: config.menge,
+    modus: (config.modus ?? "miete") as "miete" | "kauf",
+    requiredMenge: config.menge ?? 0,
     hasDruck: Boolean(config.druck),
     canPrint: quote.status === "paid",
     allocationReady: canPrintWarehouseLabels,

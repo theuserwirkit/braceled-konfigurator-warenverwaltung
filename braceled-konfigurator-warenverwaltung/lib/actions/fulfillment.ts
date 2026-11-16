@@ -21,6 +21,7 @@ import { isVersandDienstleister } from "@/lib/konfigurator/versand-dienstleister
 import { validateWarehouseForFulfillmentStep } from "@/lib/actions/quote-warehouse"
 import { toSafeErrorMessage } from "@/lib/safe-error"
 import type { FulfillmentStatus, QuoteFulfillmentEvent, VersandDienstleister } from "@/lib/konfigurator/types"
+import { asIsoString } from "@/lib/utils/date"
 
 function mapEventRow(row: Record<string, unknown>): QuoteFulfillmentEvent {
   return {
@@ -35,7 +36,7 @@ function mapEventRow(row: Record<string, unknown>): QuoteFulfillmentEvent {
     mail_sent: Boolean(row.mail_sent),
     mail_subject: (row.mail_subject as string | null) ?? null,
     created_by: (row.created_by as string | null) ?? null,
-    created_at: row.created_at as string,
+    created_at: asIsoString(row.created_at) ?? String(row.created_at ?? ""),
   }
 }
 

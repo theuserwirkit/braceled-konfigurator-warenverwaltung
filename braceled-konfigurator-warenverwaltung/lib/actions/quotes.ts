@@ -38,6 +38,8 @@ export type { ExternalQuoteInput }
 export type QuoteListFilters = {
   status?: QuoteStatus | "active" | "fulfillment_open"
   source?: QuoteSource
+  /** true = nur archivierte; false/undefined = nur aktive (nicht archiviert) */
+  archived?: boolean
 }
 
 export type QuoteListOptions = {
@@ -252,6 +254,7 @@ export async function listQuoteRequests(
 
   const sql = getDb()
   const fulfillmentOpenOnly = filters?.status === "fulfillment_open"
+  const archivedOnly = filters?.archived === true
   const statusFilter =
     filters?.status === "active"
       ? ACTIVE_QUOTE_STATUSES
@@ -271,7 +274,9 @@ export async function listQuoteRequests(
         jsonb_build_object(
           'produkt', qr.config_json->>'produkt',
           'modus', qr.config_json->>'modus',
-          'druck', COALESCE((qr.config_json->>'druck')::boolean, false)
+          'druck', COALESCE((qr.config_json->>'druck')::boolean, false),
+          'kontaktFirma', qr.config_json->>'kontaktFirma',
+          'kontaktName', qr.config_json->>'kontaktName'
         ) AS config_json,
         jsonb_build_object(
           'gesamt_netto', COALESCE((qr.price_snapshot_json->>'gesamt_netto')::numeric, 0)
@@ -288,6 +293,7 @@ export async function listQuoteRequests(
         qr.expires_at,
         qr.cancelled_at,
         qr.fulfillment_status,
+        qr.archived_at,
         qr.created_at,
         qr.updated_at,
         l.email AS lead_email
@@ -297,6 +303,10 @@ export async function listQuoteRequests(
         AND (${statusFilter}::text[] IS NULL OR qr.status = ANY(${statusFilter}::text[]))
         AND (${!fulfillmentOpenOnly}::boolean OR qr.fulfillment_status IS NULL OR qr.fulfillment_status != 'zurueckgepackt')
         AND (${filters?.source ?? null}::text IS NULL OR qr.source = ${filters?.source ?? null})
+        AND (
+          (${archivedOnly}::boolean AND qr.archived_at IS NOT NULL)
+          OR (NOT ${archivedOnly}::boolean AND qr.archived_at IS NULL)
+        )
       ORDER BY qr.submitted_at DESC NULLS LAST, qr.created_at DESC
       LIMIT ${safeLimit}
     `
@@ -308,6 +318,10 @@ export async function listQuoteRequests(
         AND (${statusFilter}::text[] IS NULL OR qr.status = ANY(${statusFilter}::text[]))
         AND (${!fulfillmentOpenOnly}::boolean OR qr.fulfillment_status IS NULL OR qr.fulfillment_status != 'zurueckgepackt')
         AND (${filters?.source ?? null}::text IS NULL OR qr.source = ${filters?.source ?? null})
+        AND (
+          (${archivedOnly}::boolean AND qr.archived_at IS NOT NULL)
+          OR (NOT ${archivedOnly}::boolean AND qr.archived_at IS NULL)
+        )
       ORDER BY qr.submitted_at DESC NULLS LAST, qr.created_at DESC
       LIMIT ${safeLimit}
     `
@@ -324,6 +338,7 @@ export async function listPriorityFulfillmentOrders(limit = 3): Promise<QuoteReq
     FROM quote_requests qr
     JOIN leads l ON l.id = qr.lead_id
     WHERE qr.status = 'paid'
+      AND qr.archived_at IS NULL
       AND (qr.fulfillment_status IS NULL OR qr.fulfillment_status != 'zurueckgepackt')
     ORDER BY qr.paid_at ASC NULLS LAST, qr.submitted_at ASC NULLS LAST
     LIMIT 100
@@ -334,23 +349,32 @@ export async function listPriorityFulfillmentOrders(limit = 3): Promise<QuoteReq
   return open.slice(0, Math.max(1, Math.min(limit, 10)))
 }
 
-export async function getQuoteRequestStats(options?: { skipExpire?: boolean }): Promise<Record<string, number>> {
+export async function getQuoteRequestStats(options?: {
+  skipExpire?: boolean
+  archived?: boolean
+}): Promise<Record<string, number>> {
   await requireRole(["ADMIN"])
   if (!options?.skipExpire) {
     await expireStaleQuotes()
   }
   const sql = getDb()
+  const archivedOnly = options?.archived === true
   const [statusRows, fulfillmentOpenRows] = await Promise.all([
     sql`
       SELECT status, COUNT(*)::int AS cnt
       FROM quote_requests
       WHERE status != 'draft'
+        AND (
+          (${archivedOnly}::boolean AND archived_at IS NOT NULL)
+          OR (NOT ${archivedOnly}::boolean AND archived_at IS NULL)
+        )
       GROUP BY status
     `,
     sql`
       SELECT COUNT(*)::int AS cnt
       FROM quote_requests
       WHERE status = 'paid'
+        AND archived_at IS NULL
         AND (fulfillment_status IS NULL OR fulfillment_status != 'zurueckgepackt')
     `,
   ])
@@ -358,7 +382,7 @@ export async function getQuoteRequestStats(options?: { skipExpire?: boolean }): 
   for (const row of statusRows) {
     stats[row.status as string] = row.cnt as number
   }
-  stats.fulfillment_open = fulfillmentOpenRows[0]?.cnt ?? 0
+  stats.fulfillment_open = archivedOnly ? 0 : (fulfillmentOpenRows[0]?.cnt ?? 0)
   return stats
 }
 
@@ -387,6 +411,51 @@ export async function adminMarkQuotePaid(
     paymentNote: input?.paymentNote,
     sendMail: input?.sendMail,
   })
+}
+
+/** Soft-Archive: aus Liste ausblenden. Bei stornierbaren Status zusätzlich Hold freigeben + Storno-Mail. */
+export async function archiveQuote(
+  quoteId: number,
+): Promise<{ success: boolean; error?: string }> {
+  await requireRole(["ADMIN", "EDITOR"])
+
+  const quote = await getQuoteByIdInternal(quoteId)
+  if (!quote) return { success: false, error: "Auftrag nicht gefunden" }
+
+  const cancellable = ["submitted", "payment_pending", "approved"]
+  if (cancellable.includes(quote.status)) {
+    const cancelled = await cancelQuoteRequest(quoteId, "Archiviert")
+    if (!cancelled.success) return cancelled
+  }
+
+  const sql = getDb()
+  const rows = await sql`
+    UPDATE quote_requests
+    SET archived_at = COALESCE(archived_at, NOW()), updated_at = NOW()
+    WHERE id = ${quoteId}
+    RETURNING id
+  `
+  if (!rows.length) return { success: false, error: "Auftrag nicht gefunden" }
+  revalidatePath("/warenverwaltung/auftraege")
+  revalidatePath(`/warenverwaltung/auftraege/${quoteId}`)
+  return { success: true }
+}
+
+export async function unarchiveQuote(
+  quoteId: number,
+): Promise<{ success: boolean; error?: string }> {
+  await requireRole(["ADMIN", "EDITOR"])
+  const sql = getDb()
+  const rows = await sql`
+    UPDATE quote_requests
+    SET archived_at = NULL, updated_at = NOW()
+    WHERE id = ${quoteId}
+    RETURNING id
+  `
+  if (!rows.length) return { success: false, error: "Auftrag nicht gefunden" }
+  revalidatePath("/warenverwaltung/auftraege")
+  revalidatePath(`/warenverwaltung/auftraege/${quoteId}`)
+  return { success: true }
 }
 
 export async function previewQuoteEmail(

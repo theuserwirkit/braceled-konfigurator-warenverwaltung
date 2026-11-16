@@ -24,7 +24,8 @@ import {
 } from "@/lib/konfigurator/order-pipeline"
 import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
 import { buildOrderContext } from "@/lib/konfigurator/order-context"
-import type { QuoteFulfillmentEvent, QuoteRequest } from "@/lib/konfigurator/types"
+import { STATUS_LABELS } from "@/lib/konfigurator/quote-status"
+import type { QuoteFulfillmentEvent, QuoteRequest, QuoteStatus } from "@/lib/konfigurator/types"
 import { toast } from "@/hooks/use-toast"
 
 const STEP_INTRO: Partial<Record<OrderPipelineStepKey, string>> = {
@@ -35,6 +36,8 @@ const STEP_INTRO: Partial<Record<OrderPipelineStepKey, string>> = {
   verpackt:
     "Alles laut Checkliste in die Tüten packen, dann als gepackt markieren.",
 }
+
+const TERMINAL_STATUSES: QuoteStatus[] = ["rejected", "expired", "cancelled", "draft"]
 
 export function QuoteOrderWorkflow({
   quote,
@@ -62,11 +65,8 @@ export function QuoteOrderWorkflow({
   const [openPrint, setOpenPrint] = useState(false)
   const [actionPending, setActionPending] = useState(false)
 
-  if (["rejected", "expired", "cancelled", "draft"].includes(quote.status)) {
-    return null
-  }
-
-  const hasDruck = Boolean(quote.config_json.druck)
+  const isTerminalStatus = TERMINAL_STATUSES.includes(quote.status)
+  const hasDruck = Boolean(quote.config_json?.druck)
   const steps = getOrderPipelineSteps(hasDruck)
   const currentIndex = getOrderPipelineProgressIndex(quote, hasDruck, warehouseContext)
   const phase = getOrderPipelinePhase(quote, hasDruck, warehouseContext)
@@ -79,8 +79,9 @@ export function QuoteOrderWorkflow({
   const primaryBooking = warehousePanelProps.warehouseData.primaryBooking
 
   useEffect(() => {
+    if (isTerminalStatus) return
     setViewIndex(currentIndex)
-  }, [currentIndex])
+  }, [currentIndex, isTerminalStatus])
 
   async function handleConfirmPrint() {
     setActionPending(true)
@@ -147,6 +148,26 @@ export function QuoteOrderWorkflow({
   const showPrimary =
     isViewingCurrent &&
     (isWarehousePhase || (quote.status === "paid" && phase && phase !== "freigabe" && phase !== "geldeingang"))
+
+  if (isTerminalStatus) {
+    return (
+      <Card id="auftrag-workflow-panel">
+        <CardHeader className="space-y-2">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <CardTitle>Auftragsabwicklung</CardTitle>
+            <span className="text-sm text-muted-foreground">{leadEmail}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">{orderContext}</p>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Keine weitere Abwicklung – Status:{" "}
+            {STATUS_LABELS[quote.status] || quote.status}.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   function renderStepContent() {
     if (!viewKey) return null
@@ -282,7 +303,7 @@ export function QuoteOrderWorkflow({
           open={openMaterial}
           onOpenChange={setOpenMaterial}
           quoteId={quote.id}
-          requiredMenge={quote.config_json.menge}
+          requiredMenge={quote.config_json?.menge ?? 0}
           booking={primaryBooking}
           bandBatchPools={warehousePanelProps.warehouseData.bandBatchPools}
           stationInfo={warehousePanelProps.warehouseData.stationInfo}

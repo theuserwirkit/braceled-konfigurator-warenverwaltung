@@ -336,7 +336,7 @@ export function QuoteFulfillmentWorkflow({
                 <div className="space-y-2">
                   <Label>Versand-Dienstleister *</Label>
                   <Select
-                    value={versandDienstleister}
+                    value={versandDienstleister || undefined}
                     onValueChange={(value) => setVersandDienstleister(value as VersandDienstleister)}
                   >
                     <SelectTrigger>

@@ -1,5 +1,7 @@
+import { GEO_EINSATZ_PATH } from "@/lib/landing/geo-einsatz"
 import { GEO_PRODUCT_PATH } from "@/lib/landing/geo-product"
 import { GEO_VERGLEICH_PATH } from "@/lib/landing/geo-vergleich"
+import { MAGAZIN_ARTICLES, MAGAZIN_PATH } from "@/lib/landing/magazin"
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://braceled-led-armband.com")
   .trim()
@@ -14,8 +16,14 @@ export function GET() {
 
 - [LED Armbänder für Events – Produkt & Specs](${siteUrl}${GEO_PRODUCT_PATH}): Zitierbare Produktseite mit Technik, Preisen, Vergleich und FAQ
 - [LED-Armbänder Vergleich Deutschland](${siteUrl}${GEO_VERGLEICH_PATH}): Anbietervergleich (BraceLED Premium, wristlink, Budget) mit Funk, Zertifikaten und Support
+- [LED-Armbänder Einsatzideen](${siteUrl}${GEO_EINSATZ_PATH}): 8 Show-Ideen und 6 Event-Segmente (Laola, Break-Outs, Networking, Timer u. a.)
+- [Magazin](${siteUrl}${MAGAZIN_PATH}): Praxisartikel (Miete/Kauf, Abstimmung, Branding, Lieferzeiten, Funk kurz)
 - [Start / BraceLED](${siteUrl}/): Marketing-Übersicht und Einstieg
 - [Konfigurator](${siteUrl}/konfigurator): Live-Preisberechnung, Menge 100–4.000
+
+## Magazin-Artikel
+
+${MAGAZIN_ARTICLES.map((a) => `- [${a.title}](${siteUrl}${MAGAZIN_PATH}/${a.slug})`).join("\n")}
 
 ## Fakten (Kurz)
 

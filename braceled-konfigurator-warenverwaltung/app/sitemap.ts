@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next"
+import { MAGAZIN_ARTICLES, MAGAZIN_PATH } from "@/lib/landing/magazin"
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://braceled-led-armband.com")
   .trim()
@@ -6,6 +7,21 @@ const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://braceled-led-armban
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
+
+  const magazineEntries: MetadataRoute.Sitemap = [
+    {
+      url: `${siteUrl}${MAGAZIN_PATH}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.88,
+    },
+    ...MAGAZIN_ARTICLES.map((article) => ({
+      url: `${siteUrl}${MAGAZIN_PATH}/${article.slug}`,
+      lastModified: new Date(article.dateModified),
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    })),
+  ]
 
   return [
     {
@@ -26,6 +42,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.94,
     },
+    {
+      url: `${siteUrl}/led-armbaender-einsatz`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.93,
+    },
+    ...magazineEntries,
     {
       url: `${siteUrl}/konfigurator`,
       lastModified: now,

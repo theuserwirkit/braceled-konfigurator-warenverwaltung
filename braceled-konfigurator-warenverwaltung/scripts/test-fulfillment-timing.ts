@@ -60,6 +60,8 @@ function makeQuote(partial: Partial<QuoteRequest>): QuoteRequest {
     offer_pdf_filename: null,
     sevdesk_order_id: null,
     sevdesk_order_number: null,
+    packing_docs_printed_at: null,
+    archived_at: null,
     created_at: "2026-06-01",
     ...partial,
   }

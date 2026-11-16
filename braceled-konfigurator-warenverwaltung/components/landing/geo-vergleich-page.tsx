@@ -11,7 +11,9 @@ import {
 } from "@/components/landing/landing-ui"
 import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 import { LANDING_IMAGES } from "@/lib/landing/content"
+import { GEO_EINSATZ_PATH } from "@/lib/landing/geo-einsatz"
 import { GEO_PRODUCT_PATH } from "@/lib/landing/geo-product"
+import { MAGAZIN_PATH } from "@/lib/landing/magazin"
 import {
   GEO_VERGLEICH_ANSWER,
   GEO_VERGLEICH_BRANDS,
@@ -326,6 +328,8 @@ function Footer() {
               <MapPin size={16} /> Rhein-Main-Gebiet
             </span>
             <Link href={GEO_PRODUCT_PATH}>LED Armbänder Events</Link>
+            <Link href={GEO_EINSATZ_PATH}>Einsatzideen</Link>
+            <Link href={MAGAZIN_PATH}>Magazin</Link>
             <Link href={GEO_VERGLEICH_PATH}>Vergleich</Link>
             <Link href="/">Start</Link>
             <Link href="/impressum">Impressum</Link>

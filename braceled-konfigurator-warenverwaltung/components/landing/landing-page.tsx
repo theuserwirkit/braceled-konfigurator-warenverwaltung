@@ -12,6 +12,7 @@ import {
   Palette,
   Headphones,
 } from "lucide-react"
+import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { Counter } from "@/components/landing/counter"
 import { LedParticles } from "@/components/landing/led-particles"
 import { LandingNav } from "@/components/landing/landing-nav"
@@ -30,6 +31,7 @@ import {
   FEATURE_CARDS,
   HERO_COPY,
   LANDING_IMAGES,
+  LANDING_SHOW_IDEAS,
   MARQUEE_ITEMS,
   TECH_ACCORDION,
   TECH_DOC_URL,
@@ -38,6 +40,7 @@ import {
   TESTIMONIALS,
   USP_ITEMS,
 } from "@/lib/landing/content"
+import { GEO_EINSATZ_PATH } from "@/lib/landing/geo-einsatz"
 import type { LandingPriceTier } from "@/lib/landing/pricing"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 import { cn } from "@/lib/utils"
@@ -59,6 +62,7 @@ export function LandingPage({ pricing }: Props) {
         <AboutSection />
         <BenefitsSection />
         <ShowSection />
+        <IdeasSection />
         <StatsSection />
         <FeaturesSection />
         <TechSection />
@@ -109,7 +113,7 @@ function HeroSection() {
         </div>
 
         <div className="lp-hero-ref-visual">
-          <div className="lp-hero-image-frame">
+          <figure className="lp-hero-image-frame lp-media-figure">
             <Image
               src={LANDING_IMAGES.hero}
               alt="BraceLED LED Armband in der Crowd"
@@ -119,7 +123,8 @@ function HeroSection() {
               className="lp-hero-main-img"
             />
             <div className="lp-hero-image-ring" />
-          </div>
+            <AiGeneratedCaption src={LANDING_IMAGES.hero} />
+          </figure>
         </div>
       </div>
 
@@ -220,20 +225,23 @@ function BenefitsSection() {
             const Icon = BENEFIT_ICONS[i]
             return (
               <LandingReveal key={item.title} delay={i * 100}>
-                <div className="lp-benefit-card">
-                  <Image src={item.image} alt="" fill className="lp-benefit-bg" />
-                  <div className="lp-benefit-overlay" />
-                  <div className="lp-benefit-content">
-                    <div className="lp-benefit-icon">
-                      <Icon size={24} />
+                <figure className="lp-media-figure">
+                  <div className="lp-benefit-card">
+                    <Image src={item.image} alt="" fill className="lp-benefit-bg" />
+                    <div className="lp-benefit-overlay" />
+                    <div className="lp-benefit-content">
+                      <div className="lp-benefit-icon">
+                        <Icon size={24} />
+                      </div>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                      <Link href="/konfigurator" className="lp-benefit-link">
+                        {item.link} <ArrowRight size={14} />
+                      </Link>
                     </div>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                    <Link href="/konfigurator" className="lp-benefit-link">
-                      {item.link} <ArrowRight size={14} />
-                    </Link>
                   </div>
-                </div>
+                  <AiGeneratedCaption src={item.image} className="lp-ai-caption--on-dark" />
+                </figure>
               </LandingReveal>
             )
           })}
@@ -248,10 +256,11 @@ function ShowSection() {
     <section className="lp-section">
       <div className="lp-container">
         <div className="lp-show-block">
-          <div className="lp-show-visual">
+          <figure className="lp-show-visual lp-media-figure">
             <Image src={LANDING_IMAGES.hero} alt="LED Show" fill style={{ objectFit: "cover" }} />
             <div className="lp-show-visual-overlay" />
-          </div>
+            <AiGeneratedCaption src={LANDING_IMAGES.hero} className="lp-ai-caption--inset" />
+          </figure>
           <div className="lp-show-content">
             <LandingReveal>
               <FestivaTitle
@@ -282,6 +291,31 @@ function ShowSection() {
               </div>
             </LandingReveal>
           </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function IdeasSection() {
+  return (
+    <section id="einsatzideen" className="lp-section lp-section-purple">
+      <div className="lp-container">
+        <SectionHeader
+          label="Einsatzideen"
+          title="Was Du mit BraceLED auf der Show machen kannst"
+          subtitle="Acht konkrete Abläufe für Agenturen und Veranstalter – Details und Event-Segmente auf der Einsatzideen-Seite."
+        />
+        <LandingReveal>
+          <LandingFaq items={LANDING_SHOW_IDEAS} />
+        </LandingReveal>
+        <div className="lp-tech-doc-row" style={{ marginTop: "1.5rem" }}>
+          <Link href={GEO_EINSATZ_PATH} className="lp-tech-doc-link">
+            Alle Einsatzideen & Event-Typen <ArrowRight size={16} />
+          </Link>
+          <LandingButton href="/konfigurator" size="sm">
+            {HERO_COPY.ctaPrimary} <ArrowRight size={16} />
+          </LandingButton>
         </div>
       </div>
     </section>
@@ -326,9 +360,12 @@ function FeaturesSection() {
           {FEATURE_CARDS.map((card, i) => (
             <LandingReveal key={card.title} delay={i * 70}>
               <article className="lp-feature-card-lg">
-                <div className="lp-feature-card-lg-img">
-                  <Image src={card.image} alt={card.title} fill sizes="(max-width:768px) 100vw, 33vw" />
-                </div>
+                <figure className="lp-media-figure">
+                  <div className="lp-feature-card-lg-img">
+                    <Image src={card.image} alt={card.title} fill sizes="(max-width:768px) 100vw, 33vw" />
+                  </div>
+                  <AiGeneratedCaption src={card.image} className="px-4" />
+                </figure>
                 <div className="lp-feature-card-lg-body">
                   <h3>{card.title}</h3>
                   <p>{card.description}</p>
@@ -553,6 +590,8 @@ function LandingFooter() {
               <MapPin size={16} /> Rhein-Main-Gebiet
             </span>
             <Link href="/led-armbaender-events">LED Armbänder Events</Link>
+            <Link href={GEO_EINSATZ_PATH}>Einsatzideen</Link>
+            <Link href="/magazin">Magazin</Link>
             <Link href="/led-armbaender-vergleich">Vergleich</Link>
             <Link href="/impressum">Impressum</Link>
             <Link href="/datenschutz">Datenschutz</Link>

@@ -17,7 +17,12 @@ import type {
 } from "@/lib/types"
 import { isAuthenticated, getUser, canEdit } from "@/lib/auth"
 import { computeStockFromItems } from "@/lib/utils/booking"
-import { addWorkdays as addWorkdaysServer, addDays as addDaysServer, rangesOverlap } from "@/lib/utils/date"
+import {
+  addWorkdays as addWorkdaysServer,
+  addDays as addDaysServer,
+  rangesOverlap,
+  asIsoString,
+} from "@/lib/utils/date"
 import { createBookingInternal } from "@/lib/actions/bookings-internal"
 
 // Guard für lesende Admin-Actions. Wirft, wenn keine gültige Admin-Session vorliegt.
@@ -247,7 +252,11 @@ export async function getGroups(): Promise<GroupRow[]> {
 export async function getBatches(): Promise<BatchRow[]> {
   await ensureAuthed()
   const sql = getDb()
-  return (await sql`SELECT * FROM batches ORDER BY lieferdatum DESC`) as unknown as BatchRow[]
+  const rows = (await sql`SELECT * FROM batches ORDER BY lieferdatum DESC`) as unknown as BatchRow[]
+  return rows.map((row) => ({
+    ...row,
+    lieferdatum: asIsoString(row.lieferdatum) ?? undefined,
+  }))
 }
 
 export async function getCustomers(limit = 500): Promise<CustomerRow[]> {
@@ -396,6 +405,7 @@ export async function getAvailabilityForGroupBatchesByDateRange(
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.group_id = ANY(${normalizedGroupIds})
       AND bi.batch_id = ANY(${batchIds})
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   const stockByPair = new Map<string, number>()
@@ -558,6 +568,7 @@ export async function getBaseAvailabilityByDateRangeInternal(
     FROM booking_items bi
     JOIN bookings b ON b.id = bi.booking_id
     WHERE bi.base_id = ${baseId}
+      AND b.status IS DISTINCT FROM 'STORNIERT'
   `
 
   const { totalStock: bookedStock } = computeStockFromItems((stockItems || []) as Parameters<typeof computeStockFromItems>[0], "bases")
@@ -701,8 +712,8 @@ export async function getOpenRentals() {
     customerName: r.customer_name,
     bemerkung: r.bemerkung,
     status: r.status,
-    datumAusgabe: r.datum_ausgabe,
-    datumRueckgabePlan: r.datum_rueckgabe_geplant,
+    datumAusgabe: asIsoString(r.datum_ausgabe),
+    datumRueckgabePlan: asIsoString(r.datum_rueckgabe_geplant),
   }))
 }
 
@@ -710,7 +721,7 @@ export async function getInventoryLots(limit = 500): Promise<Array<Record<string
   await ensureAuthed()
   const sql = getDb()
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 2000)
-  return (await sql`
+  const rows = (await sql`
     SELECT il.*, g.id as group_id_ref, g.name as group_name,
       ba.id as batch_id_ref, ba.code as batch_code, ba.funktionsumfang as batch_funktionsumfang,
       ba.lieferdatum as batch_lieferdatum
@@ -721,6 +732,12 @@ export async function getInventoryLots(limit = 500): Promise<Array<Record<string
     ORDER BY il.created_at DESC
     LIMIT ${safeLimit}
   `) as Array<Record<string, unknown> & { id: number }>
+  return rows.map((row) => ({
+    ...row,
+    created_at: asIsoString(row.created_at),
+    updated_at: asIsoString(row.updated_at),
+    batch_lieferdatum: asIsoString(row.batch_lieferdatum),
+  }))
 }
 
 export async function getRentedItemsByGroup(batchId?: number) {
@@ -934,6 +951,7 @@ export async function getCalendarData() {
     JOIN bookings b ON b.id = bi.booking_id
     JOIN groups g ON g.id = bi.group_id
     WHERE bi.group_id IS NOT NULL
+      AND b.status IS DISTINCT FROM 'STORNIERT'
     GROUP BY bi.group_id, g.name
     ORDER BY g.name ASC
   `
@@ -947,6 +965,7 @@ export async function getCalendarData() {
     JOIN bookings b ON b.id = bi.booking_id
     JOIN bases bs ON bs.id = bi.base_id
     WHERE bi.base_id IS NOT NULL AND bi.anzahl_basen > 0
+      AND b.status IS DISTINCT FROM 'STORNIERT'
     GROUP BY bi.base_id, bs.bezeichnung
     ORDER BY bs.bezeichnung ASC
   `
@@ -1083,12 +1102,24 @@ export async function getBookingById(bookingId: number): Promise<BookingWithRela
   const booking = bookings[0]
   return {
     ...booking,
+    datum_ausgabe: asIsoString(booking.datum_ausgabe),
+    datum_rueckgabe_geplant: asIsoString(booking.datum_rueckgabe_geplant),
+    datum_rueckgabe_ist: asIsoString(booking.datum_rueckgabe_ist),
+    created_at: asIsoString(booking.created_at) ?? undefined,
     customer: booking.customer_name ? { id: booking.customer_id_ref, name: booking.customer_name } : null,
     items: items.map((item: any) => ({
       id: item.id, group_id: item.group_id, anzahl: item.anzahl, anzahl_fehlt: item.anzahl_fehlt,
       anzahl_basen: item.anzahl_basen, batch_id: item.batch_id, base_id: item.base_id,
       group: item.group_id_ref ? { id: item.group_id_ref, name: item.group_name } : null,
-      batch: item.batch_id_ref ? { id: item.batch_id_ref, code: item.batch_code, funktionsumfang: item.batch_funktionsumfang, lieferant: item.batch_lieferant, lieferdatum: item.batch_lieferdatum } : null,
+      batch: item.batch_id_ref
+        ? {
+            id: item.batch_id_ref,
+            code: item.batch_code,
+            funktionsumfang: item.batch_funktionsumfang,
+            lieferant: item.batch_lieferant,
+            lieferdatum: asIsoString(item.batch_lieferdatum),
+          }
+        : null,
       base: item.base_id_ref ? { id: item.base_id_ref, bezeichnung: item.base_bezeichnung, hersteller: item.base_hersteller, kanalanzahl: item.base_kanalanzahl, seriennummer: item.base_seriennummer ?? null } : null,
     })),
   } as BookingWithRelations

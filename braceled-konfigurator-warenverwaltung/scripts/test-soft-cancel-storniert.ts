@@ -39,6 +39,46 @@ assert(
   "getAvailabilityForGroupBatchesByDateRange muss STORNIERT-Mieten ausschließen",
 )
 
+// Stock-Berechnung (ZUGANG/VERKAUF/Defekt) muss STORNIERT ebenfalls ausschließen
+const batchRangeFn = bookings.match(
+  /export async function getAvailabilityForGroupBatchesByDateRange[\s\S]*?(?=\n\/\/ Shared helper|\nexport async function getAvailabilityForGroupByDateRange)/,
+)?.[0]
+assert(batchRangeFn, "getAvailabilityForGroupBatchesByDateRange muss existieren")
+const stockBlock = batchRangeFn!.match(
+  /const stockRows = await sql`[\s\S]*?`/,
+)?.[0]
+assert(stockBlock, "stockRows-Query in getAvailabilityForGroupBatchesByDateRange muss existieren")
+assert(
+  /status\s+IS\s+DISTINCT\s+FROM\s+['"]STORNIERT['"]/i.test(stockBlock!),
+  "stockRows muss STORNIERT-Buchungen ausschließen (sonst bleiben stornierte VERKAUF negativ im Bestand)",
+)
+
+const baseRangeFn = bookings.match(
+  /export async function getBaseAvailabilityByDateRangeInternal[\s\S]*?(?=\nexport async function getBaseAvailabilityByDateRange\b)/,
+)?.[0]
+assert(baseRangeFn, "getBaseAvailabilityByDateRangeInternal muss existieren")
+const baseStockBlock = baseRangeFn!.match(
+  /const stockItems = await sql`[\s\S]*?`/,
+)?.[0]
+assert(baseStockBlock, "stockItems-Query in getBaseAvailabilityByDateRangeInternal muss existieren")
+assert(
+  /status\s+IS\s+DISTINCT\s+FROM\s+['"]STORNIERT['"]/i.test(baseStockBlock!),
+  "getBaseAvailabilityByDateRangeInternal stockItems muss STORNIERT ausschließen",
+)
+
+const calendarFn = bookings.match(
+  /export async function getCalendarData[\s\S]*?(?=\nexport async function )/,
+)?.[0]
+assert(calendarFn, "getCalendarData muss existieren")
+assert(
+  /const bandStock = await sql`[\s\S]*?status\s+IS\s+DISTINCT\s+FROM\s+['"]STORNIERT['"]/i.test(calendarFn!),
+  "getCalendarData bandStock muss STORNIERT ausschließen",
+)
+assert(
+  /const baseStock = await sql`[\s\S]*?status\s+IS\s+DISTINCT\s+FROM\s+['"]STORNIERT['"]/i.test(calendarFn!),
+  "getCalendarData baseStock muss STORNIERT ausschließen",
+)
+
 // BookingStatus umfasst STORNIERT
 assert(
   /export type BookingStatus\s*=\s*"[^"]+"\s*\|\s*"[^"]+"\s*\|\s*"STORNIERT"/.test(types) ||

@@ -154,7 +154,7 @@ export default async function AuftragDetailPage({
 
   return (
     <OperationsShell activeTab="auftraege" quoteStats={quoteStats} userCanAdmin={userCanAdmin}>
-      <div className="max-w-3xl space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <Button asChild variant="ghost" size="icon" className="shrink-0 mt-0.5">

@@ -3,6 +3,7 @@
 import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
 import { A6PrintStyles } from "@/components/print/print-a6-styles"
 import { PackingShippingDates } from "@/components/print/packing-shipping-dates"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 
 type QuoteBagLabelsProps = {
   data: PackingSheetData
@@ -10,7 +11,8 @@ type QuoteBagLabelsProps = {
 
 function formatGroupLine(slot: number, lagerGruppe: string | null, charge: string | null): string {
   if (!lagerGruppe) return `Gruppe ${slot}: –`
-  return charge ? `Gruppe ${slot}: ${lagerGruppe} · ${charge}` : `Gruppe ${slot}: ${lagerGruppe}`
+  const label = formatGroupDisplayLabel(lagerGruppe)
+  return charge ? `Gruppe ${slot}: ${label} · ${charge}` : `Gruppe ${slot}: ${label}`
 }
 
 export function QuoteBagLabels({ data }: QuoteBagLabelsProps) {

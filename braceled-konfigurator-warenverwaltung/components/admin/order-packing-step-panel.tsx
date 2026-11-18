@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { QuoteStationInfo } from "@/lib/actions/quote-warehouse"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import type { WarehousePipelineStepKey } from "@/lib/konfigurator/order-pipeline"
 import type { BookingWithRelations } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -145,7 +146,9 @@ export function OrderPackingStepPanel({
                 ) : (
                   bandItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.group?.name || "–"}</TableCell>
+                      <TableCell>
+                        {item.group?.name ? formatGroupDisplayLabel(item.group.name) : "–"}
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{item.batch?.code || "–"}</TableCell>
                       <TableCell className="text-right font-mono">{item.anzahl}</TableCell>
                     </TableRow>

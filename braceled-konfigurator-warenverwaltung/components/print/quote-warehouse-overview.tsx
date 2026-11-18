@@ -1,6 +1,7 @@
 "use client"
 
 import type { PackingSheetData } from "@/lib/konfigurator/packing-sheet"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import { modusAnzeige } from "@/lib/konfigurator/product-info"
 import {
   STATION_TYP_LABELS,
@@ -124,7 +125,7 @@ export function QuoteWarehouseOverview({ data }: QuoteWarehouseOverviewProps) {
             rows={data.warehouseRows.map((row) => [
               String(row.slot),
               String(row.anzahl),
-              row.lagerGruppe ?? "–",
+              row.lagerGruppe ? formatGroupDisplayLabel(row.lagerGruppe) : "–",
               row.charge ?? "–",
             ])}
           />
@@ -136,7 +137,7 @@ export function QuoteWarehouseOverview({ data }: QuoteWarehouseOverviewProps) {
             <CompactTable
               headers={["Lager", "Charge", "Anz."]}
               rows={data.bookingRows.map((row) => [
-                row.lagerGruppe,
+                formatGroupDisplayLabel(row.lagerGruppe),
                 row.charge ?? "–",
                 String(row.anzahl),
               ])}

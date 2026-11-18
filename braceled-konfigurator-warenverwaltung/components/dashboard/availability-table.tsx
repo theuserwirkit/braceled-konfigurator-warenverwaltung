@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import type { AvailabilityStats } from "@/lib/types"
 
 interface BaseAvailStat {
@@ -43,7 +44,7 @@ export function AvailabilityTable({ stats, baseStats }: AvailabilityTableProps) 
               <TableBody>
                 {stats.map((stat) => (
                   <TableRow key={stat.groupId}>
-                    <TableCell className="font-medium">{stat.groupName}</TableCell>
+                    <TableCell className="font-medium">{formatGroupDisplayLabel(stat.groupName)}</TableCell>
                     <TableCell className="text-right"><span className="font-mono">{stat.verfuegbar}</span></TableCell>
                     <TableCell className="text-right"><span className="font-mono">{stat.inVermietung}</span></TableCell>
                     <TableCell className="text-right"><span className="font-mono text-red-600">{stat.defekt}</span></TableCell>

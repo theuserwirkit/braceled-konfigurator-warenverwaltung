@@ -25,6 +25,7 @@ import {
   type BandAllocationLine,
   type BandBatchPool,
 } from "@/lib/konfigurator/band-allocation"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import {
   isBaseStationTyp,
   STATION_TYP_LABELS,
@@ -138,7 +139,9 @@ export function QuoteWarehouseAllocationForm({
 
   const poolLabel = (groupId: number, batchId: number) => {
     const pool = getPool(bandBatchPools, groupId, batchId)
-    return pool ? `${pool.groupName} · ${pool.batchCode}` : "–"
+    return pool
+      ? `${formatGroupDisplayLabel(pool.groupName)} · ${pool.batchCode}`
+      : "–"
   }
 
   const handleSubmit = async (e: FormEvent) => {

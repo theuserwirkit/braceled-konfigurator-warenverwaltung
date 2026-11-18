@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight, Package, Radio } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatGroupDisplayLabel } from "@/lib/konfigurator/leuchtgruppen"
 import { addWorkdays, addDays } from "@/lib/utils/date"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -329,7 +330,7 @@ export function CalendarView({
     return calendarDays.map((day) => {
       const { bands, bases } = computeDailyLoad(day, rentalEvents, departureBufferDays, returnBufferDays)
       const bandUtils = bandStock.map((bs) => ({
-        name: bs.groupName,
+        name: formatGroupDisplayLabel(bs.groupName),
         used: bands.get(bs.groupId) || 0,
         total: bs.totalStock,
       }))
@@ -484,7 +485,7 @@ export function CalendarView({
                           <div className="mt-2 flex flex-wrap gap-1">
                             {ev.bands.map((b) => (
                               <span key={b.groupId} className="text-[10px] bg-wristlink-cyan/10 text-wristlink-cyan rounded px-1.5 py-0.5">
-                                {b.groupName}: {b.anzahl} St.
+                                {formatGroupDisplayLabel(b.groupName)}: {b.anzahl} St.
                               </span>
                             ))}
                           </div>
@@ -525,7 +526,7 @@ export function CalendarView({
                           <div className="mt-2 flex flex-wrap gap-1">
                             {ev.bands.map((b) => (
                               <span key={b.groupId} className="text-[10px] bg-wristlink-purple/10 text-wristlink-purple rounded px-1.5 py-0.5">
-                                {b.groupName}: {b.anzahl} St.
+                                {formatGroupDisplayLabel(b.groupName)}: {b.anzahl} St.
                               </span>
                             ))}
                           </div>
@@ -549,7 +550,7 @@ export function CalendarView({
                               const avail = Math.max(0, bs.totalStock - used)
                               return (
                                 <div key={bs.groupId} className="flex items-center justify-between text-xs">
-                                  <span className="flex items-center gap-1"><Radio className="h-3 w-3" />{bs.groupName}</span>
+                                  <span className="flex items-center gap-1"><Radio className="h-3 w-3" />{formatGroupDisplayLabel(bs.groupName)}</span>
                                   <div className="flex items-center gap-1.5">
                                     {tentative > 0 && (
                                       <span className="font-mono text-[10px] text-amber-600 px-1 py-0.5 rounded bg-amber-100 border border-amber-200">
@@ -624,7 +625,7 @@ export function CalendarView({
                 )}
                 {bandStock.map((bs) => (
                   <div key={bs.groupId} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-muted-foreground"><Radio className="h-3 w-3" />{bs.groupName}</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground"><Radio className="h-3 w-3" />{formatGroupDisplayLabel(bs.groupName)}</span>
                     <span className="font-mono font-semibold">{bs.totalStock} St.</span>
                   </div>
                 ))}

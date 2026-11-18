@@ -184,7 +184,9 @@ function PrimaryBookingSection({
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="flex flex-col gap-0.5">
-                      <span className="font-medium">{item.group?.name || "–"}</span>
+                      <span className="font-medium">
+                        {item.group?.name ? formatGroupDisplayLabel(item.group.name) : "–"}
+                      </span>
                       {item.batch?.funktionsumfang && (
                         <span className="text-xs text-muted-foreground">
                           {item.batch.funktionsumfang}
@@ -472,7 +474,9 @@ function ReturnSection({
                   .filter((item) => item.group_id != null)
                   .map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.group?.name || "–"}</TableCell>
+                      <TableCell>
+                        {item.group?.name ? formatGroupDisplayLabel(item.group.name) : "–"}
+                      </TableCell>
                       <TableCell>
                         {item.batch?.code ? (
                           <span className="font-mono text-xs">{item.batch.code}</span>

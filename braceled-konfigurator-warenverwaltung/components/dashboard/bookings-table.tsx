@@ -176,8 +176,12 @@ function BookingsTableContent({ bookings, onReturnClick, highlightId = null }: B
           bValue = getBookingTypeLabel(b.booking_type)
           break
         case "group":
-          aValue = a.item?.group?.name || a.item?.base?.bezeichnung || ""
-          bValue = b.item?.group?.name || b.item?.base?.bezeichnung || ""
+          aValue = a.item?.group?.name
+            ? formatGroupDisplayLabel(a.item.group.name)
+            : a.item?.base?.bezeichnung || ""
+          bValue = b.item?.group?.name
+            ? formatGroupDisplayLabel(b.item.group.name)
+            : b.item?.base?.bezeichnung || ""
           break
         case "batch":
           aValue = a.item?.batch?.code || ""

@@ -60,6 +60,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url), 308)
   }
 
+  if (
+    pathname === "/magazin/funk-ism-led-armbaender-kurz" ||
+    pathname === "/magazin/funk-ism-led-armbaender-kurz/"
+  ) {
+    return NextResponse.redirect(
+      new URL("/magazin/event-ablauf-led-armbaender", request.url),
+      308,
+    )
+  }
+
   const authCookie = request.cookies.get("wristlink_auth")
   const isAuthenticated = authCookie?.value ? await verifyTokenInMiddleware(authCookie.value) : false
 
@@ -68,7 +78,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/konfigurator") ||
     pathname.startsWith("/angebot/") ||
+    pathname === "/magazin" ||
+    pathname.startsWith("/magazin/") ||
     pathname === "/led-armbaender-events" ||
+    pathname === "/led-armbaender-einsatz" ||
     pathname === "/led-armbaender-vergleich" ||
     pathname === "/llms.txt" ||
     pathname === "/sitemap.xml" ||

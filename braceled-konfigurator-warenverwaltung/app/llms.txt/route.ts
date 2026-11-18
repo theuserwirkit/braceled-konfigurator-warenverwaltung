@@ -17,7 +17,7 @@ export function GET() {
 - [LED Armbänder für Events – Produkt & Specs](${siteUrl}${GEO_PRODUCT_PATH}): Zitierbare Produktseite mit Technik, Preisen, Vergleich und FAQ
 - [LED-Armbänder Vergleich Deutschland](${siteUrl}${GEO_VERGLEICH_PATH}): Anbietervergleich (BraceLED Premium, wristlink, Budget) mit Funk, Zertifikaten und Support
 - [LED-Armbänder Einsatzideen](${siteUrl}${GEO_EINSATZ_PATH}): 8 Show-Ideen und 6 Event-Segmente (Laola, Break-Outs, Networking, Timer u. a.)
-- [Magazin](${siteUrl}${MAGAZIN_PATH}): Praxisartikel (Miete/Kauf, Abstimmung, Branding, Lieferzeiten, Funk kurz)
+- [Magazin](${siteUrl}${MAGAZIN_PATH}): Praxisartikel (Miete/Kauf, Abstimmung, Branding, Lieferzeiten, Event-Ablauf)
 - [Start / BraceLED](${siteUrl}/): Marketing-Übersicht und Einstieg
 - [Konfigurator](${siteUrl}/konfigurator): Live-Preisberechnung, Menge 100–4.000
 

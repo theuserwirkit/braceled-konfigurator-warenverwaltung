@@ -105,7 +105,7 @@ function ArticleList() {
         <SectionHeader
           label="Artikel"
           title="8 Beiträge für Briefing und Show"
-          subtitle="Miete vs. Kauf, Interaktion, Branding, Ablauf und Kurz-Technik – mit klaren CTAs in den Konfigurator."
+          subtitle="Miete vs. Kauf, Interaktion, Branding, Event-Ablauf und Agentur-Workflows – mit klaren CTAs in den Konfigurator."
         />
         <div className="magazin-grid">
           {MAGAZIN_ARTICLES.map((article, i) => (

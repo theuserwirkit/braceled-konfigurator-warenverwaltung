@@ -15,7 +15,6 @@ import {
 import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { Counter } from "@/components/landing/counter"
 import { LedParticles } from "@/components/landing/led-particles"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
 import { LandingFaq } from "@/components/landing/landing-faq"
 import { LandingReveal } from "@/components/landing/landing-reveal"
@@ -51,11 +50,7 @@ type Props = { pricing: LandingPriceTier[] }
 
 export function LandingPage({ pricing }: Props) {
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav />
+    <>
       <main id="hauptinhalt">
         <HeroSection />
         <UspStrip />
@@ -73,7 +68,7 @@ export function LandingPage({ pricing }: Props) {
         <FinalCta />
       </main>
       <LandingFooter />
-    </div>
+    </>
   )
 }
 

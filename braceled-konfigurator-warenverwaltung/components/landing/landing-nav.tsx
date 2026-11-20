@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ArrowRight, Menu, X } from "lucide-react"
 import { LandingButton } from "@/components/landing/landing-ui"
@@ -9,9 +10,8 @@ import { HERO_COPY, NAV_LINKS } from "@/lib/landing/content"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 import { cn } from "@/lib/utils"
 
-type NavLink = { readonly href: string; readonly label: string }
-
-export function LandingNav({ links = NAV_LINKS }: { links?: readonly NavLink[] }) {
+export function LandingNav() {
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -20,7 +20,11 @@ export function LandingNav({ links = NAV_LINKS }: { links?: readonly NavLink[] }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
-  }, [])
+  }, [pathname])
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : ""
@@ -40,7 +44,7 @@ export function LandingNav({ links = NAV_LINKS }: { links?: readonly NavLink[] }
           </Link>
 
           <nav className="lp-nav-links" aria-label="Hauptnavigation">
-            {links.map((link) => (
+            {NAV_LINKS.map((link) => (
               <a key={link.href} href={link.href}>
                 {link.label}
               </a>
@@ -80,7 +84,7 @@ export function LandingNav({ links = NAV_LINKS }: { links?: readonly NavLink[] }
           tabIndex={menuOpen ? -1 : undefined}
         >
           <nav className="lp-mobile-menu-links" aria-label="Mobile Hauptnavigation">
-            {links.map((link) => (
+            {NAV_LINKS.map((link) => (
               <a key={link.href} href={link.href} onClick={closeMenu}>
                 {link.label}
               </a>

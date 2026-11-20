@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Mail, MapPin } from "lucide-react"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import { FestivaTitle, LandingButton } from "@/components/landing/landing-ui"
 import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
@@ -15,14 +14,6 @@ import {
   type MagazinArticle,
 } from "@/lib/landing/magazin"
 import { EMAIL_INFO } from "@/lib/contact-emails"
-
-const NAV_LINKS = [
-  { href: MAGAZIN_PATH, label: "Magazin" },
-  { href: GEO_EINSATZ_PATH, label: "Einsatzideen" },
-  { href: GEO_PRODUCT_PATH, label: "Produkt" },
-  { href: "/konfigurator", label: "Konfigurator" },
-  { href: "/", label: "Start" },
-] as const
 
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("de-DE", {
@@ -40,11 +31,7 @@ export function MagazinArticlePage({ article }: { article: MagazinArticle }) {
   const others = MAGAZIN_ARTICLES.filter((a) => a.slug !== article.slug).slice(0, 3)
 
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav links={NAV_LINKS} />
+    <>
       <main id="hauptinhalt">
         <ArticleHero article={article} />
         <ArticleBody article={article} />
@@ -52,7 +39,7 @@ export function MagazinArticlePage({ article }: { article: MagazinArticle }) {
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </>
   )
 }
 

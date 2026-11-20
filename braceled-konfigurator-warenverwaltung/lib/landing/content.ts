@@ -12,9 +12,9 @@ export const NAV_LINKS = [
   { href: "/led-armbaender-einsatz", label: "Einsatzideen" },
   { href: "/magazin", label: "Magazin" },
   { href: "/led-armbaender-vergleich", label: "Vergleich" },
-  { href: "#technik", label: "Technik" },
-  { href: "#preise", label: "Preise" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#technik", label: "Technik" },
+  { href: "/#preise", label: "Preise" },
+  { href: "/#faq", label: "FAQ" },
 ] as const
 
 /** Kurzfassung der Show-Ideen für den Landing-Akkordeon (Volltext auf /led-armbaender-einsatz). */

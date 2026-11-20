@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Check, Mail, MapPin } from "lucide-react"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import {
   FestivaTitle,
@@ -27,22 +26,9 @@ import { MAGAZIN_PATH } from "@/lib/landing/magazin"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
 
-const GEO_NAV_LINKS = [
-  { href: `${GEO_PRODUCT_PATH}#specs`, label: "Specs" },
-  { href: GEO_EINSATZ_PATH, label: "Einsatzideen" },
-  { href: "/led-armbaender-vergleich", label: "Markenvergleich" },
-  { href: `${GEO_PRODUCT_PATH}#preise`, label: "Preise" },
-  { href: `${GEO_PRODUCT_PATH}#faq`, label: "FAQ" },
-  { href: "/", label: "Start" },
-] as const
-
 export function GeoProductPage() {
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav links={GEO_NAV_LINKS} />
+    <>
       <main id="hauptinhalt">
         <Hero />
         <AnswerSection />
@@ -55,7 +41,7 @@ export function GeoProductPage() {
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </>
   )
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { DM_Sans, Plus_Jakarta_Sans } from "next/font/google"
+import { LandingNav } from "@/components/landing/landing-nav"
 import "./landing.css"
 
 const jakarta = Plus_Jakarta_Sans({
@@ -56,7 +57,13 @@ export const metadata: Metadata = {
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${jakarta.variable} ${dmSans.variable} landing-theme`}>
-      {children}
+      <div className="landing-root">
+        <a href="#hauptinhalt" className="lp-skip-link">
+          Zum Hauptinhalt springen
+        </a>
+        <LandingNav />
+        {children}
+      </div>
     </div>
   )
 }

@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Check, Mail, MapPin } from "lucide-react"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import {
   FestivaTitle,
@@ -28,21 +27,9 @@ import {
 } from "@/lib/landing/geo-vergleich"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 
-const NAV_LINKS = [
-  { href: `${GEO_VERGLEICH_PATH}#vergleich`, label: "Tabelle" },
-  { href: `${GEO_VERGLEICH_PATH}#warum-braceled`, label: "Warum BraceLED" },
-  { href: `${GEO_VERGLEICH_PATH}#faq`, label: "FAQ" },
-  { href: GEO_PRODUCT_PATH, label: "Produkt" },
-  { href: "/", label: "Start" },
-] as const
-
 export function GeoVergleichPage() {
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav links={NAV_LINKS} />
+    <>
       <main id="hauptinhalt">
         <Hero />
         <AnswerSection />
@@ -53,7 +40,7 @@ export function GeoVergleichPage() {
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </>
   )
 }
 

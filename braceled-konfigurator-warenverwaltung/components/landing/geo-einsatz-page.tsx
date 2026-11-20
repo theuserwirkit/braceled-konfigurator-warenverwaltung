@@ -3,7 +3,6 @@ import Link from "next/link"
 import { ArrowRight, Check, Mail, MapPin } from "lucide-react"
 import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import {
   FestivaTitle,
@@ -24,21 +23,9 @@ import {
 import { MAGAZIN_PATH } from "@/lib/landing/magazin"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 
-const NAV_LINKS = [
-  { href: `${GEO_EINSATZ_PATH}#ideen`, label: "Show-Ideen" },
-  { href: `${GEO_EINSATZ_PATH}#events`, label: "Event-Typen" },
-  { href: MAGAZIN_PATH, label: "Magazin" },
-  { href: GEO_PRODUCT_PATH, label: "Produkt" },
-  { href: "/", label: "Start" },
-] as const
-
 export function GeoEinsatzPage() {
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav links={NAV_LINKS} />
+    <>
       <main id="hauptinhalt">
         <Hero />
         <AnswerSection />
@@ -48,7 +35,7 @@ export function GeoEinsatzPage() {
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </>
   )
 }
 

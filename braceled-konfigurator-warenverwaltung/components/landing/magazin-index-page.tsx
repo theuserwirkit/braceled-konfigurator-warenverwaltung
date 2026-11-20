@@ -3,7 +3,6 @@ import Link from "next/link"
 import { ArrowRight, Mail, MapPin } from "lucide-react"
 import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
-import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import {
   FestivaTitle,
@@ -21,14 +20,6 @@ import {
 } from "@/lib/landing/magazin"
 import { EMAIL_INFO } from "@/lib/contact-emails"
 
-const NAV_LINKS = [
-  { href: MAGAZIN_PATH, label: "Magazin" },
-  { href: GEO_EINSATZ_PATH, label: "Einsatzideen" },
-  { href: GEO_PRODUCT_PATH, label: "Produkt" },
-  { href: "/led-armbaender-vergleich", label: "Vergleich" },
-  { href: "/", label: "Start" },
-] as const
-
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("de-DE", {
     day: "numeric",
@@ -39,18 +30,14 @@ function formatDate(iso: string) {
 
 export function MagazinIndexPage() {
   return (
-    <div className="landing-root">
-      <a href="#hauptinhalt" className="lp-skip-link">
-        Zum Hauptinhalt springen
-      </a>
-      <LandingNav links={NAV_LINKS} />
+    <>
       <main id="hauptinhalt">
         <Hero />
         <ArticleList />
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </>
   )
 }
 

@@ -1,7 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Mail, MapPin } from "lucide-react"
+import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
+import { MagazinCardImage } from "@/components/landing/magazin-card-image"
 import { LandingReveal } from "@/components/landing/landing-reveal"
 import { FestivaTitle, LandingButton } from "@/components/landing/landing-ui"
 import { CookieSettingsButton } from "@/components/cookie-consent/cookie-settings-button"
@@ -57,6 +59,18 @@ function ArticleHero({ article }: { article: MagazinArticle }) {
           <span aria-hidden>·</span>
           <Link href={MAGAZIN_PATH}>Alle Artikel</Link>
         </p>
+        <figure className="magazin-article-figure">
+          <Image
+            src={article.image}
+            alt={article.imageAlt}
+            width={1280}
+            height={720}
+            priority
+            sizes="(min-width: 768px) 42rem, 100vw"
+            className="magazin-article-image"
+          />
+          <AiGeneratedCaption force />
+        </figure>
       </div>
     </section>
   )
@@ -82,6 +96,12 @@ function ArticleBody({ article }: { article: MagazinArticle }) {
                       <li key={b}>{b}</li>
                     ))}
                   </ul>
+                ) : null}
+                {section.quote ? (
+                  <aside className="magazin-tip">
+                    <span className="magazin-tip-label">Praxistipp</span>
+                    <p>{section.quote}</p>
+                  </aside>
                 ) : null}
               </section>
             ))}
@@ -121,6 +141,7 @@ function Related({ others }: { others: MagazinArticle[] }) {
         <div className="magazin-grid magazin-grid--compact">
           {others.map((article) => (
             <article key={article.slug} className="magazin-card">
+              <MagazinCardImage article={article} />
               <p className="magazin-card-meta">
                 <span>{article.kicker}</span>
                 <span aria-hidden>·</span>

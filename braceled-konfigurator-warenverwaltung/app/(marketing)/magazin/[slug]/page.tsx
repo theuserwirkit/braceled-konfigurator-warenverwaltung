@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { MagazinArticlePage } from "@/components/landing/magazin-article-page"
-import { LANDING_IMAGES } from "@/lib/landing/content"
 import {
   MAGAZIN_PATH,
   buildMagazinArticleJsonLd,
@@ -40,12 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: article.description,
       publishedTime: article.datePublished,
       modifiedTime: article.dateModified,
-      images: [{ url: LANDING_IMAGES.front, alt: article.title }],
+      images: [{ url: article.image, width: 1280, height: 720, alt: article.imageAlt }],
     },
     twitter: {
       card: "summary_large_image",
       title: article.title,
       description: article.description,
+      images: [article.image],
     },
   }
 }

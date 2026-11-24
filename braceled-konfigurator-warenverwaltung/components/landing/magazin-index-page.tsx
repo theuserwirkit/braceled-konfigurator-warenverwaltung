@@ -4,6 +4,7 @@ import { ArrowRight, Mail, MapPin } from "lucide-react"
 import { AiGeneratedCaption } from "@/components/landing/ai-generated-caption"
 import { BraceledLogo } from "@/components/landing/braceled-logo"
 import { LandingReveal } from "@/components/landing/landing-reveal"
+import { MagazinCardImage } from "@/components/landing/magazin-card-image"
 import {
   FestivaTitle,
   LandingButton,
@@ -91,13 +92,14 @@ function ArticleList() {
       <div className="lp-container">
         <SectionHeader
           label="Artikel"
-          title="8 Beiträge für Briefing und Show"
-          subtitle="Miete vs. Kauf, Interaktion, Branding, Event-Ablauf und Agentur-Workflows – mit klaren CTAs in den Konfigurator."
+          title="Geschichten und Wissen rund um den Eventabend"
+          subtitle="Vom ersten Gedanken bis zur Zugabe: wie Du planst, was es kostet und welche Lichtmomente Deine Gäste nicht vergessen."
         />
         <div className="magazin-grid">
           {MAGAZIN_ARTICLES.map((article, i) => (
             <LandingReveal key={article.slug} delay={i * 50}>
               <article className="magazin-card">
+                <MagazinCardImage article={article} />
                 <p className="magazin-card-meta">
                   <span>{article.kicker}</span>
                   <span aria-hidden>·</span>

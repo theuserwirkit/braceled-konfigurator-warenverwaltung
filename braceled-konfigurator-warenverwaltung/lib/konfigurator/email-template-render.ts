@@ -3,6 +3,8 @@ import { getAppBaseUrl } from "@/lib/konfigurator/lead-auth"
 import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { getVersandDienstleisterLabel } from "@/lib/konfigurator/versand-dienstleister"
 import { formatDate } from "@/lib/utils/date"
+import { formatEur } from "@/lib/pricing/preis-engine"
+import { buildAnnahmeUrl, buildBezahlenUrl } from "@/lib/konfigurator/angebot-annahme"
 
 export type TemplateVars = Record<string, string>
 
@@ -56,9 +58,16 @@ export function buildQuoteTemplateVars(
   leadEmail: string,
   extra: TemplateVars = {},
 ): TemplateVars {
-  const price = quote.price_snapshot_json as { gesamt_netto?: number; gesamt_brutto?: number }
+  const price = quote.price_snapshot_json as {
+    gesamt_netto?: number
+    mwst_19?: number
+    gesamt_brutto?: number
+  }
   const config = quote.config_json
   const statusUrl = `${getAppBaseUrl()}/angebot/${quote.public_token}`.replace(/\s+/g, "")
+  const netto = price.gesamt_netto || 0
+  const brutto = price.gesamt_brutto || 0
+  const mwst = price.mwst_19 ?? Math.round((brutto - netto) * 100) / 100
   const trackingNr = quote.tracking_number || extra.tracking_nr || ""
   const versandDienstleister = getVersandDienstleisterLabel(
     extra.versand_dienstleister || quote.versand_dienstleister,
@@ -79,8 +88,14 @@ export function buildQuoteTemplateVars(
     kunde_anrede: config.kontaktName?.trim()
       ? `Hallo ${config.kontaktName.trim()},`
       : "Hallo,",
-    angebot_netto: (price.gesamt_netto || 0).toFixed(2),
-    angebot_brutto: (price.gesamt_brutto || 0).toFixed(2),
+    angebot_netto: netto.toFixed(2),
+    angebot_brutto: brutto.toFixed(2),
+    angebot_netto_eur: formatEur(netto),
+    angebot_mwst_eur: formatEur(mwst),
+    angebot_brutto_eur: formatEur(brutto),
+    gueltig_bis: quote.expires_at ? formatDate(quote.expires_at) : "",
+    annahme_url: buildAnnahmeUrl(statusUrl),
+    bezahlen_url: buildBezahlenUrl(statusUrl),
     menge: String(config.menge || 0),
     event_datum: formatEventDatum(config.von, config.bis),
     lieferort: config.technikerAdresse?.trim() || "–",

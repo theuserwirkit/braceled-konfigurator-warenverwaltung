@@ -12,6 +12,8 @@ export type QuoteSource = "konfigurator" | "n8n_email" | "manual"
 
 export type PaymentMethod = "stripe" | "bank_transfer" | "manual"
 
+export type OfferPaymentMode = "stripe" | "manual"
+
 export type VersandDienstleister = "UPS" | "DHL" | "TNT" | "FedEx"
 
 export type FulfillmentStatus =
@@ -132,6 +134,10 @@ export type QuoteRequest = {
   notes: string | null
   submitted_at: string | null
   approved_at: string | null
+  /** Bei Versand gewählte Zahlungsart; null = Angebot ohne Annahme-Schritt (z. B. n8n). */
+  offer_payment_mode: OfferPaymentMode | null
+  accepted_at: string | null
+  accepted_ip: string | null
   paid_at: string | null
   expires_at: string | null
   cancelled_at: string | null

@@ -33,8 +33,8 @@ const sampleQuote = {
 } as unknown as QuoteRequest
 
 const TEMPLATE_KEYS_WITH_STATUS = [
-  "quote_approved_stripe",
-  "quote_approved_manual",
+  "quote_accepted_stripe",
+  "quote_accepted_manual",
   "quote_paid",
   "fulfillment_vorbereitet",
   "fulfillment_bedruckt",
@@ -45,7 +45,26 @@ const TEMPLATE_KEYS_WITH_STATUS = [
   "fulfillment_zurueckgepackt",
 ]
 
+function loadAnnahmeTemplateBody(templateKey: string): string | null {
+  const sql = readFileSync(join(__dirname, "migration", "30-quote-angebot-annahme.sql"), "utf8")
+  const updateMarker = `WHERE template_key = '${templateKey}'`
+  if (sql.includes(updateMarker)) {
+    const chunk = sql.split(updateMarker)[0].split("UPDATE email_templates SET").pop() ?? ""
+    const m = chunk.match(/body = '([\s\S]*)',\s+updated_at/)
+    return m ? m[1].replace(/''/g, "'") : null
+  }
+  const insertMarker = `'${templateKey}',`
+  if (sql.includes(insertMarker)) {
+    const chunk = sql.split(insertMarker)[1]
+    const m = chunk.match(/'(\{\{kunde_anrede\}\}[\s\S]*?)',\s+true\s*\)/)
+    return m ? m[1].replace(/''/g, "'") : null
+  }
+  return null
+}
+
 function loadTemplateBody(templateKey: string): string {
+  const annahme = loadAnnahmeTemplateBody(templateKey)
+  if (annahme) return annahme
   const file = join(__dirname, "migration", "17-email-templates-angebot.sql")
   const sql = readFileSync(file, "utf8")
   const marker = `WHERE template_key = '${templateKey}'`
@@ -106,6 +125,35 @@ try {
 } catch (error) {
   failed++
   console.error("FAIL customer_submitted:", error instanceof Error ? error.message : error)
+}
+
+for (const key of ["quote_approved_stripe", "quote_approved_manual"]) {
+  try {
+    const body = renderTemplateText(loadTemplateBody(key), { ...vars, gueltig_bis: "02.12.2026" })
+    const { text: plain, html } = buildEmailBodies(body)
+    assert(!/freigegeben/i.test(body), `${key}: enthält noch „freigegeben“`)
+    assert(body.includes("unterbreiten"), `${key}: Angebots-Wording fehlt`)
+    assert(body.includes("02.12.2026"), `${key}: Reservierungsdatum fehlt`)
+    assert(!body.includes(STRIPE_URL), `${key}: Zahlungslink darf vor Annahme nicht enthalten sein`)
+    assert(plain.includes(vars.annahme_url), `${key}: Annahme-Link fehlt im Plain-Text`)
+    assert(html.includes("Angebot ansehen &amp; annehmen"), `${key}: Annahme-Button fehlt`)
+    assert(html.includes("3.771,11"), `${key}: formatierter Betrag fehlt`)
+    console.log(`OK  ${key}`)
+  } catch (error) {
+    failed++
+    console.error(`FAIL ${key}:`, error instanceof Error ? error.message : error)
+  }
+}
+
+try {
+  const body = renderTemplateText(loadTemplateBody("quote_accepted_stripe"), vars)
+  const { html } = buildEmailBodies(body)
+  assert(html.includes(`href="${vars.bezahlen_url}"`), "Bezahl-Link fehlt")
+  assert(html.includes("Jetzt online bezahlen"), "Bezahl-Button-Text fehlt")
+  console.log("OK  quote_accepted_stripe Bezahl-Button")
+} catch (error) {
+  failed++
+  console.error("FAIL quote_accepted_stripe Bezahl-Button:", error instanceof Error ? error.message : error)
 }
 
 if (failed > 0) {

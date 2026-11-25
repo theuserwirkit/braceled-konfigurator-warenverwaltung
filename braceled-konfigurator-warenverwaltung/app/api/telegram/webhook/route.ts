@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
       const result = await approveQuoteRequest(quoteId)
       const successMsg =
         quote?.source === "n8n_email"
-          ? `✅ Auftrag #${quoteId} freigegeben & Angebot versendet`
-          : `✅ Auftrag #${quoteId} freigegeben – Zahlungslink gesendet`
-      const msg = result.success ? successMsg : `❌ Freigabe fehlgeschlagen: ${result.error}`
-      await answerCallbackQuery(callback.id, result.success ? "Freigegeben" : "Fehler")
+          ? `✅ Auftrag #${quoteId}: Angebot versendet`
+          : `✅ Auftrag #${quoteId}: Angebot versendet – wartet auf Annahme durch den Kunden`
+      const msg = result.success ? successMsg : `❌ Versand fehlgeschlagen: ${result.error}`
+      await answerCallbackQuery(callback.id, result.success ? "Angebot versendet" : "Fehler")
       await editMessageAfterAction(
         callback.message.chat.id,
         callback.message.message_id,

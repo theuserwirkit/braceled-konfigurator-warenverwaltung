@@ -51,9 +51,9 @@ export function AngebotPlzGate({
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Ihr Auftragsstatus</CardTitle>
+          <CardTitle>Dein Auftragsstatus</CardTitle>
           <CardDescription>
-            Auftrag #{quoteId} – bitte die Postleitzahl Ihrer Firmenadresse eingeben, um
+            Auftrag #{quoteId} – bitte gib die Postleitzahl deiner Firmenadresse ein, um
             Angebot und Status einzusehen.
           </CardDescription>
         </CardHeader>

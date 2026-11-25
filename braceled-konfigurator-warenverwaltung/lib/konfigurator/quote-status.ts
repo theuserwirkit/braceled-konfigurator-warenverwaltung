@@ -3,10 +3,10 @@ import type { QuoteSource, QuoteStatus } from "@/lib/konfigurator/types"
 export const STATUS_LABELS: Record<QuoteStatus, string> = {
   draft: "Entwurf",
   submitted: "In Prüfung",
-  payment_pending: "Zahlung ausstehend",
+  payment_pending: "Angebot angenommen",
   paid: "Gebucht",
   rejected: "Abgelehnt",
-  approved: "Freigegeben",
+  approved: "Angebot versendet",
   expired: "Abgelaufen",
   cancelled: "Storniert",
 }

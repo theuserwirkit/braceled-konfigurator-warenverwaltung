@@ -15,16 +15,32 @@ import { getOrCreateVerifiedLeadForEmail } from "@/lib/actions/leads-internal"
 import { getLeadById } from "@/lib/actions/leads-internal"
 import { rechnePreis } from "@/lib/pricing/preis-engine"
 import {
+  sendCustomerAcceptedEmail,
   sendCustomerApprovedEmail,
   sendCustomerCancelledEmail,
   sendCustomerPaidEmail,
   sendCustomerRejectedEmail,
   sendCustomerSubmittedEmail,
   sendN8nApprovedOfferEmail,
+  sendTeamOfferAcceptedNotification,
   sendTeamQuoteNotification,
 } from "@/lib/konfigurator/email"
-import { sendQuoteTelegramNotification, isTelegramConfigured } from "@/lib/konfigurator/telegram"
-import { createCheckoutSessionForQuote, isStripeConfigured } from "@/lib/konfigurator/stripe"
+import {
+  sendOfferAcceptedTelegramNotification,
+  sendQuoteTelegramNotification,
+  isTelegramConfigured,
+} from "@/lib/konfigurator/telegram"
+import {
+  createCheckoutSessionForQuote,
+  getOpenCheckoutSessionUrl,
+  isStripeConfigured,
+} from "@/lib/konfigurator/stripe"
+import {
+  canPayOnline,
+  computeOfferExpiry,
+  isOfferAwaitingAcceptance,
+} from "@/lib/konfigurator/angebot-annahme"
+import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
 import { getAppBaseUrl } from "@/lib/konfigurator/lead-auth"
 import { canCustomerEditQuoteStatus, CUSTOMER_EDITABLE_STATUSES } from "@/lib/konfigurator/quote-status"
 import { mergeCustomerEditConfig, buildChangeSummary } from "@/lib/konfigurator/quote-customer-edit"
@@ -35,7 +51,13 @@ import {
   snapshotOfferPdfOntoLatestVersion,
 } from "@/lib/konfigurator/quote-versions"
 import type { AvailabilityStressLevel } from "@/lib/konfigurator/availability-stress"
-import type { PaymentMethod, QuoteConfig, QuoteRequest, QuoteSource } from "@/lib/konfigurator/types"
+import type {
+  OfferPaymentMode,
+  PaymentMethod,
+  QuoteConfig,
+  QuoteRequest,
+  QuoteSource,
+} from "@/lib/konfigurator/types"
 import {
   getProbedruckLabel,
   normalizeProbedruckOption,
@@ -49,9 +71,6 @@ import { priceSnapshotSchema, quoteConfigSchema, formatZodError } from "@/lib/ap
 import { getQuoteOfferPdfForEmail } from "@/lib/actions/quote-offer-pdf-internal"
 import { toSafeErrorMessage } from "@/lib/safe-error"
 import { asIsoString } from "@/lib/utils/date"
-
-const PAYMENT_EXPIRY_DAYS = 7
-
 export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
   const { offer_pdf_data: _pdf, offer_pdf_mime_type: _mime, ...safeRow } = row
   return {
@@ -62,6 +81,9 @@ export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
     notes: (row.notes as string | null) ?? null,
     submitted_at: asIsoString(row.submitted_at),
     approved_at: asIsoString(row.approved_at),
+    offer_payment_mode: (row.offer_payment_mode as QuoteRequest["offer_payment_mode"]) ?? null,
+    accepted_at: asIsoString(row.accepted_at),
+    accepted_ip: (row.accepted_ip as string | null) ?? null,
     paid_at: asIsoString(row.paid_at),
     expires_at: asIsoString(row.expires_at),
     cancelled_at: asIsoString(row.cancelled_at),
@@ -344,7 +366,7 @@ export async function expireStaleQuotes(): Promise<number> {
   const sql = getDb()
   const stale = await sql`
     SELECT id, booking_id FROM quote_requests
-    WHERE status = 'payment_pending'
+    WHERE status IN ('approved', 'payment_pending')
       AND expires_at IS NOT NULL
       AND expires_at < NOW()
   `
@@ -454,6 +476,9 @@ export async function updateQuoteByPublicToken(input: {
         price_snapshot_json = ${JSON.stringify(price)},
         status = 'submitted',
         approved_at = NULL,
+        offer_payment_mode = NULL,
+        accepted_at = NULL,
+        accepted_ip = NULL,
         expires_at = NULL,
         stripe_checkout_session_id = NULL,
         stripe_payment_link_url = NULL,
@@ -503,7 +528,7 @@ function scheduleApprovalCustomerEmail(params: {
   quoteId: number
   email: string
   quote: QuoteRequest
-  paymentUrl?: string
+  paymentMode: OfferPaymentMode
 }) {
   after(async () => {
     try {
@@ -511,7 +536,7 @@ function scheduleApprovalCustomerEmail(params: {
       const mailResult = await sendCustomerApprovedEmail({
         email: params.email,
         quote: params.quote,
-        paymentUrl: params.paymentUrl,
+        paymentMode: params.paymentMode,
         attachments: pdf ? [{ filename: pdf.filename, content: pdf.data }] : undefined,
       })
       if (!mailResult.success) {
@@ -589,62 +614,38 @@ export async function approveQuoteRequest(
       return { success: true }
     }
 
-    const useStripe = !options?.skipStripe && isStripeConfigured()
+    const paymentMode: OfferPaymentMode =
+      !options?.skipStripe && isStripeConfigured() ? "stripe" : "manual"
+    const expiresAt = computeOfferExpiry().toISOString()
 
-    if (!useStripe) {
-      await sql`
-        UPDATE quote_requests SET
-          status = 'approved',
-          approved_at = NOW(),
-          updated_at = NOW()
-        WHERE id = ${quoteId}
-      `
-
-      scheduleApprovalCustomerEmail({
-        quoteId,
-        email: lead.email,
-        quote: { ...quote, status: "approved" },
-      })
-
-      revalidatePath("/warenverwaltung/auftraege")
-      revalidatePath(`/warenverwaltung/auftraege/${quoteId}`)
-      return { success: true }
-    }
-
-    let sessionId: string
-    let url: string
-    try {
-      const checkout = await createCheckoutSessionForQuote(quote, lead.email, {
-        name: lead.name,
-        firma: lead.firma,
-      })
-      sessionId = checkout.sessionId
-      url = checkout.url
-    } catch (e) {
-      return {
-        success: false,
-        error: toSafeErrorMessage(e, "createCheckoutSessionForQuote"),
-      }
-    }
-
-    const expiresAt = new Date(Date.now() + PAYMENT_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-
-    await sql`
+    const updated = await sql`
       UPDATE quote_requests SET
-        status = 'payment_pending',
+        status = 'approved',
         approved_at = NOW(),
-        expires_at = ${expiresAt.toISOString()},
-        stripe_checkout_session_id = ${sessionId},
-        stripe_payment_link_url = ${url},
+        offer_payment_mode = ${paymentMode},
+        accepted_at = NULL,
+        accepted_ip = NULL,
+        expires_at = ${expiresAt},
+        stripe_checkout_session_id = NULL,
+        stripe_payment_link_url = NULL,
         updated_at = NOW()
-      WHERE id = ${quoteId}
+      WHERE id = ${quoteId} AND status = 'submitted'
+      RETURNING id
     `
+    if (updated.length === 0) {
+      return { success: false, error: "Status hat sich zwischenzeitlich geändert" }
+    }
 
     scheduleApprovalCustomerEmail({
       quoteId,
       email: lead.email,
-      quote: { ...quote, status: "payment_pending" },
-      paymentUrl: url,
+      quote: {
+        ...quote,
+        status: "approved",
+        offer_payment_mode: paymentMode,
+        expires_at: expiresAt,
+      },
+      paymentMode,
     })
 
     revalidatePath("/warenverwaltung/auftraege")
@@ -655,6 +656,134 @@ export async function approveQuoteRequest(
       success: false,
       error: toSafeErrorMessage(e, "approveQuoteRequest"),
     }
+  }
+}
+
+function scheduleOfferAcceptedNotifications(params: {
+  quote: QuoteRequest
+  email: string
+  paymentMode: OfferPaymentMode
+}) {
+  const { quote, email, paymentMode } = params
+  after(async () => {
+    const results = await Promise.allSettled([
+      sendCustomerAcceptedEmail({ email, quote, paymentMode }),
+      sendTeamOfferAcceptedNotification({ quote, email, paymentMode }),
+      isTelegramConfigured()
+        ? sendOfferAcceptedTelegramNotification({
+            quoteId: quote.id,
+            auftragsNr: formatAuftragsNr(quote),
+            email,
+            kunde: [quote.config_json.kontaktName, quote.config_json.kontaktFirma]
+              .filter(Boolean)
+              .join(" · "),
+            totalBrutto: Number((quote.price_snapshot_json as { gesamt_brutto?: number }).gesamt_brutto) || 0,
+            paymentMode,
+          })
+        : Promise.resolve(),
+    ])
+    for (const r of results) {
+      if (r.status === "rejected") console.error("Offer-accepted notification failed:", r.reason)
+      else if (r.value && typeof r.value === "object" && "success" in r.value && !r.value.success) {
+        console.error("Offer-accepted email failed:", r.value.error)
+      }
+    }
+  })
+}
+
+export async function acceptQuoteByPublicToken(input: {
+  publicToken: string
+  ip: string | null
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const sql = getDb()
+    const rows = await sql`
+      SELECT qr.*, l.email AS lead_email
+      FROM quote_requests qr
+      JOIN leads l ON l.id = qr.lead_id
+      WHERE qr.public_token = ${input.publicToken}
+      LIMIT 1
+    `
+    if (!rows.length) return { success: false, error: "Angebot nicht gefunden" }
+    const quote = mapQuoteRow(rows[0])
+
+    if (!isOfferAwaitingAcceptance(quote) || !quote.offer_payment_mode) {
+      return { success: false, error: "Dieses Angebot kann nicht (mehr) angenommen werden." }
+    }
+    if (quote.expires_at && new Date(quote.expires_at) < new Date()) {
+      return { success: false, error: "Dieses Angebot ist leider abgelaufen." }
+    }
+
+    const paymentMode = quote.offer_payment_mode
+    const expiresAt = paymentMode === "stripe" ? computeOfferExpiry().toISOString() : null
+
+    const updated = await sql`
+      UPDATE quote_requests SET
+        status = 'payment_pending',
+        accepted_at = NOW(),
+        accepted_ip = ${input.ip},
+        expires_at = ${expiresAt},
+        updated_at = NOW()
+      WHERE id = ${quote.id}
+        AND status = 'approved'
+        AND accepted_at IS NULL
+      RETURNING accepted_at
+    `
+    if (updated.length === 0) {
+      return { success: false, error: "Dieses Angebot kann nicht (mehr) angenommen werden." }
+    }
+
+    if (quote.lead_email) {
+      scheduleOfferAcceptedNotifications({
+        quote: {
+          ...quote,
+          status: "payment_pending",
+          accepted_at: asIsoString(updated[0].accepted_at),
+          expires_at: expiresAt,
+        },
+        email: quote.lead_email,
+        paymentMode,
+      })
+    }
+
+    revalidatePath("/warenverwaltung/auftraege")
+    revalidatePath(`/warenverwaltung/auftraege/${quote.id}`)
+    revalidatePath(`/angebot/${input.publicToken}`)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: toSafeErrorMessage(e, "acceptQuoteByPublicToken") }
+  }
+}
+
+/** Liefert eine gültige Stripe-Checkout-URL; erzeugt bei Bedarf eine neue Session. */
+export async function getCheckoutUrlForQuote(
+  quote: QuoteRequest,
+): Promise<{ url?: string; error?: string }> {
+  if (!canPayOnline(quote)) return { error: "Für dieses Angebot ist keine Online-Zahlung möglich." }
+  if (!isStripeConfigured()) return { error: "Online-Zahlung ist derzeit nicht verfügbar." }
+
+  const existing = await getOpenCheckoutSessionUrl(quote.stripe_checkout_session_id)
+  if (existing) return { url: existing }
+
+  const lead = await getLeadById(quote.lead_id)
+  if (!lead) return { error: "Kunde nicht gefunden" }
+
+  try {
+    const checkout = await createCheckoutSessionForQuote(quote, lead.email, {
+      name: lead.name,
+      firma: lead.firma,
+    })
+    const sql = getDb()
+    await sql`
+      UPDATE quote_requests SET
+        stripe_checkout_session_id = ${checkout.sessionId},
+        stripe_payment_link_url = ${checkout.url},
+        updated_at = NOW()
+      WHERE id = ${quote.id} AND status = 'payment_pending'
+    `
+    return { url: checkout.url }
+  } catch (e) {
+    return { error: toSafeErrorMessage(e, "createCheckoutSessionForQuote") }
   }
 }
 

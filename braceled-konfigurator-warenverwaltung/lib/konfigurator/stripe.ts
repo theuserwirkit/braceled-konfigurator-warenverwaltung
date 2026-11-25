@@ -167,6 +167,17 @@ export async function createCheckoutSessionForQuote(
   return { sessionId: session.id, url: session.url }
 }
 
+/** Offene Session wiederverwenden; abgelaufene (Stripe: max. 24 h) durch eine neue ersetzen. */
+export async function getOpenCheckoutSessionUrl(sessionId: string | null): Promise<string | null> {
+  if (!sessionId) return null
+  try {
+    const session = await getStripe().checkout.sessions.retrieve(sessionId)
+    return session.status === "open" && session.url ? session.url : null
+  } catch {
+    return null
+  }
+}
+
 export function constructStripeEvent(payload: string, signature: string): Stripe.Event {
   const stripe = getStripe()
   const secret = process.env.STRIPE_WEBHOOK_SECRET

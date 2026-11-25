@@ -32,6 +32,8 @@ import {
   isFulfillmentWorkOpen,
 } from "@/lib/konfigurator/fulfillment-timing"
 import { defaultGroesseProGruppe, maxGruppenAnzahl } from "@/lib/konfigurator/gruppen-config"
+import { computeOfferExpiry } from "@/lib/konfigurator/angebot-annahme"
+import { formatDate } from "@/lib/utils/date"
 
 export type { ExternalQuoteInput }
 
@@ -478,6 +480,9 @@ export async function previewQuoteEmail(
       zahlungsnotiz: extra?.paymentNote?.trim()
         ? `Hinweis: ${extra.paymentNote.trim()}\n\n`
         : "",
+      ...(templateKey.startsWith("quote_approved_") && quote.status === "submitted"
+        ? { gueltig_bis: formatDate(computeOfferExpiry()) }
+        : {}),
     },
   })
 }

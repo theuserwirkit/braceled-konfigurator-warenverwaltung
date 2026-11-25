@@ -35,7 +35,7 @@ export async function POST(
   const plz = body.plz?.trim()
   if (!plz || !verifyPlzInput(plz, expectedPlz)) {
     return Response.json(
-      { error: "Die Postleitzahl stimmt nicht mit Ihrer Firmenadresse überein." },
+      { error: "Die Postleitzahl stimmt nicht mit deiner Firmenadresse überein." },
       { status: 403 },
     )
   }

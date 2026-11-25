@@ -253,8 +253,8 @@ vercel --prod
 
 | Aktion | Verhalten |
 |--------|-----------|
-| **Freigeben mit Stripe** | Status → `payment_pending`, Checkout-Link per E-Mail (`quote_approved_stripe`) inkl. `{{status_url}}` |
-| **Freigeben ohne Stripe** | Status → `approved`, E-Mail mit Statuslink (`quote_approved_manual`) |
+| **Angebot an Kunden schicken** | Status → `approved` („Angebot versendet“), `offer_payment_mode` = Stripe/Rechnung, Reservierung 7 Tage (`expires_at`), Mail `quote_approved_stripe` / `quote_approved_manual` mit `{{annahme_url}}` |
+| **Kunde nimmt an** (`POST /api/angebot/[token]/accept`, AGB-Checkbox) | Status → `payment_pending` („Angebot angenommen“), `accepted_at`/`accepted_ip`; Mails `quote_accepted_*` + Team-Mail + Telegram. Stripe: `/angebot/[token]/bezahlen` erzeugt bei Bedarf eine frische Checkout-Session (Migration `30-quote-angebot-annahme.sql`) |
 | **Ablehnen** | Status → `rejected`, E-Mail mit Grund (`quote_rejected`), Hold wird freigegeben |
 | **Mail-Vorschau** | Vor dem Senden Betreff/Text der Template-Mail anzeigen |
 | **Angebots-PDF** | Manuell: „In sevDesk erstellen“ oder PDF-Upload – Anhang bei Freigabe/Zahlung (siehe `docs/sevdesk-angebote.md`) |

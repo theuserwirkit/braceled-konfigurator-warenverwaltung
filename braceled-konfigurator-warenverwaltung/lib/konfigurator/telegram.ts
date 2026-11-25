@@ -2,7 +2,7 @@ import "server-only"
 
 import { getAppBaseUrl } from "@/lib/konfigurator/lead-auth"
 import { REJECTION_REASONS } from "@/lib/konfigurator/rejection-reasons"
-import type { QuoteSource } from "@/lib/konfigurator/types"
+import type { OfferPaymentMode, QuoteSource } from "@/lib/konfigurator/types"
 import { SOURCE_LABELS } from "@/lib/konfigurator/quote-status"
 
 function getBotToken(): string {
@@ -56,7 +56,7 @@ Admin: ${adminUrl}`
     text,
     reply_markup: {
       inline_keyboard: [
-        [{ text: "✅ Freigeben", callback_data: `approve:${params.quoteId}` }],
+        [{ text: "✅ Angebot an Kunden schicken", callback_data: `approve:${params.quoteId}` }],
         ...REJECTION_REASONS.map((reason) => [
           {
             text: `❌ ${reason.label}`,
@@ -66,6 +66,28 @@ Admin: ${adminUrl}`
       ],
     },
   })
+}
+
+export async function sendOfferAcceptedTelegramNotification(params: {
+  quoteId: number
+  auftragsNr: string
+  email: string
+  kunde: string
+  totalBrutto: number
+  paymentMode: OfferPaymentMode
+}) {
+  const adminUrl = `${getAppBaseUrl()}/warenverwaltung/auftraege/${params.quoteId}`
+  const zahlung =
+    params.paymentMode === "stripe" ? "Stripe – Kunde kann jetzt online bezahlen" : "Rechnung – bitte jetzt senden"
+  const text = `🤝 Angebot angenommen: ${params.auftragsNr}
+
+👤 ${params.kunde || params.email}
+💳 ${params.totalBrutto.toFixed(2)} EUR inkl. MwSt.
+🧾 ${zahlung}
+
+Admin: ${adminUrl}`
+
+  await telegramApi("sendMessage", { chat_id: getChatId(), text })
 }
 
 export async function answerCallbackQuery(callbackQueryId: string, text: string) {

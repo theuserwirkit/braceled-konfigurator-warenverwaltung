@@ -11,7 +11,8 @@ import {
   type TemplateVars,
 } from "@/lib/konfigurator/email-template-render"
 import { getGlobalCcEmail, resolveCcRecipients } from "@/lib/konfigurator/email-settings"
-import type { QuoteRequest, VersandDienstleister } from "@/lib/konfigurator/types"
+import { formatAuftragsNr } from "@/lib/konfigurator/quote-reference"
+import type { OfferPaymentMode, QuoteRequest, VersandDienstleister } from "@/lib/konfigurator/types"
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -164,20 +165,51 @@ ${params.adminUrl}`
 export async function sendCustomerApprovedEmail(params: {
   email: string
   quote: QuoteRequest
-  paymentUrl?: string
+  paymentMode: OfferPaymentMode
   attachments?: EmailAttachment[]
 }): Promise<{ success: boolean; error?: string }> {
-  const quoteWithLink = params.paymentUrl
-    ? { ...params.quote, stripe_payment_link_url: params.paymentUrl }
-    : params.quote
   return sendFromTemplateKey({
-    templateKey: params.paymentUrl ? "quote_approved_stripe" : "quote_approved_manual",
+    templateKey: params.paymentMode === "stripe" ? "quote_approved_stripe" : "quote_approved_manual",
     email: params.email,
-    quote: quoteWithLink,
+    quote: params.quote,
     attachments: params.attachments,
-    extraVars: {
-      angebot_url: `${getAppBaseUrl()}/angebot/${params.quote.public_token}`,
-    },
+  })
+}
+
+export async function sendCustomerAcceptedEmail(params: {
+  email: string
+  quote: QuoteRequest
+  paymentMode: OfferPaymentMode
+}): Promise<{ success: boolean; error?: string }> {
+  return sendFromTemplateKey({
+    templateKey: params.paymentMode === "stripe" ? "quote_accepted_stripe" : "quote_accepted_manual",
+    email: params.email,
+    quote: params.quote,
+  })
+}
+
+export async function sendTeamOfferAcceptedNotification(params: {
+  quote: QuoteRequest
+  email: string
+  paymentMode: OfferPaymentMode
+}) {
+  const price = params.quote.price_snapshot_json as { gesamt_netto?: number; gesamt_brutto?: number }
+  const config = params.quote.config_json
+  const auftragsNr = formatAuftragsNr(params.quote)
+  const body = `Der Kunde hat das Angebot ${auftragsNr} angenommen (AGB bestätigt).
+
+Kunde: ${[config.kontaktName, config.kontaktFirma].filter(Boolean).join(" · ") || "–"}
+E-Mail: ${params.email}
+Gesamt netto: ${(price.gesamt_netto || 0).toFixed(2)} EUR
+Zahlungsbetrag (inkl. 19 % MwSt.): ${(price.gesamt_brutto || 0).toFixed(2)} EUR
+Zahlungsart: ${params.paymentMode === "stripe" ? "Stripe (online)" : "Rechnung – bitte jetzt Rechnung senden"}
+
+Auftrag öffnen:
+${getAppBaseUrl()}/warenverwaltung/auftraege/${params.quote.id}`
+  return sendTemplatedEmail({
+    email: getTeamEmail(),
+    subject: `Angebot angenommen: ${auftragsNr}`,
+    text: body,
   })
 }
 

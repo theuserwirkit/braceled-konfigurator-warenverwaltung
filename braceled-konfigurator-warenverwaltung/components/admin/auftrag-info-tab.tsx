@@ -64,13 +64,28 @@ export function AuftragInfoTab({ quote, config, price, versions = [] }: AuftragI
             )}
             {quote.approved_at && (
               <div className="flex justify-between">
-                <dt>Freigegeben</dt>
+                <dt>Angebot versendet</dt>
                 <dd>{new Date(quote.approved_at).toLocaleString("de-DE")}</dd>
               </div>
             )}
-            {quote.expires_at && quote.status === "payment_pending" && (
+            {quote.accepted_at && (
               <div className="flex justify-between">
-                <dt>Zahlung bis</dt>
+                <dt>Angebot angenommen</dt>
+                <dd>
+                  {new Date(quote.accepted_at).toLocaleString("de-DE")}
+                  {quote.accepted_ip ? ` · IP ${quote.accepted_ip}` : ""}
+                </dd>
+              </div>
+            )}
+            {quote.offer_payment_mode && (
+              <div className="flex justify-between">
+                <dt>Zahlungsart</dt>
+                <dd>{quote.offer_payment_mode === "stripe" ? "Stripe (online)" : "Rechnung"}</dd>
+              </div>
+            )}
+            {quote.expires_at && (quote.status === "payment_pending" || quote.status === "approved") && (
+              <div className="flex justify-between">
+                <dt>{quote.status === "approved" ? "Reserviert bis" : "Zahlung bis"}</dt>
                 <dd>{new Date(quote.expires_at).toLocaleString("de-DE")}</dd>
               </div>
             )}

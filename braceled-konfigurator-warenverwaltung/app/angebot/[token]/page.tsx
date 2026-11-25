@@ -17,10 +17,10 @@ export default async function AngebotPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>
-  searchParams: Promise<{ paid?: string; cancelled?: string }>
+  searchParams: Promise<{ paid?: string; cancelled?: string; angenommen?: string; zahlung?: string }>
 }) {
   const { token } = await params
-  const { paid, cancelled } = await searchParams
+  const { paid, cancelled, angenommen, zahlung } = await searchParams
   const quote = await getQuoteByPublicToken(token)
 
   if (!quote) notFound()
@@ -47,6 +47,8 @@ export default async function AngebotPage({
       hasOfferPdf={hasOfferPdf}
       paid={paid}
       cancelled={cancelled}
+      justAccepted={angenommen === "1"}
+      paymentError={zahlung === "fehler"}
     />
   )
 }

@@ -63,6 +63,7 @@ async function main() {
     await runFile(pool, join(migrationDir, "27-email-auftrags-nr-freigabe.sql"))
     await runFile(pool, join(migrationDir, "28-email-quote-cancelled.sql"))
     await runFile(pool, join(migrationDir, "29-quote-archived-at.sql"))
+    await runFile(pool, join(migrationDir, "30-quote-angebot-annahme.sql"))
     console.log("Migration abgeschlossen.")
   } finally {
     await pool.end()

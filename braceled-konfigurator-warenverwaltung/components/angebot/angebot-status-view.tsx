@@ -16,22 +16,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Circle, Clock, CreditCard, Package, Pencil, XCircle } from "lucide-react"
+import { AngebotAnnehmenCard } from "@/components/angebot/angebot-annehmen-card"
+import { canPayOnline, isOfferAwaitingAcceptance } from "@/lib/konfigurator/angebot-annahme"
+import { formatDate } from "@/lib/utils/date"
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   submitted: { label: "In Prüfung", variant: "secondary" },
-  approved: { label: "Freigegeben", variant: "default" },
-  payment_pending: { label: "Zahlung ausstehend", variant: "default" },
-  paid: { label: "Bezahlt", variant: "default" },
+  approved: { label: "Angebot liegt vor", variant: "default" },
+  payment_pending: { label: "Angebot angenommen", variant: "default" },
+  paid: { label: "Gebucht", variant: "default" },
   rejected: { label: "Abgelehnt", variant: "destructive" },
   expired: { label: "Abgelaufen", variant: "outline" },
   cancelled: { label: "Storniert", variant: "destructive" },
 }
 
 const CUSTOMER_FULFILLMENT_HINTS: Partial<Record<FulfillmentStatus, string>> = {
-  angenommen: "Wir haben Ihre Bestellung angenommen",
+  angenommen: "Wir haben deine Bestellung angenommen",
   vorbereitet: "Material wird vorbereitet",
   verpackt: "Sets sind zusammengepackt",
-  bedruckt: "Ihr Logo wurde auf die Bänder gedruckt",
+  bedruckt: "Dein Logo wurde auf die Bänder gedruckt",
   versand_beauftragt: "Versand ist beauftragt",
   versandt: "Paket ist unterwegs",
   ruecksendung_angekommen: "Rücksendung eingegangen",
@@ -53,6 +56,8 @@ export function AngebotStatusView({
   hasOfferPdf,
   paid,
   cancelled,
+  justAccepted = false,
+  paymentError = false,
 }: {
   quote: QuoteRequest
   fulfillmentEvents: FulfillmentEvent[]
@@ -61,6 +66,8 @@ export function AngebotStatusView({
   hasOfferPdf: boolean
   paid?: string
   cancelled?: string
+  justAccepted?: boolean
+  paymentError?: boolean
 }) {
   const price = quote.price_snapshot_json as {
     positionen?: { pos: string; summe: number }[]
@@ -76,14 +83,20 @@ export function AngebotStatusView({
   const currentFulfillment = quote.fulfillment_status
   const currentIdx = currentFulfillment ? fulfillmentSteps.indexOf(currentFulfillment) : -1
   const showFulfillment = quote.status === "paid" && currentFulfillment
+  const awaitingAcceptance = isOfferAwaitingAcceptance(quote)
+  const payOnline = canPayOnline(quote)
+  const acceptedManual =
+    quote.status === "payment_pending" && quote.accepted_at && quote.offer_payment_mode === "manual"
+  const auftragsNr = formatAuftragsNr(quote)
+  const gueltigBis = quote.expires_at ? formatDate(quote.expires_at) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold">Ihr Auftragsstatus</h1>
+          <h1 className="text-2xl font-bold">Dein Auftragsstatus</h1>
           <p className="text-muted-foreground mt-1">
-            Auftrag {formatAuftragsNr(quote)}
+            Auftrag {auftragsNr}
             {config.kontaktFirma ? ` · ${config.kontaktFirma}` : ""}
           </p>
         </div>
@@ -102,9 +115,38 @@ export function AngebotStatusView({
         {cancelled === "1" && (
           <Card className="border-amber-200 bg-amber-50">
             <CardContent className="pt-6 text-amber-800">
-              Zahlung abgebrochen. Sie können es jederzeit erneut versuchen.
+              Zahlung abgebrochen. Du kannst es jederzeit erneut versuchen.
             </CardContent>
           </Card>
+        )}
+
+        {justAccepted && quote.accepted_at && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6 flex items-center gap-2 text-green-800">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              Vielen Dank – du hast das Angebot angenommen! Eine Bestätigung ist per E-Mail
+              unterwegs.
+            </CardContent>
+          </Card>
+        )}
+
+        {paymentError && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="pt-6 text-amber-800">
+              Die Online-Zahlung konnte gerade nicht gestartet werden. Bitte versuche es gleich
+              noch einmal oder schreib uns an tech@wirkung-digital.de.
+            </CardContent>
+          </Card>
+        )}
+
+        {awaitingAcceptance && quote.offer_payment_mode && (
+          <AngebotAnnehmenCard
+            token={quote.public_token}
+            auftragsNr={auftragsNr}
+            totalBrutto={price.gesamt_brutto || 0}
+            gueltigBis={gueltigBis}
+            paymentMode={quote.offer_payment_mode}
+          />
         )}
 
         <section className="rounded-xl border bg-card p-6 shadow-sm">
@@ -119,9 +161,23 @@ export function AngebotStatusView({
             <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mt-0.5 shrink-0" />
               <p>
-                Wir prüfen Ihre Konfiguration. In der Regel melden wir uns innerhalb von 24 Stunden.
+                Wir prüfen deine Konfiguration. In der Regel melden wir uns innerhalb von 24 Stunden.
               </p>
             </div>
+          )}
+          {awaitingAcceptance && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Wir freuen uns, dir unser Angebot unterbreiten zu können. Du kannst es direkt auf
+              dieser Seite annehmen.
+            </p>
+          )}
+          {quote.status === "payment_pending" && quote.accepted_at && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Angenommen am {formatDate(quote.accepted_at)}.{" "}
+              {payOnline
+                ? `Bitte schließe die Zahlung${gueltigBis ? ` bis zum ${gueltigBis}` : ""} ab – dann ist dein Termin fest gebucht.`
+                : "Die Rechnung erhältst du per E-Mail. Mit dem Zahlungseingang ist dein Termin fest gebucht."}
+            </p>
           )}
         </section>
 
@@ -129,7 +185,7 @@ export function AngebotStatusView({
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Angebotsstatus</CardTitle>
-              <CardDescription>Ihre Anfrage auf einen Blick</CardDescription>
+              <CardDescription>Dein Auftrag auf einen Blick</CardDescription>
             </div>
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
           </CardHeader>
@@ -138,7 +194,7 @@ export function AngebotStatusView({
               <div className="flex items-start gap-2 text-destructive">
                 <XCircle className="h-4 w-4 mt-0.5" />
                 <div>
-                  <p>Leider konnten wir Ihre Anfrage nicht bestätigen.</p>
+                  <p>Leider konnten wir deine Anfrage nicht bestätigen.</p>
                   {quote.rejection_reason && (
                     <p className="text-sm mt-1">{quote.rejection_reason}</p>
                   )}
@@ -146,15 +202,28 @@ export function AngebotStatusView({
               </div>
             )}
 
-            {(quote.status === "payment_pending" || quote.status === "approved") &&
-              quote.stripe_payment_link_url && (
-                <Button asChild size="lg" className="w-full">
-                  <a href={quote.stripe_payment_link_url}>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Jetzt bezahlen ({formatEur(price.gesamt_brutto || 0)} inkl. MwSt.)
-                  </a>
-                </Button>
-              )}
+            {payOnline && (
+              <Button asChild size="lg" className="w-full">
+                <a href={`/angebot/${quote.public_token}/bezahlen`}>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Jetzt bezahlen ({formatEur(price.gesamt_brutto || 0)} inkl. MwSt.)
+                </a>
+              </Button>
+            )}
+
+            {acceptedManual && (
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+                <p>Die Rechnung erhältst du in Kürze per E-Mail.</p>
+              </div>
+            )}
+
+            {quote.status === "expired" && (
+              <p className="text-sm text-muted-foreground">
+                Dieses Angebot ist abgelaufen. Melde dich gern unter tech@wirkung-digital.de, wir
+                erstellen dir ein neues.
+              </p>
+            )}
 
             {quote.status === "paid" && !showFulfillment && (
               <div className="flex items-center gap-2 text-green-700">
@@ -199,7 +268,7 @@ export function AngebotStatusView({
                 <Package className="h-5 w-5" />
                 Produktion & Versand
               </CardTitle>
-              <CardDescription>So weit ist Ihre Bestellung</CardDescription>
+              <CardDescription>So weit ist deine Bestellung</CardDescription>
             </CardHeader>
             <CardContent>
               <ol className="space-y-4">
@@ -259,7 +328,7 @@ export function AngebotStatusView({
 
         <Card>
           <CardHeader>
-            <CardTitle>Ihre Konfiguration</CardTitle>
+            <CardTitle>Deine Konfiguration</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid gap-2 text-sm">

@@ -136,12 +136,7 @@ export function QuoteApprovalActions({
     }
   }
 
-  const approveLabel =
-    source === "n8n_email"
-      ? "Freigeben & Angebot senden"
-      : skipStripe || !stripeConfigured
-        ? "Freigeben & Mail senden"
-        : "Freigeben & Stripe-Link senden"
+  const approveLabel = "Angebot an Kunden schicken"
 
   const cancelSection =
     (status === "payment_pending" || status === "approved") ? (
@@ -167,12 +162,18 @@ export function QuoteApprovalActions({
 
       <Card className="border-emerald-200 dark:border-emerald-900">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-emerald-800 dark:text-emerald-200">Freigabe</CardTitle>
+          <CardTitle className="text-lg text-emerald-800 dark:text-emerald-200">Angebot versenden</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {source !== "n8n_email" && (
+            <p className="text-sm text-muted-foreground">
+              Der Kunde erhält das Angebot und kann es auf seiner Angebotsseite annehmen (AGB-Bestätigung).
+              Erst danach wird bezahlt. Die Reservierung läuft nach 7 Tagen ohne Annahme ab.
+            </p>
+          )}
           {source === "konfigurator" && (
             <div className="space-y-2">
-              <Label>Zahlungsart für den Kunden</Label>
+              <Label>Zahlungsart nach Annahme</Label>
               <Select
                 value={paymentMode}
                 onValueChange={(v: "stripe" | "manual") => setPaymentMode(v)}

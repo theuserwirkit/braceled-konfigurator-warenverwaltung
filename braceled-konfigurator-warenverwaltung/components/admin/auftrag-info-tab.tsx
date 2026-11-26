@@ -7,6 +7,7 @@ import { getProbedruckLabel, normalizeProbedruckOption } from "@/lib/konfigurato
 import type { QuoteConfig, QuoteRequest } from "@/lib/konfigurator/types"
 import type { QuoteVersionRow } from "@/lib/konfigurator/quote-versions"
 import { QuoteVersionTimeline } from "@/components/angebot/quote-version-timeline"
+import { QuoteDruckkostenForm } from "@/components/admin/quote-druckkosten-form"
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   stripe: "Stripe",
@@ -310,6 +311,15 @@ export function AuftragInfoTab({ quote, config, price, versions = [] }: AuftragI
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Interne Kosten</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuoteDruckkostenForm quoteId={quote.id} druckkostenNetto={quote.druckkosten_netto} />
+        </CardContent>
+      </Card>
 
       {quote.stripe_payment_link_url && (
         <Card>

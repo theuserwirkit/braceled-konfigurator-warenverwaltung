@@ -152,6 +152,8 @@ export type QuoteRequest = {
   sevdesk_order_number: string | null
   packing_docs_printed_at: string | null
   archived_at: string | null
+  /** Interne Druck-Einkaufskosten (netto) für das KPI-Dashboard */
+  druckkosten_netto: number | null
   created_at: string
   lead_email?: string
 }

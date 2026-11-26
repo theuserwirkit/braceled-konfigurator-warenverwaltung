@@ -10,11 +10,21 @@ import { Button } from "@/components/ui/button"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { EditableBaseRow } from "@/components/admin/editable-base-row"
 import { InventoryReportModal } from "@/components/admin/inventory-report-modal"
+import { BatchCostsDialog } from "@/components/admin/batch-costs-dialog"
+import { getBatchCosts } from "@/lib/actions/kpi"
+import { formatEur } from "@/lib/pricing/preis-engine"
+import { BarChart3 } from "lucide-react"
 
 export default async function AdminPage() {
   if (!(await isAuthenticated())) redirect("/login")
 
-  const [groups, batches, bases] = await Promise.all([getGroups(), getBatches(), getBases()])
+  const [groups, batches, bases, batchCosts] = await Promise.all([
+    getGroups(),
+    getBatches(),
+    getBases(),
+    getBatchCosts().catch(() => []),
+  ])
+  const batchCostsById = new Map(batchCosts.map((c) => [c.id, c]))
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,6 +42,12 @@ export default async function AdminPage() {
                 <p className="text-sm text-muted-foreground">Datenverwaltung</p>
               </div>
             </div>
+            <Button asChild>
+              <Link href="/admin/kpi" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                KPI-Dashboard
+              </Link>
+            </Button>
             <InventoryReportModal />
             <Button asChild variant="outline">
               <Link href="/warenverwaltung/auftraege">Anfragen</Link>
@@ -105,22 +121,51 @@ export default async function AdminPage() {
                       <TableHead>Funktionsumfang</TableHead>
                       <TableHead>Lieferant</TableHead>
                       <TableHead>Lieferdatum</TableHead>
-                      <TableHead className="w-[100px]">Aktionen</TableHead>
+                      <TableHead className="text-right">Bänder</TableHead>
+                      <TableHead className="text-right">EK / Band</TableHead>
+                      <TableHead className="text-right">Gesamt netto</TableHead>
+                      <TableHead className="w-[200px]">Aktionen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {batches.map((batch) => (
-                      <TableRow key={batch.id}>
-                        <TableCell className="font-mono text-xs">{batch.id}</TableCell>
-                        <TableCell className="font-mono font-medium">{batch.code}</TableCell>
-                        <TableCell className="text-sm">{batch.funktionsumfang}</TableCell>
-                        <TableCell>{batch.lieferant || "-"}</TableCell>
-                        <TableCell>{batch.lieferdatum ? new Date(batch.lieferdatum).toLocaleDateString("de-DE") : "-"}</TableCell>
-                        <TableCell>
-                          <DeleteButton type="batch" id={batch.id} name={batch.code} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {batches.map((batch) => {
+                      const costs = batchCostsById.get(batch.id)
+                      const gesamt =
+                        costs?.einkaufspreisStueck != null
+                          ? costs.einkaufspreisStueck * costs.zugangMenge + (costs.fracht ?? 0) + (costs.zoll ?? 0)
+                          : null
+                      return (
+                        <TableRow key={batch.id}>
+                          <TableCell className="font-mono text-xs">{batch.id}</TableCell>
+                          <TableCell className="font-mono font-medium">{batch.code}</TableCell>
+                          <TableCell className="text-sm">{batch.funktionsumfang}</TableCell>
+                          <TableCell>{batch.lieferant || "-"}</TableCell>
+                          <TableCell>{batch.lieferdatum ? new Date(batch.lieferdatum).toLocaleDateString("de-DE") : "-"}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {(costs?.zugangMenge ?? 0).toLocaleString("de-DE")}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {costs?.einkaufspreisStueck != null
+                              ? costs.einkaufspreisStueck.toLocaleString("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 4 })
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{gesamt != null ? formatEur(gesamt) : "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <BatchCostsDialog
+                                batchId={batch.id}
+                                batchCode={batch.code}
+                                einkaufspreisStueck={costs?.einkaufspreisStueck ?? null}
+                                fracht={costs?.fracht ?? null}
+                                zoll={costs?.zoll ?? null}
+                                zugangMenge={costs?.zugangMenge ?? 0}
+                              />
+                              <DeleteButton type="batch" id={batch.id} name={batch.code} />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -148,6 +193,7 @@ export default async function AdminPage() {
                       <TableHead>Kanalanzahl</TableHead>
                       <TableHead>Firmwareversion</TableHead>
                       <TableHead>Funktionsumfang</TableHead>
+                      <TableHead className="text-right">EK netto</TableHead>
                       <TableHead className="w-[100px]">Aktionen</TableHead>
                     </TableRow>
                   </TableHeader>

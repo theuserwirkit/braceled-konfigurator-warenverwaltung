@@ -19,6 +19,7 @@ import {
   LEUCHTGRUPPE_SLOTS,
   TEXTILBAND_LEUCHTGRUPPE_SLOTS,
 } from "@/lib/konfigurator/leuchtgruppen"
+import { parseBetragInput } from "@/lib/kpi/betrag-input"
 import { Loader2, Plus, RefreshCw, Settings } from "lucide-react"
 
 interface AdminActionsProps {
@@ -39,6 +40,9 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
   const [batchFunktionsumfang, setBatchFunktionsumfang] = useState("")
   const [batchLieferant, setBatchLieferant] = useState("")
   const [batchLieferdatum, setBatchLieferdatum] = useState("")
+  const [batchEinkaufspreis, setBatchEinkaufspreis] = useState("")
+  const [batchFracht, setBatchFracht] = useState("")
+  const [batchZoll, setBatchZoll] = useState("")
 
   const [baseBezeichnung, setBaseBezeichnung] = useState("")
   const [baseHersteller, setBaseHersteller] = useState("")
@@ -48,6 +52,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
   const [baseFunktionsumfang, setBaseFunktionsumfang] = useState("")
   const [baseAnzahl, setBaseAnzahl] = useState("1")
   const [baseStationTyp, setBaseStationTyp] = useState("")
+  const [baseEinkaufspreis, setBaseEinkaufspreis] = useState("")
 
   // System settings state
   const [departureBufferDays, setDepartureBufferDays] = useState("6")
@@ -112,12 +117,22 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
 
   const handleCreateBatch = async () => {
     if (!batchCode.trim() || !batchFunktionsumfang.trim() || !batchLieferdatum) return
+    const einkaufspreisStueckNetto = parseBetragInput(batchEinkaufspreis)
+    const frachtkostenNetto = parseBetragInput(batchFracht)
+    const zollkostenNetto = parseBetragInput(batchZoll)
+    if ([einkaufspreisStueckNetto, frachtkostenNetto, zollkostenNetto].some((v) => Number.isNaN(v))) {
+      toast({ title: "Fehler", description: "Kosten bitte als Zahl ≥ 0 eingeben", variant: "destructive" })
+      return
+    }
     setLoading(true)
     const result = await createBatch({
       code: batchCode.trim(),
       funktionsumfang: batchFunktionsumfang.trim(),
       lieferant: batchLieferant.trim() || undefined,
       lieferdatum: new Date(batchLieferdatum),
+      einkaufspreisStueckNetto,
+      frachtkostenNetto,
+      zollkostenNetto,
     })
     setLoading(false)
     if (result.success) {
@@ -126,6 +141,9 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
       setBatchFunktionsumfang("")
       setBatchLieferant("")
       setBatchLieferdatum("")
+      setBatchEinkaufspreis("")
+      setBatchFracht("")
+      setBatchZoll("")
     } else {
       toast({ title: "Fehler", description: result.error, variant: "destructive" })
     }
@@ -142,6 +160,11 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
       return
     }
     const anzahl = Math.min(Math.max(parseInt(baseAnzahl, 10) || 1, 1), 100)
+    const einkaufspreisNetto = parseBetragInput(baseEinkaufspreis)
+    if (Number.isNaN(einkaufspreisNetto)) {
+      toast({ title: "Fehler", description: "Einkaufspreis bitte als Zahl ≥ 0 eingeben", variant: "destructive" })
+      return
+    }
     setLoading(true)
     const result = await createBase({
       bezeichnung: baseBezeichnung.trim(),
@@ -152,6 +175,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
       firmwareversion: baseFirmwareversion.trim() || undefined,
       funktionsumfang: baseFunktionsumfang.trim() || undefined,
       count: anzahl,
+      einkaufspreisNetto,
     })
     setLoading(false)
     if (result.success) {
@@ -171,6 +195,7 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
       setBaseFunktionsumfang("")
       setBaseAnzahl("1")
       setBaseStationTyp("")
+      setBaseEinkaufspreis("")
     } else {
       toast({ title: "Fehler", description: result.error, variant: "destructive" })
     }
@@ -434,6 +459,42 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
                 onChange={(e) => setBatchLieferdatum(e.target.value)}
               />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="batchEinkaufspreis">Einkaufspreis pro Band netto (optional)</Label>
+              <Input
+                id="batchEinkaufspreis"
+                inputMode="decimal"
+                value={batchEinkaufspreis}
+                onChange={(e) => setBatchEinkaufspreis(e.target.value)}
+                placeholder="z.B. 1,89"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="batchFracht">Fracht gesamt</Label>
+                <Input
+                  id="batchFracht"
+                  inputMode="decimal"
+                  value={batchFracht}
+                  onChange={(e) => setBatchFracht(e.target.value)}
+                  placeholder="€ netto"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="batchZoll">Zoll gesamt</Label>
+                <Input
+                  id="batchZoll"
+                  inputMode="decimal"
+                  value={batchZoll}
+                  onChange={(e) => setBatchZoll(e.target.value)}
+                  placeholder="€ netto"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Die Stückzahl ergibt sich aus den Zugangsbuchungen dieser Charge. Kosten sind später in der
+              Chargen-Tabelle änderbar.
+            </p>
             <Button
               onClick={handleCreateBatch}
               disabled={loading || !batchCode.trim() || !batchFunktionsumfang.trim() || !batchLieferdatum}
@@ -537,6 +598,16 @@ export function AdminActions({ batches, existingGroups }: AdminActionsProps) {
                 value={baseFunktionsumfang}
                 onChange={(e) => setBaseFunktionsumfang(e.target.value)}
                 placeholder="z.B. RGB Flash DMX ArtNet"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="baseEinkaufspreis">Einkaufspreis pro Stück netto (optional)</Label>
+              <Input
+                id="baseEinkaufspreis"
+                inputMode="decimal"
+                value={baseEinkaufspreis}
+                onChange={(e) => setBaseEinkaufspreis(e.target.value)}
+                placeholder="z.B. 249,00"
               />
             </div>
             <div className="flex flex-col gap-2">

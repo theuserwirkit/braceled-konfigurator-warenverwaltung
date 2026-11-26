@@ -83,14 +83,25 @@ export async function createBatch(input: {
   funktionsumfang: string
   lieferant?: string
   lieferdatum: Date
+  einkaufspreisStueckNetto?: number | null
+  frachtkostenNetto?: number | null
+  zollkostenNetto?: number | null
 }) {
   try {
     await requireRole(["ADMIN"])
     const sql = getDb()
 
+    const kosten = [input.einkaufspreisStueckNetto, input.frachtkostenNetto, input.zollkostenNetto]
+    if (kosten.some((v) => v != null && (!Number.isFinite(v) || v < 0))) {
+      return { success: false, error: "Kosten bitte als Zahl ≥ 0 eingeben" }
+    }
+
     const batches = await sql`
-      INSERT INTO batches (code, funktionsumfang, lieferant, lieferdatum)
-      VALUES (${input.code}, ${input.funktionsumfang}, ${input.lieferant || null}, ${input.lieferdatum.toISOString()})
+      INSERT INTO batches (code, funktionsumfang, lieferant, lieferdatum, einkaufspreis_stueck_netto, frachtkosten_netto, zollkosten_netto)
+      VALUES (
+        ${input.code}, ${input.funktionsumfang}, ${input.lieferant || null}, ${input.lieferdatum.toISOString()},
+        ${input.einkaufspreisStueckNetto ?? null}, ${input.frachtkostenNetto ?? null}, ${input.zollkostenNetto ?? null}
+      )
       RETURNING *
     `
     const batch = batches[0]
@@ -134,11 +145,16 @@ export async function createBase(input: {
   firmwareversion?: string
   funktionsumfang?: string
   count?: number
+  einkaufspreisNetto?: number | null
 }) {
   try {
     await requireRole(["ADMIN"])
     const sql = getDb()
 
+    const einkaufspreis = input.einkaufspreisNetto ?? null
+    if (einkaufspreis != null && (!Number.isFinite(einkaufspreis) || einkaufspreis < 0)) {
+      return { success: false, error: "Einkaufspreis bitte als Zahl ≥ 0 eingeben" }
+    }
     const count = Math.min(Math.max(input.count ?? 1, 1), 100)
     const bezeichnung = input.bezeichnung.trim()
     const hersteller = input.hersteller.trim()
@@ -170,7 +186,7 @@ export async function createBase(input: {
     )
 
     const created = await sql`
-      INSERT INTO bases (bezeichnung, hersteller, kanalanzahl, batch_id, firmwareversion, funktionsumfang, station_typ, seriennummer)
+      INSERT INTO bases (bezeichnung, hersteller, kanalanzahl, batch_id, firmwareversion, funktionsumfang, station_typ, seriennummer, einkaufspreis_netto)
       SELECT
         generated.name,
         ${hersteller},
@@ -179,7 +195,8 @@ export async function createBase(input: {
         ${firmwareversion},
         ${funktionsumfang},
         ${stationTyp},
-        generated.serial
+        generated.serial,
+        ${einkaufspreis}::numeric
       FROM UNNEST(${names}::text[], ${serials}::text[]) AS generated(name, serial)
       RETURNING *
     `

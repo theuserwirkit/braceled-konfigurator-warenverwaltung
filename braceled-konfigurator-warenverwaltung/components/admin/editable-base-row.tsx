@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { updateBase } from "@/lib/actions/admin"
+import { updateBaseEinkaufspreis } from "@/lib/actions/kpi"
+import { parseBetragInput } from "@/lib/kpi/betrag-input"
+import { formatEur } from "@/lib/pricing/preis-engine"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { BASE_STATION_TYP_OPTIONS, STATION_TYP_LABELS, type BaseStationTyp } from "@/lib/konfigurator/station-types"
 import { Pencil, Check, X } from "lucide-react"
@@ -22,8 +25,12 @@ interface EditableBaseRowProps {
     firmwareversion: string | null
     funktionsumfang: string | null
     station_typ?: string
+    einkaufspreis_netto?: string | number | null
   }
 }
+
+const formatPreisInput = (v: string | number | null | undefined) =>
+  v == null || v === "" ? "" : String(Number(v)).replace(".", ",")
 
 export function EditableBaseRow({ base }: EditableBaseRowProps) {
   const { toast } = useToast()
@@ -33,6 +40,8 @@ export function EditableBaseRow({ base }: EditableBaseRowProps) {
   const [stationTyp, setStationTyp] = useState<BaseStationTyp>(
     (base.station_typ as BaseStationTyp) || "keine",
   )
+  const [einkaufspreis, setEinkaufspreis] = useState(formatPreisInput(base.einkaufspreis_netto))
+  const [savedPreis, setSavedPreis] = useState(formatPreisInput(base.einkaufspreis_netto))
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -45,14 +54,28 @@ export function EditableBaseRow({ base }: EditableBaseRowProps) {
       })
       return
     }
+    const preis = parseBetragInput(einkaufspreis)
+    if (Number.isNaN(preis)) {
+      toast({ title: "Fehler", description: "Einkaufspreis bitte als Zahl ≥ 0 eingeben.", variant: "destructive" })
+      return
+    }
     setSaving(true)
     const result = await updateBase(base.id, {
       bezeichnung: bezeichnung.trim(),
       seriennummer: seriennummer.trim(),
       stationTyp,
     })
+    const preisResult =
+      result.success && einkaufspreis !== savedPreis
+        ? await updateBaseEinkaufspreis(base.id, preis)
+        : { success: true as const, error: undefined }
     setSaving(false)
+    if (result.success && !preisResult.success) {
+      toast({ title: "Fehler", description: preisResult.error, variant: "destructive" })
+      return
+    }
     if (result.success) {
+      setSavedPreis(einkaufspreis)
       toast({ title: "Gespeichert", description: "Basis wurde aktualisiert" })
       setEditing(false)
     } else {
@@ -64,6 +87,7 @@ export function EditableBaseRow({ base }: EditableBaseRowProps) {
     setBezeichnung(base.bezeichnung)
     setSeriennummer(base.seriennummer ?? "")
     setStationTyp((base.station_typ as BaseStationTyp) || "keine")
+    setEinkaufspreis(savedPreis)
     setEditing(false)
   }
 
@@ -143,6 +167,22 @@ export function EditableBaseRow({ base }: EditableBaseRowProps) {
       <TableCell>{base.kanalanzahl}</TableCell>
       <TableCell>{base.firmwareversion || "-"}</TableCell>
       <TableCell>{base.funktionsumfang || "-"}</TableCell>
+      <TableCell className="text-right font-mono">
+        {editing ? (
+          <Input
+            value={einkaufspreis}
+            onChange={(e) => setEinkaufspreis(e.target.value)}
+            className="h-8 w-24 text-right"
+            inputMode="decimal"
+            placeholder="€ netto"
+            aria-label="Einkaufspreis netto"
+          />
+        ) : savedPreis ? (
+          formatEur(parseBetragInput(savedPreis) ?? 0)
+        ) : (
+          "-"
+        )}
+      </TableCell>
       <TableCell>
         <DeleteButton type="base" id={base.id} name={bezeichnung} />
       </TableCell>

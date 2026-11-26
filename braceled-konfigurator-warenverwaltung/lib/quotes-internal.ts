@@ -90,6 +90,7 @@ export function mapQuoteRow(row: Record<string, unknown>): QuoteRequest {
     created_at: asIsoString(row.created_at) ?? (safeRow.created_at as string),
     packing_docs_printed_at: asIsoString(row.packing_docs_printed_at),
     archived_at: asIsoString(row.archived_at),
+    druckkosten_netto: row.druckkosten_netto != null ? Number(row.druckkosten_netto) : null,
     fulfillment_status: (row.fulfillment_status as QuoteRequest["fulfillment_status"]) ?? null,
     tracking_number: (row.tracking_number as string | null) ?? null,
     versand_dienstleister: (row.versand_dienstleister as QuoteRequest["versand_dienstleister"]) ?? null,

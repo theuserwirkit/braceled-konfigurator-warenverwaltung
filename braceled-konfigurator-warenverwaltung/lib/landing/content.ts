@@ -108,8 +108,8 @@ export function isAiGeneratedLandingImage(src: string): boolean {
 export const LANDING_ANSWER_BLOCK = {
   title: "Was ist BraceLED?",
   paragraphs: [
-    "BraceLED sind ferngesteuerte LED-Eventarmbänder für Festivals, Corporate Events, Messen und Produktionen. Die Crowd leuchtet synchron – steuerbar per DMX, App oder Fernbedienung, in bis zu 20 Gruppen.",
-    "Du mietest oder kaufst ab 100 Stück. Entwicklung, Support und Versand kommen aus Deutschland; Preise sind netto und gelten für Unternehmen (B2B).",
+    "BraceLED ist ein LED-Armband, das Du fernsteuerst. Jeder Gast trägt eins am Handgelenk – und Du entscheidest, wann der Saal leuchtet, in welcher Farbe und in welchem Block. Direkt vom Lichtpult per DMX, per App oder per Fernbedienung, in bis zu 20 Gruppen.",
+    "Gemacht für Festivals, Firmenevents, Messen und TV-Produktionen. Du mietest oder kaufst ab 100 Stück, auf Wunsch mit Deinem Logo bedruckt. Entwickelt in Deutschland, geliefert aus dem Rhein-Main-Gebiet – für Unternehmen, Agenturen und Veranstalter.",
   ],
 } as const
 

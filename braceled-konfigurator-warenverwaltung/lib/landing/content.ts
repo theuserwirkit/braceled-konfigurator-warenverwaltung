@@ -104,6 +104,15 @@ export function isAiGeneratedLandingImage(src: string): boolean {
   return AI_GENERATED_LANDING_IMAGE_SET.has(src)
 }
 
+/** Kurz-Antwortblock für GEO/AEO direkt unter dem Hero. */
+export const LANDING_ANSWER_BLOCK = {
+  title: "Was ist BraceLED?",
+  paragraphs: [
+    "BraceLED sind ferngesteuerte LED-Eventarmbänder für Festivals, Corporate Events, Messen und Produktionen. Die Crowd leuchtet synchron – steuerbar per DMX, App oder Fernbedienung, in bis zu 20 Gruppen.",
+    "Du mietest oder kaufst ab 100 Stück. Entwicklung, Support und Versand kommen aus Deutschland; Preise sind netto und gelten für Unternehmen (B2B).",
+  ],
+} as const
+
 export const USP_ITEMS = [
   {
     title: "Bis zu 20 Gruppen",
@@ -124,6 +133,7 @@ export const BENEFIT_ITEMS = [
       "Wenn es eilig ist, hast Du Deine LED-Armbänder innerhalb von 48 Stunden – oder holst sie einfach bei uns im Rhein-Main-Gebiet ab!",
     link: "Lieferzeiten im Konfigurator",
     image: LANDING_IMAGES.benefit1,
+    imageAlt: "Express-Lieferung von BraceLED LED-Eventarmbändern",
   },
   {
     title: "Individuell gebrandet",
@@ -131,6 +141,7 @@ export const BENEFIT_ITEMS = [
       "Die BraceLED Leuchtarmbänder kannst Du individualisieren: Vollflächiger Druck, 4c-Branding – direkt im Konfigurator hochladen.",
     link: "Druck im Konfigurator testen",
     image: LANDING_IMAGES.benefit2,
+    imageAlt: "BraceLED LED-Armband mit individuellem Branding-Druck",
   },
   {
     title: "Gut beraten!",
@@ -138,6 +149,7 @@ export const BENEFIT_ITEMS = [
       "Unser Team aus dem Rhein-Main-Gebiet begleitet Dich bei Technik, Ablauf und Umsetzung Deines Events.",
     link: "Jetzt konfigurieren",
     image: LANDING_IMAGES.benefit3,
+    imageAlt: "Beratung zu BraceLED LED-Eventarmbändern für Events",
   },
 ] as const
 
@@ -146,31 +158,37 @@ export const FEATURE_CARDS = [
     image: LANDING_IMAGES.front,
     title: "LED Festivalarmband",
     description: "4 LEDs, unendliche Farben",
+    imageAlt: "BraceLED LED-Festivalarmband von vorne",
   },
   {
     image: LANDING_IMAGES.back,
     title: "Knopf für Interaktionen",
     description: "z. B. Abstimmungen, Farbwahl, Votings",
+    imageAlt: "BraceLED LED-Armband Rückseite mit Interaktionsknopf",
   },
   {
     image: LANDING_IMAGES.gruppen,
     title: "Gruppierbar",
     description: "Armbänder können in Gruppen angesteuert werden",
+    imageAlt: "Mehr von BraceLED LED-Armbändern in farbigen Gruppen",
   },
   {
     image: LANDING_IMAGES.bedruckt,
     title: "Individualisierung",
     description: "Bedrucken in 4c möglich",
+    imageAlt: "Bedrucktes BraceLED LED-Eventarmband mit Logo",
   },
   {
     image: LANDING_IMAGES.batterie,
     title: "Nachhaltig durch Batterietausch",
     description: "2× CR2032",
+    imageAlt: "BraceLED LED-Armband mit austauschbaren CR2032-Batterien",
   },
   {
     image: LANDING_IMAGES.vollflaeche,
     title: "Vollflächiger Druck",
     description: "Premium-Druck möglich",
+    imageAlt: "BraceLED LED-Armband mit vollflächigem Premium-Druck",
   },
 ] as const
 

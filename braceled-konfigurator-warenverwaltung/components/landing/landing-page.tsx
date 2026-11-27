@@ -29,6 +29,7 @@ import {
   FAQ_ITEMS,
   FEATURE_CARDS,
   HERO_COPY,
+  LANDING_ANSWER_BLOCK,
   LANDING_IMAGES,
   LANDING_SHOW_IDEAS,
   MARQUEE_ITEMS,
@@ -54,6 +55,7 @@ export function LandingPage({ pricing }: Props) {
       <main id="hauptinhalt">
         <HeroSection />
         <UspStrip />
+        <AnswerSection />
         <AboutSection />
         <BenefitsSection />
         <ShowSection />
@@ -151,6 +153,23 @@ function UspStrip() {
   )
 }
 
+function AnswerSection() {
+  return (
+    <section className="lp-section" aria-label={LANDING_ANSWER_BLOCK.title}>
+      <div className="lp-container">
+        <LandingReveal>
+          <div className="lp-prose geo-answer-block" style={{ maxWidth: "42rem" }}>
+            <FestivaTitle kicker="Kurz erklärt" title={LANDING_ANSWER_BLOCK.title} />
+            {LANDING_ANSWER_BLOCK.paragraphs.map((p) => (
+              <p key={p.slice(0, 48)}>{p}</p>
+            ))}
+          </div>
+        </LandingReveal>
+      </div>
+    </section>
+  )
+}
+
 function AboutSection() {
   return (
     <section id="ueber" className="lp-section">
@@ -160,7 +179,7 @@ function AboutSection() {
           <div className="lp-about-visual">
             <Image
               src={LANDING_IMAGES.tisch}
-              alt="BraceLED Armbänder"
+              alt="BraceLED LED-Armbänder auf dem Tisch"
               width={550}
               height={785}
               className="lp-about-img"
@@ -222,7 +241,7 @@ function BenefitsSection() {
               <LandingReveal key={item.title} delay={i * 100}>
                 <figure className="lp-media-figure">
                   <div className="lp-benefit-card">
-                    <Image src={item.image} alt="" fill className="lp-benefit-bg" />
+                    <Image src={item.image} alt={item.imageAlt} fill className="lp-benefit-bg" />
                     <div className="lp-benefit-overlay" />
                     <div className="lp-benefit-content">
                       <div className="lp-benefit-icon">
@@ -252,7 +271,12 @@ function ShowSection() {
       <div className="lp-container">
         <div className="lp-show-block">
           <figure className="lp-show-visual lp-media-figure">
-            <Image src={LANDING_IMAGES.hero} alt="LED Show" fill style={{ objectFit: "cover" }} />
+            <Image
+              src={LANDING_IMAGES.hero}
+              alt="Synchron leuchtende BraceLED LED-Armbänder in der Crowd"
+              fill
+              style={{ objectFit: "cover" }}
+            />
             <div className="lp-show-visual-overlay" />
             <AiGeneratedCaption src={LANDING_IMAGES.hero} className="lp-ai-caption--inset" />
           </figure>
@@ -357,7 +381,12 @@ function FeaturesSection() {
               <article className="lp-feature-card-lg">
                 <figure className="lp-media-figure">
                   <div className="lp-feature-card-lg-img">
-                    <Image src={card.image} alt={card.title} fill sizes="(max-width:768px) 100vw, 33vw" />
+                    <Image
+                      src={card.image}
+                      alt={card.imageAlt}
+                      fill
+                      sizes="(max-width:768px) 100vw, 33vw"
+                    />
                   </div>
                   <AiGeneratedCaption src={card.image} className="px-4" />
                 </figure>
